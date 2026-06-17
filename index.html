@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IQAC Checklist & Report Management System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ================= AUTH VIEW ================= -->
+  <div id="login-view" class="auth-wrapper animate-fade-in">
+    <div class="auth-card glass-panel">
+      <div class="auth-logo-wrapper">
+        <img src="logo.png" alt="IQAC Logo" class="auth-logo">
+      </div>
+      <div class="auth-header">
+        <h1>IQAC Portal</h1>
+        <p>Report Checklist Management System</p>
+      </div>
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            </span>
+            <input type="text" id="username" class="form-control" placeholder="Enter username" required autocomplete="username">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </span>
+            <input type="password" id="password" class="form-control" placeholder="Enter password" required autocomplete="current-password">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          Log In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= APPLICATION SHELL ================= -->
+  <div id="app-view" class="app-container" style="display: none;">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="logo.png" alt="IQAC Logo" class="sidebar-logo-img">
+        <span class="sidebar-title">IQAC Checklist</span>
+      </div>
+      
+      <!-- Staff Menu -->
+      <ul id="staff-menu" class="sidebar-menu" style="display: none;">
+        <li class="menu-item active" id="menu-staff-dashboard">
+          <a onclick="switchSubView('staff-dashboard')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="menu-item" id="menu-staff-events">
+          <a onclick="switchSubView('staff-events')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+            <span>Manage Events</span>
+          </a>
+        </li>
+        <li class="menu-item" id="menu-staff-departments">
+          <a onclick="switchSubView('staff-departments')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Departments</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Director Menu -->
+      <ul id="director-menu" class="sidebar-menu" style="display: none;">
+        <li class="menu-item active" id="menu-director-dashboard">
+          <a onclick="switchSubView('director-dashboard')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+            <span>Director Dashboard</span>
+          </a>
+        </li>
+        <li class="menu-item" id="menu-director-users">
+          <a onclick="switchSubView('director-users')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>User Access Control</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- User footer area -->
+      <div class="sidebar-user">
+        <div class="user-info">
+          <span id="current-username" class="user-name">User Name</span>
+          <span id="current-userrole" class="user-role">Role</span>
+        </div>
+        <button onclick="logout()" class="logout-btn" title="Log Out">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-title-container">
+          <h2 id="header-title">Dashboard</h2>
+        </div>
+        <div class="header-actions">
+          <div class="deadline-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="header-time-info">Loading time...</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Body -->
+      <div class="content-body">
+        
+        <!-- ================= STAFF SUB-VIEW: DASHBOARD ================= -->
+        <div id="subview-staff-dashboard" class="subview animate-fade-in" style="display: none;">
+          <!-- Summary Cards -->
+          <div class="stats-grid">
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">Active Events</span>
+                <span id="staff-stat-active-events" class="stat-value">0</span>
+              </div>
+              <div class="stat-icon-box stat-icon-blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+            </div>
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">Reports Received</span>
+                <span id="staff-stat-total-received" class="stat-value">0</span>
+              </div>
+              <div class="stat-icon-box stat-icon-green">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">Needs Correction</span>
+                <span id="staff-stat-total-remarks" class="stat-value">0</span>
+              </div>
+              <div class="stat-icon-box stat-icon-yellow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+            </div>
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">Pending Checklist</span>
+                <span id="staff-stat-total-pending" class="stat-value">0</span>
+              </div>
+              <div class="stat-icon-box stat-icon-purple">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Event Progress Overview -->
+          <div class="glass-panel" style="margin-top: 24px;">
+            <div class="card-header">
+              <span class="card-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Active Events Checklist Status
+              </span>
+              <button class="btn btn-primary btn-sm" onclick="switchSubView('staff-events')">
+                Manage Events
+              </button>
+            </div>
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Event Details</th>
+                    <th>Created On</th>
+                    <th>Deadline</th>
+                    <th>Submissions</th>
+                    <th>Progress</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-dashboard-events-table">
+                  <!-- JS Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= STAFF SUB-VIEW: MANAGE EVENTS ================= -->
+        <div id="subview-staff-events" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header">
+            <div class="section-title">
+              <h3>Manage Events</h3>
+              <p class="section-desc">Create, view, and delete report submission events</p>
+            </div>
+            <button class="btn btn-primary" onclick="openCreateEventModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add New Event
+            </button>
+          </div>
+
+          <div class="glass-panel">
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Event Title</th>
+                    <th>Created Date</th>
+                    <th>Deadline</th>
+                    <th>Checklist Status</th>
+                    <th style="width: 120px; text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-events-list-table">
+                  <!-- JS Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= STAFF SUB-VIEW: MANAGE DEPARTMENTS ================= -->
+        <div id="subview-staff-departments" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header">
+            <div class="section-title">
+              <h3>Manage Departments</h3>
+              <p class="section-desc">Add, edit, or delete departments that are checked for reports</p>
+            </div>
+            <button class="btn btn-primary" onclick="openDeptModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Department
+            </button>
+          </div>
+
+          <!-- Filters -->
+          <div class="filter-bar">
+            <div class="form-group filter-search" style="margin-bottom: 0;">
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" id="dept-search-input" class="form-control" placeholder="Search department name..." oninput="renderStaffDepartments()">
+              </div>
+            </div>
+            <div class="form-group filter-select" style="margin-bottom: 0;">
+              <select id="dept-shift-filter" class="form-select" onchange="renderStaffDepartments()">
+                <option value="all">All Shifts</option>
+                <option value="Shift 1">Shift 1</option>
+                <option value="Shift 2">Shift 2</option>
+                <option value="Administrative Units">Administrative Units</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="glass-panel">
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Department Name</th>
+                    <th>Category</th>
+                    <th>Shift Type</th>
+                    <th style="width: 150px; text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="staff-departments-list-table">
+                  <!-- JS Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= STAFF SUB-VIEW: CHECKLIST WORKSPACE ================= -->
+        <div id="subview-staff-checklist" class="subview animate-fade-in" style="display: none;">
+          <div class="back-link" onclick="switchSubView('staff-dashboard')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back to Dashboard
+          </div>
+
+          <div class="section-header" style="margin-bottom: 16px;">
+            <div class="section-title">
+              <h3 id="checklist-event-title">Event Title</h3>
+              <p id="checklist-event-deadline" class="section-desc">Deadline: -</p>
+            </div>
+            <div id="checklist-completion-percentage" class="badge badge-received">Completion: 0%</div>
+          </div>
+
+          <!-- Filters -->
+          <div class="filter-bar">
+            <div class="form-group filter-search" style="margin-bottom: 0;">
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" id="checklist-search-input" class="form-control" placeholder="Search department..." oninput="filterChecklist()">
+              </div>
+            </div>
+            <div class="form-group filter-select" style="margin-bottom: 0;">
+              <select id="checklist-status-filter" class="form-select" onchange="filterChecklist()">
+                <option value="all">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="received">Received (On Time)</option>
+                <option value="delayed">Delayed Submission</option>
+                <option value="remarks">Needs Correction</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Categories Tabs -->
+          <div class="tab-container" id="checklist-tabs">
+            <button class="tab-btn active" onclick="setChecklistTab('all')">All Units</button>
+            <button class="tab-btn" onclick="setChecklistTab('Shift 1')">Shift 1</button>
+            <button class="tab-btn" onclick="setChecklistTab('Shift 2')">Shift 2</button>
+            <button class="tab-btn" onclick="setChecklistTab('Administrative Units')">Administrative Units</button>
+          </div>
+
+          <div class="glass-panel">
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Department</th>
+                    <th>Category / Shift</th>
+                    <th>Status</th>
+                    <th>Submission Info / Remarks</th>
+                    <th style="width: 200px; text-align: right;">Update Status</th>
+                  </tr>
+                </thead>
+                <tbody id="checklist-departments-table">
+                  <!-- JS Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= DIRECTOR SUB-VIEW: DASHBOARD ================= -->
+        <div id="subview-director-dashboard" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header">
+            <div class="section-title">
+              <h3>Director Overview Dashboard</h3>
+              <p class="section-desc">Consolidated monitoring of IQAC events submissions</p>
+            </div>
+          </div>
+
+          <!-- Summary Grid -->
+          <div class="stats-grid">
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">Total Listed Events</span>
+                <span id="director-stat-total-events" class="stat-value">0</span>
+              </div>
+              <div class="stat-icon-box stat-icon-blue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </div>
+            </div>
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">Average Progress</span>
+                <span id="director-stat-avg-progress" class="stat-value">0%</span>
+              </div>
+              <div class="stat-icon-box stat-icon-purple">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Director Events Table -->
+          <div class="glass-panel">
+            <div class="card-header">
+              <span class="card-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Track Submissions
+              </span>
+            </div>
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Event Details</th>
+                    <th>Created On</th>
+                    <th>Deadline</th>
+                    <th>Submitted / Total</th>
+                    <th>Completion Progress</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="director-dashboard-events-table">
+                  <!-- JS Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= DIRECTOR SUB-VIEW: USER ACCESS CONTROL ================= -->
+        <div id="subview-director-users" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header">
+            <div class="section-title">
+              <h3>User Access Control</h3>
+              <p class="section-desc">Manage system users, login credentials, passwords, and roles</p>
+            </div>
+            <button class="btn btn-primary" onclick="openUserModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add New User
+            </button>
+          </div>
+
+          <div class="glass-panel">
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Full Name</th>
+                    <th>Username</th>
+                    <th>Role Type</th>
+                    <th style="width: 180px; text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="director-users-list-table">
+                  <!-- JS Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= DIRECTOR SUB-VIEW: DETAIL SCREEN ================= -->
+        <div id="subview-director-detail" class="subview animate-fade-in" style="display: none;">
+          <div class="back-link" onclick="switchSubView('director-dashboard')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back to Dashboard
+          </div>
+
+          <div class="section-header" style="margin-bottom: 24px;">
+            <div class="section-title">
+              <h3 id="director-detail-event-title">Event Title</h3>
+              <p id="director-detail-event-deadline" class="section-desc">Deadline: -</p>
+            </div>
+            <div id="director-detail-completion-badge" class="badge badge-received">Completion: 0%</div>
+          </div>
+
+          <!-- Alert for Sorting Order -->
+          <div style="background: #eff6ff; border: 1px dashed rgba(37, 99, 235, 0.2); padding: 12px 16px; border-radius: 10px; margin-bottom: 24px; font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span><strong>Sorting Order:</strong> Unsubmitted departments (Pending & Correction Remarks) are listed first, followed by Submitted (Received & Delayed) departments.</span>
+          </div>
+
+          <!-- Filters -->
+          <div class="filter-bar">
+            <div class="form-group filter-search" style="margin-bottom: 0;">
+              <div class="input-wrapper">
+                <span class="input-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" id="director-search-input" class="form-control" placeholder="Search department..." oninput="filterDirectorChecklist()">
+              </div>
+            </div>
+            <div class="form-group filter-select" style="margin-bottom: 0;">
+              <select id="director-status-filter" class="form-select" onchange="filterDirectorChecklist()">
+                <option value="all">All Statuses</option>
+                <option value="unsubmitted">Not Submitted (Pending + Remarks)</option>
+                <option value="submitted">Submitted (Received & Delayed)</option>
+                <option value="delayed">Delayed Submissions Only</option>
+                <option value="remarks">Needs Correction (Remarks)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Director Tabs for shifts -->
+          <div class="tab-container" id="director-tabs">
+            <button class="tab-btn active" onclick="setDirectorTab('all')">All Units</button>
+            <button class="tab-btn" onclick="setDirectorTab('Shift 1')">Shift 1</button>
+            <button class="tab-btn" onclick="setDirectorTab('Shift 2')">Shift 2</button>
+            <button class="tab-btn" onclick="setDirectorTab('Administrative Units')">Administrative Units</button>
+          </div>
+
+          <!-- Checklist Table -->
+          <div class="glass-panel">
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Department</th>
+                    <th>Category / Shift</th>
+                    <th>Status</th>
+                    <th>Submission Time / Remarks Details</th>
+                  </tr>
+                </thead>
+                <tbody id="director-detail-checklist-table">
+                  <!-- JS Dynamic Content -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= MODAL: CREATE EVENT ================= -->
+  <div id="create-event-modal" class="modal-overlay">
+    <div class="modal-container glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Event</h3>
+        <button class="modal-close" onclick="closeCreateEventModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="create-event-form">
+        <div class="form-group">
+          <label class="form-label" for="event-title">Event Title</label>
+          <input type="text" id="event-title" class="form-control" style="padding-left: 16px;" placeholder="e.g. Annual Report Submission 2026" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="event-desc">Description</label>
+          <textarea id="event-desc" class="form-control" style="padding-left: 16px; min-height: 80px; resize: vertical;" placeholder="Provide brief instructions..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="event-deadline">Deadline Date & Time</label>
+          <input type="datetime-local" id="event-deadline" class="form-control" style="padding-left: 16px;" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateEventModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADD/EDIT REMARKS ================= -->
+  <div id="remarks-modal" class="modal-overlay">
+    <div class="modal-container glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title">Correction Remarks</h3>
+        <button class="modal-close" onclick="closeRemarksModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="remarks-form">
+        <input type="hidden" id="remarks-dept-id">
+        <div class="form-group">
+          <label class="form-label" id="remarks-dept-label">Department: Botany</label>
+          <p class="section-desc" style="margin-bottom: 12px;">Type the mistake/corrections needed for this department's submission.</p>
+          <textarea id="remarks-text-input" class="form-control" style="padding-left: 16px; min-height: 120px; resize: vertical;" placeholder="e.g. Missing HOD signature, or Criteria 3 spreadsheet is incomplete." required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeRemarksModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Remarks</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: DEPARTMENT CRUD ================= -->
+  <div id="dept-modal" class="modal-overlay">
+    <div class="modal-container glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title" id="dept-modal-title">Add Department</h3>
+        <button class="modal-close" onclick="closeDeptModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="dept-form">
+        <input type="hidden" id="dept-edit-id">
+        <div class="form-group">
+          <label class="form-label" for="dept-name">Department Name</label>
+          <input type="text" id="dept-name" class="form-control" style="padding-left: 16px;" placeholder="e.g. Zoology, Counselling Psychology, etc." required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="dept-category">Category</label>
+          <input type="text" id="dept-category" class="form-control" style="padding-left: 16px;" placeholder="e.g. Science, Arts, Applied Sciences, Administrative Units" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="dept-shift">Shift Type</label>
+          <select id="dept-shift" class="form-select">
+            <option value="Shift 1">Shift 1</option>
+            <option value="Shift 2">Shift 2</option>
+            <option value="Administrative Units">Administrative Units</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeDeptModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="dept-submit-btn">Save Department</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: USER CRUD ================= -->
+  <div id="user-modal" class="modal-overlay">
+    <div class="modal-container glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title" id="user-modal-title">Add User</h3>
+        <button class="modal-close" onclick="closeUserModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="user-form">
+        <input type="hidden" id="user-edit-id">
+        <div class="form-group">
+          <label class="form-label" for="user-fullname">Full Name</label>
+          <input type="text" id="user-fullname" class="form-control" style="padding-left: 16px;" placeholder="e.g. Prof. Kumar" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="user-username">Username</label>
+          <input type="text" id="user-username" class="form-control" style="padding-left: 16px;" placeholder="e.g. staff_assistant" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="user-password" id="user-password-label">Password</label>
+          <input type="password" id="user-password" class="form-control" style="padding-left: 16px;" placeholder="Enter password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="user-role">Role</label>
+          <select id="user-role" class="form-select">
+            <option value="Staff">Staff (Can update reports & checklists)</option>
+            <option value="Director">Director (Can monitor and manage users)</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="user-submit-btn">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
