@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 
@@ -23,6 +24,13 @@ app.use((req, res, next) => {
 
 // SQLite Database Setup (supports persistent volume directories, e.g. /data on Render/Railway)
 const dbDir = process.env.DATA_DIR || __dirname;
+if (!fs.existsSync(dbDir)) {
+  try {
+    fs.mkdirSync(dbDir, { recursive: true });
+  } catch (mkdirErr) {
+    console.error('Error creating database directory:', mkdirErr.message);
+  }
+}
 const dbPath = path.join(dbDir, 'database.sqlite');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
