@@ -308,16 +308,31 @@ function seedDepartments() {
         { id: "admin-discipline", name: "Discipline Committee", category: "Administrative Units", shift: "Administrative Units" }
       ];
 
-      let insertCount = 0;
-      initialDepts.forEach(d => {
-        db.run("INSERT INTO departments (id, name, category, shift) VALUES (?, ?, ?, ?)", [d.id, d.name, d.category, d.shift], (err) => {
-          insertCount++;
-          if (insertCount === initialDepts.length) {
-            console.log('Default departments seeded.');
-            seedEvents();
-          }
+      if (usePostgres) {
+        let sql = "INSERT INTO departments (id, name, category, shift) VALUES ";
+        const values = [];
+        let index = 1;
+        initialDepts.forEach((d, i) => {
+          sql += `($${index++}, $${index++}, $${index++}, $${index++})${i === initialDepts.length - 1 ? '' : ', '}`;
+          values.push(d.id, d.name, d.category, d.shift);
         });
-      });
+        db.run(sql, values, (err) => {
+          if (err) console.error("Error seeding departments:", err.message);
+          else console.log('Default departments seeded.');
+          seedEvents();
+        });
+      } else {
+        let insertCount = 0;
+        initialDepts.forEach(d => {
+          db.run("INSERT INTO departments (id, name, category, shift) VALUES (?, ?, ?, ?)", [d.id, d.name, d.category, d.shift], (err) => {
+            insertCount++;
+            if (insertCount === initialDepts.length) {
+              console.log('Default departments seeded.');
+              seedEvents();
+            }
+          });
+        });
+      }
     } else {
       seedEvents();
     }
