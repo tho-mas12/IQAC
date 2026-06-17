@@ -1,8 +1,13 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const dns = require('dns');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
+
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
