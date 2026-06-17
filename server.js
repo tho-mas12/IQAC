@@ -22,204 +22,349 @@ app.use((req, res, next) => {
   next();
 });
 
-// SQLite Database Setup (supports persistent volume directories, e.g. /data on Render/Railway)
-const dbDir = process.env.DATA_DIR || __dirname;
-if (!fs.existsSync(dbDir)) {
-  try {
-    fs.mkdirSync(dbDir, { recursive: true });
-  } catch (mkdirErr) {
-    console.error('Error creating database directory:', mkdirErr.message);
+// Database Driver Switch (PostgreSQL / SQLite)
+const usePostgres = !!process.env.DATABASE_URL;
+let pgClient = null;
+let sqliteDb = null;
+
+if (usePostgres) {
+  const { Client } = require('pg');
+  pgClient = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+  pgClient.connect((err) => {
+    if (err) {
+      console.error('Error connecting to Supabase PostgreSQL database:', err.stack);
+    } else {
+      console.log('Connected to Supabase PostgreSQL database.');
+      initializeDatabase();
+    }
+  });
+} else {
+  const sqlite3 = require('sqlite3').verbose();
+  const dbDir = process.env.DATA_DIR || __dirname;
+  if (!fs.existsSync(dbDir)) {
+    try {
+      fs.mkdirSync(dbDir, { recursive: true });
+    } catch (mkdirErr) {
+      console.error('Error creating database directory:', mkdirErr.message);
+    }
+  }
+  const dbPath = path.join(dbDir, 'database.sqlite');
+  sqliteDb = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+      console.error('Error opening database:', err.message);
+    } else {
+      console.log('Connected to SQLite database.');
+      initializeDatabase();
+    }
+  });
+}
+
+// Convert SQLite "?" placeholders to PostgreSQL "$1, $2"
+function convertSqlParams(sql) {
+  if (!usePostgres) return sql;
+  let index = 1;
+  return sql.replace(/\?/g, () => `$${index++}`);
+}
+
+function dbRun(sql, params = [], callback = () => {}) {
+  if (typeof params === 'function') {
+    callback = params;
+    params = [];
+  }
+  const querySql = convertSqlParams(sql);
+  if (usePostgres) {
+    pgClient.query(querySql, params, (err, res) => {
+      if (err) return callback(err);
+      const ctx = {
+        lastID: res.rows && res.rows[0] ? res.rows[0].id : null,
+        changes: res.rowCount
+      };
+      callback.call(ctx, null);
+    });
+  } else {
+    sqliteDb.run(sql, params, function(err) {
+      callback.call(this, err);
+    });
   }
 }
-const dbPath = path.join(dbDir, 'database.sqlite');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err.message);
-  } else {
-    console.log('Connected to SQLite database.');
-    initializeDatabase();
+
+function dbGet(sql, params = [], callback = () => {}) {
+  if (typeof params === 'function') {
+    callback = params;
+    params = [];
   }
-});
-
-// Database Initialization (Tables & Seed Data)
-function initializeDatabase() {
-  db.serialize(() => {
-    // 1. Users table
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      name TEXT NOT NULL,
-      role TEXT NOT NULL
-    )`);
-
-    // 2. Departments table
-    db.run(`CREATE TABLE IF NOT EXISTS departments (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      shift TEXT NOT NULL
-    )`);
-
-    // 3. Events table
-    db.run(`CREATE TABLE IF NOT EXISTS events (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      deadline TEXT NOT NULL
-    )`);
-
-    // 4. Submissions table
-    db.run(`CREATE TABLE IF NOT EXISTS submissions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      event_id TEXT NOT NULL,
-      department_id TEXT NOT NULL,
-      status TEXT NOT NULL,
-      received_time TEXT,
-      remarks TEXT,
-      UNIQUE(event_id, department_id),
-      FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
-      FOREIGN KEY (department_id) REFERENCES departments (id) ON DELETE CASCADE
-    )`);
-
-    // Seed default users if empty
-    db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
-      if (row.count === 0) {
-        db.run("INSERT INTO users (username, password, name, role) VALUES ('staff', 'staff123', 'IQAC Coordinator', 'Staff')");
-        db.run("INSERT INTO users (username, password, name, role) VALUES ('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director')");
-        console.log('Default users seeded.');
-      }
+  const querySql = convertSqlParams(sql);
+  if (usePostgres) {
+    pgClient.query(querySql, params, (err, res) => {
+      if (err) return callback(err, null);
+      callback(null, res.rows[0] || null);
     });
+  } else {
+    sqliteDb.get(sql, params, (err, row) => {
+      callback(err, row);
+    });
+  }
+}
 
-    // Seed default departments if empty
-    db.get("SELECT COUNT(*) as count FROM departments", (err, row) => {
-      if (row.count === 0) {
-        const stmt = db.prepare("INSERT INTO departments (id, name, category, shift) VALUES (?, ?, ?, ?)");
-        
-        const initialDepts = [
-          // Shift 1 - Science
-          { id: "s1-sci-botany", name: "Botany", category: "Science", shift: "Shift 1" },
-          { id: "s1-sci-chemistry", name: "Chemistry", category: "Science", shift: "Shift 1" },
-          { id: "s1-sci-cs", name: "Computer Science", category: "Science", shift: "Shift 1" },
-          { id: "s1-sci-maths", name: "Mathematics", category: "Science", shift: "Shift 1" },
-          { id: "s1-sci-physics", name: "Physics", category: "Science", shift: "Shift 1" },
-          { id: "s1-sci-stats", name: "Statistics", category: "Science", shift: "Shift 1" },
-          // Shift 1 - Arts
-          { id: "s1-arts-eco", name: "Economics", category: "Arts", shift: "Shift 1" },
-          { id: "s1-arts-eng", name: "English Literature", category: "Arts", shift: "Shift 1" },
-          { id: "s1-arts-hist", name: "History", category: "Arts", shift: "Shift 1" },
-          { id: "s1-arts-tam", name: "Tamil Literature", category: "Arts", shift: "Shift 1" },
-          // Shift 1 - Commerce
-          { id: "s1-comm-comm", name: "Commerce", category: "Commerce", shift: "Shift 1" },
-          // Shift 1 - Vocational
-          { id: "s1-voc-sdsa", name: "Software Development & System Administration", category: "Vocational", shift: "Shift 1" },
-          { id: "s1-voc-vct", name: "Visual Communication Technology", category: "Vocational", shift: "Shift 1" },
-          // Shift 1 - Postgraduate
-          { id: "s1-pg-botany", name: "M.Sc. Botany", category: "Postgraduate", shift: "Shift 1" },
-          { id: "s1-pg-chemistry", name: "M.Sc. Chemistry", category: "Postgraduate", shift: "Shift 1" },
-          { id: "s1-pg-mcom", name: "M.Com.", category: "Postgraduate", shift: "Shift 1" },
-          { id: "s1-pg-eco", name: "M.A. Economics", category: "Postgraduate", shift: "Shift 1" },
-          { id: "s1-pg-eng", name: "M.A. English", category: "Postgraduate", shift: "Shift 1" },
-          { id: "s1-pg-hrm", name: "M.A. HRM", category: "Postgraduate", shift: "Shift 1" },
-          { id: "s1-pg-maths", name: "M.Sc. Mathematics", category: "Postgraduate", shift: "Shift 1" },
-          { id: "s1-pg-physics", name: "M.Sc. Physics", category: "Postgraduate", shift: "Shift 1" },
-          { id: "s1-pg-mca", name: "MCA", category: "Postgraduate", shift: "Shift 1" },
+function dbAll(sql, params = [], callback = () => {}) {
+  if (typeof params === 'function') {
+    callback = params;
+    params = [];
+  }
+  const querySql = convertSqlParams(sql);
+  if (usePostgres) {
+    pgClient.query(querySql, params, (err, res) => {
+      if (err) return callback(err, null);
+      callback(null, res.rows || []);
+    });
+  } else {
+    sqliteDb.all(sql, params, (err, rows) => {
+      callback(err, rows);
+    });
+  }
+}
 
-          // Shift 2 - Computer & Data Sciences
-          { id: "s2-cds-aiml", name: "AI & Machine Learning", category: "Computer & Data Sciences", shift: "Shift 2" },
-          { id: "s2-cds-bca", name: "Computer Applications (BCA)", category: "Computer & Data Sciences", shift: "Shift 2" },
-          { id: "s2-cds-cs", name: "Computer Science", category: "Computer & Data Sciences", shift: "Shift 2" },
-          // Shift 2 - Commerce & Management
-          { id: "s2-cm-bba", name: "BBA", category: "Commerce & Management", shift: "Shift 2" },
-          { id: "s2-cm-comm", name: "Commerce", category: "Commerce & Management", shift: "Shift 2" },
-          { id: "s2-cm-cca", name: "Commerce CA", category: "Commerce & Management", shift: "Shift 2" },
-          { id: "s2-cm-ba", name: "Business Analytics", category: "Commerce & Management", shift: "Shift 2" },
-          { id: "s2-cm-sf", name: "Strategic Finance", category: "Commerce & Management", shift: "Shift 2" },
-          { id: "s2-cm-ch", name: "Commerce Honours", category: "Commerce & Management", shift: "Shift 2" },
-          // Shift 2 - Applied Sciences
-          { id: "s2-as-biotech", name: "Biotechnology", category: "Applied Sciences", shift: "Shift 2" },
-          { id: "s2-as-biochem", name: "Biochemistry", category: "Applied Sciences", shift: "Shift 2" },
-          { id: "s2-as-elec", name: "Electronics", category: "Applied Sciences", shift: "Shift 2" },
-          { id: "s2-as-maths", name: "Mathematics", category: "Applied Sciences", shift: "Shift 2" },
-          { id: "s2-as-physics", name: "Physics", category: "Applied Sciences", shift: "Shift 2" },
-          { id: "s2-as-stats", name: "Statistics", category: "Applied Sciences", shift: "Shift 2" },
-          // Shift 2 - Humanities
-          { id: "s2-hum-eng", name: "English", category: "Humanities", shift: "Shift 2" },
-          { id: "s2-hum-hist", name: "History", category: "Humanities", shift: "Shift 2" },
-          { id: "s2-hum-tam", name: "Tamil", category: "Humanities", shift: "Shift 2" },
-          { id: "s2-hum-hrm", name: "HRM", category: "Humanities", shift: "Shift 2" },
-          { id: "s2-hum-cp", name: "Counselling Psychology", category: "Humanities", shift: "Shift 2" },
-          // Shift 2 - Media
-          { id: "s2-media-viscom", name: "Visual Communication", category: "Media", shift: "Shift 2" },
-          // Shift 2 - Physical Education
-          { id: "s2-pe-pe", name: "Physical Education", category: "Physical Education", shift: "Shift 2" },
+const db = {
+  get: dbGet,
+  all: dbAll,
+  run: dbRun
+};
 
-          // Administrative Units
-          { id: "admin-iqac", name: "IQAC Office", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-principal", name: "Principal Office", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-coe", name: "Controller of Examinations", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-library", name: "Library", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-placement", name: "Placement Cell", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-research", name: "Research Cell", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-nss", name: "NSS", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-ncc", name: "NCC", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-yrc", name: "YRC", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-rrc", name: "RRC", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-sports", name: "Sports Department", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-hostel", name: "Hostel", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-alumni", name: "Alumni Association", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-wec", name: "Women Empowerment Cell", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-cgc", name: "Career Guidance Cell", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-edc", name: "Entrepreneurship Development Cell", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-icc", name: "Internal Complaints Committee", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-antirag", name: "Anti-Ragging Cell", category: "Administrative Units", shift: "Administrative Units" },
-          { id: "admin-discipline", name: "Discipline Committee", category: "Administrative Units", shift: "Administrative Units" }
-        ];
+// Dialect-compatible Schema Creation
+function createTables(dbRunExecutor, callback) {
+  const usersSql = usePostgres 
+    ? `CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL
+      )`
+    : `CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL
+      )`;
 
-        initialDepts.forEach(d => {
-          stmt.run(d.id, d.name, d.category, d.shift);
+  const deptsSql = `CREATE TABLE IF NOT EXISTS departments (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(255) NOT NULL,
+    shift VARCHAR(100) NOT NULL
+  )`;
+
+  const eventsSql = `CREATE TABLE IF NOT EXISTS events (
+    id VARCHAR(255) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    created_at VARCHAR(255) NOT NULL,
+    deadline VARCHAR(255) NOT NULL
+  )`;
+
+  const submissionsSql = usePostgres
+    ? `CREATE TABLE IF NOT EXISTS submissions (
+        id SERIAL PRIMARY KEY,
+        event_id VARCHAR(255) NOT NULL,
+        department_id VARCHAR(255) NOT NULL,
+        status VARCHAR(50) NOT NULL,
+        received_time VARCHAR(255),
+        remarks TEXT,
+        UNIQUE(event_id, department_id),
+        FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+        FOREIGN KEY (department_id) REFERENCES departments (id) ON DELETE CASCADE
+      )`
+    : `CREATE TABLE IF NOT EXISTS submissions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id TEXT NOT NULL,
+        department_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        received_time TEXT,
+        remarks TEXT,
+        UNIQUE(event_id, department_id),
+        FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+        FOREIGN KEY (department_id) REFERENCES departments (id) ON DELETE CASCADE
+      )`;
+
+  dbRunExecutor(usersSql, [], () => {
+    dbRunExecutor(deptsSql, [], () => {
+      dbRunExecutor(eventsSql, [], () => {
+        dbRunExecutor(submissionsSql, [], () => {
+          callback();
         });
-        stmt.finalize();
-        console.log('Default departments seeded.');
+      });
+    });
+  });
+}
+
+// Cascading Seed Data Initialization
+function initializeDatabase() {
+  createTables(db.run, () => {
+    // 1. Seed users
+    db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
+      if (row && (row.count === 0 || row.count === '0')) {
+        db.run("INSERT INTO users (username, password, name, role) VALUES ('staff', 'staff123', 'IQAC Coordinator', 'Staff')", [], () => {
+          db.run("INSERT INTO users (username, password, name, role) VALUES ('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director')", [], () => {
+            console.log('Default users seeded.');
+            seedDepartments();
+          });
+        });
+      } else {
+        seedDepartments();
       }
     });
+  });
+}
 
-    // Seed default events if empty
-    db.get("SELECT COUNT(*) as count FROM events", (err, row) => {
-      if (row.count === 0) {
-        const activeDeadline = new Date();
-        activeDeadline.setDate(activeDeadline.getDate() + 3); // 3 days in future
+function seedDepartments() {
+  db.get("SELECT COUNT(*) as count FROM departments", (err, row) => {
+    if (row && (row.count === 0 || row.count === '0')) {
+      const initialDepts = [
+        // Shift 1 - Science
+        { id: "s1-sci-botany", name: "Botany", category: "Science", shift: "Shift 1" },
+        { id: "s1-sci-chemistry", name: "Chemistry", category: "Science", shift: "Shift 1" },
+        { id: "s1-sci-cs", name: "Computer Science", category: "Science", shift: "Shift 1" },
+        { id: "s1-sci-maths", name: "Mathematics", category: "Science", shift: "Shift 1" },
+        { id: "s1-sci-physics", name: "Physics", category: "Science", shift: "Shift 1" },
+        { id: "s1-sci-stats", name: "Statistics", category: "Science", shift: "Shift 1" },
+        // Shift 1 - Arts
+        { id: "s1-arts-eco", name: "Economics", category: "Arts", shift: "Shift 1" },
+        { id: "s1-arts-eng", name: "English Literature", category: "Arts", shift: "Shift 1" },
+        { id: "s1-arts-hist", name: "History", category: "Arts", shift: "Shift 1" },
+        { id: "s1-arts-tam", name: "Tamil Literature", category: "Arts", shift: "Shift 1" },
+        // Shift 1 - Commerce
+        { id: "s1-comm-comm", name: "Commerce", category: "Commerce", shift: "Shift 1" },
+        // Shift 1 - Vocational
+        { id: "s1-voc-sdsa", name: "Software Development & System Administration", category: "Vocational", shift: "Shift 1" },
+        { id: "s1-voc-vct", name: "Visual Communication Technology", category: "Vocational", shift: "Shift 1" },
+        // Shift 1 - Postgraduate
+        { id: "s1-pg-botany", name: "M.Sc. Botany", category: "Postgraduate", shift: "Shift 1" },
+        { id: "s1-pg-chemistry", name: "M.Sc. Chemistry", category: "Postgraduate", shift: "Shift 1" },
+        { id: "s1-pg-mcom", name: "M.Com.", category: "Postgraduate", shift: "Shift 1" },
+        { id: "s1-pg-eco", name: "M.A. Economics", category: "Postgraduate", shift: "Shift 1" },
+        { id: "s1-pg-eng", name: "M.A. English", category: "Postgraduate", shift: "Shift 1" },
+        { id: "s1-pg-hrm", name: "M.A. HRM", category: "Postgraduate", shift: "Shift 1" },
+        { id: "s1-pg-maths", name: "M.Sc. Mathematics", category: "Postgraduate", shift: "Shift 1" },
+        { id: "s1-pg-physics", name: "M.Sc. Physics", category: "Postgraduate", shift: "Shift 1" },
+        { id: "s1-pg-mca", name: "MCA", category: "Postgraduate", shift: "Shift 1" },
 
-        const passedDeadline = new Date();
-        passedDeadline.setDate(passedDeadline.getDate() - 2); // 2 days in past
+        // Shift 2 - Computer & Data Sciences
+        { id: "s2-cds-aiml", name: "AI & Machine Learning", category: "Computer & Data Sciences", shift: "Shift 2" },
+        { id: "s2-cds-bca", name: "Computer Applications (BCA)", category: "Computer & Data Sciences", shift: "Shift 2" },
+        { id: "s2-cds-cs", name: "Computer Science", category: "Computer & Data Sciences", shift: "Shift 2" },
+        // Shift 2 - Commerce & Management
+        { id: "s2-cm-bba", name: "BBA", category: "Commerce & Management", shift: "Shift 2" },
+        { id: "s2-cm-comm", name: "Commerce", category: "Commerce & Management", shift: "Shift 2" },
+        { id: "s2-cm-cca", name: "Commerce CA", category: "Commerce & Management", shift: "Shift 2" },
+        { id: "s2-cm-ba", name: "Business Analytics", category: "Commerce & Management", shift: "Shift 2" },
+        { id: "s2-cm-sf", name: "Strategic Finance", category: "Commerce & Management", shift: "Shift 2" },
+        { id: "s2-cm-ch", name: "Commerce Honours", category: "Commerce & Management", shift: "Shift 2" },
+        // Shift 2 - Applied Sciences
+        { id: "s2-as-biotech", name: "Biotechnology", category: "Applied Sciences", shift: "Shift 2" },
+        { id: "s2-as-biochem", name: "Biochemistry", category: "Applied Sciences", shift: "Shift 2" },
+        { id: "s2-as-elec", name: "Electronics", category: "Applied Sciences", shift: "Shift 2" },
+        { id: "s2-as-maths", name: "Mathematics", category: "Applied Sciences", shift: "Shift 2" },
+        { id: "s2-as-physics", name: "Physics", category: "Applied Sciences", shift: "Shift 2" },
+        { id: "s2-as-stats", name: "Statistics", category: "Applied Sciences", shift: "Shift 2" },
+        // Shift 2 - Humanities
+        { id: "s2-hum-eng", name: "English", category: "Humanities", shift: "Shift 2" },
+        { id: "s2-hum-hist", name: "History", category: "Humanities", shift: "Shift 2" },
+        { id: "s2-hum-tam", name: "Tamil", category: "Humanities", shift: "Shift 2" },
+        { id: "s2-hum-hrm", name: "HRM", category: "Humanities", shift: "Shift 2" },
+        { id: "s2-hum-cp", name: "Counselling Psychology", category: "Humanities", shift: "Shift 2" },
+        // Shift 2 - Media
+        { id: "s2-media-viscom", name: "Visual Communication", category: "Media", shift: "Shift 2" },
+        // Shift 2 - Physical Education
+        { id: "s2-pe-pe", name: "Physical Education", category: "Physical Education", shift: "Shift 2" },
 
-        db.run("INSERT INTO events (id, title, description, created_at, deadline) VALUES (?, ?, ?, ?, ?)", [
-          "evt-aqar-2026",
-          "AQAR Criteria-wise Report Collection (2025-26)",
-          "Submit all quantitative templates and narrative descriptions for Criteria 1 to 7.",
-          new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          activeDeadline.toISOString()
-        ]);
+        // Administrative Units
+        { id: "admin-iqac", name: "IQAC Office", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-principal", name: "Principal Office", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-coe", name: "Controller of Examinations", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-library", name: "Library", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-placement", name: "Placement Cell", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-research", name: "Research Cell", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-nss", name: "NSS", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-ncc", name: "NCC", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-yrc", name: "YRC", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-rrc", name: "RRC", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-sports", name: "Sports Department", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-hostel", name: "Hostel", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-alumni", name: "Alumni Association", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-wec", name: "Women Empowerment Cell", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-cgc", name: "Career Guidance Cell", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-edc", name: "Entrepreneurship Development Cell", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-icc", name: "Internal Complaints Committee", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-antirag", name: "Anti-Ragging Cell", category: "Administrative Units", shift: "Administrative Units" },
+        { id: "admin-discipline", name: "Discipline Committee", category: "Administrative Units", shift: "Administrative Units" }
+      ];
 
+      let insertCount = 0;
+      initialDepts.forEach(d => {
+        db.run("INSERT INTO departments (id, name, category, shift) VALUES (?, ?, ?, ?)", [d.id, d.name, d.category, d.shift], (err) => {
+          insertCount++;
+          if (insertCount === initialDepts.length) {
+            console.log('Default departments seeded.');
+            seedEvents();
+          }
+        });
+      });
+    } else {
+      seedEvents();
+    }
+  });
+}
+
+function seedEvents() {
+  db.get("SELECT COUNT(*) as count FROM events", (err, row) => {
+    if (row && (row.count === 0 || row.count === '0')) {
+      const activeDeadline = new Date();
+      activeDeadline.setDate(activeDeadline.getDate() + 3);
+
+      const passedDeadline = new Date();
+      passedDeadline.setDate(passedDeadline.getDate() - 2);
+
+      db.run("INSERT INTO events (id, title, description, created_at, deadline) VALUES (?, ?, ?, ?, ?)", [
+        "evt-aqar-2026",
+        "AQAR Criteria-wise Report Collection (2025-26)",
+        "Submit all quantitative templates and narrative descriptions for Criteria 1 to 7.",
+        new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        activeDeadline.toISOString()
+      ], () => {
         db.run("INSERT INTO events (id, title, description, created_at, deadline) VALUES (?, ?, ?, ?, ?)", [
           "evt-nirf-2026",
           "NIRF Publications & Placement Data Collection",
           "Submit verified reports on student placements, higher studies, and faculty publication indexes.",
           new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
           passedDeadline.toISOString()
-        ]);
+        ], () => {
+          console.log('Default events seeded.');
+          seedSubmissions();
+        });
+      });
+    } else {
+      seedSubmissions();
+    }
+  });
+}
 
-        console.log('Default events seeded.');
-
-        // Seed some submissions for default events
-        db.run("INSERT INTO submissions (event_id, department_id, status, received_time) VALUES ('evt-aqar-2026', 's1-sci-botany', 'received', ?)", [new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()]);
-        db.run("INSERT INTO submissions (event_id, department_id, status, remarks) VALUES ('evt-aqar-2026', 's1-sci-cs', 'remarks', 'Missing Student feedback excel data. Please upload.')");
-        db.run("INSERT INTO submissions (event_id, department_id, status, received_time) VALUES ('evt-nirf-2026', 's1-sci-chemistry', 'received', ?)", [new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()]);
-        // Add a late submission for NIRF event (deadline passed 2 days ago, submitted today)
-        db.run("INSERT INTO submissions (event_id, department_id, status, received_time) VALUES ('evt-nirf-2026', 's1-sci-physics', 'received', ?)", [new Date().toISOString()]);
-      }
-    });
+function seedSubmissions() {
+  db.get("SELECT COUNT(*) as count FROM submissions", (err, row) => {
+    if (row && (row.count === 0 || row.count === '0')) {
+      db.run("INSERT INTO submissions (event_id, department_id, status, received_time) VALUES ('evt-aqar-2026', 's1-sci-botany', 'received', ?)", [new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()], () => {
+        db.run("INSERT INTO submissions (event_id, department_id, status, remarks) VALUES ('evt-aqar-2026', 's1-sci-cs', 'remarks', 'Missing Student feedback excel data. Please upload.')", [], () => {
+          db.run("INSERT INTO submissions (event_id, department_id, status, received_time) VALUES ('evt-nirf-2026', 's1-sci-chemistry', 'received', ?)", [new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()], () => {
+            db.run("INSERT INTO submissions (event_id, department_id, status, received_time) VALUES ('evt-nirf-2026', 's1-sci-physics', 'received', ?)", [new Date().toISOString()], () => {
+              console.log('Default submissions seeded.');
+            });
+          });
+        });
+      });
+    }
   });
 }
 
