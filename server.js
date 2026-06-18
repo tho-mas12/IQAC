@@ -512,9 +512,8 @@ app.post('/api/events', (req, res) => {
 });
 
 app.delete('/api/events/:id', (req, res) => {
-  // First delete associated submissions cascade style
-  db.serialize(() => {
-    db.run("DELETE FROM submissions WHERE event_id = ?", [req.params.id]);
+  db.run("DELETE FROM submissions WHERE event_id = ?", [req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
     db.run("DELETE FROM events WHERE id = ?", [req.params.id], function(err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ message: 'Event deleted successfully' });
