@@ -226,12 +226,15 @@ async function switchSubView(viewId) {
 
 // 6. Stats & Calculations
 function getEventStats(evt, checklists) {
-  let total = state.departments.length;
+  const scope = evt.shifts_scope || 'Shift 1,Shift 2,Administrative Units';
+  const targetDepts = state.departments.filter(dept => scope.includes(dept.shift));
+  
+  let total = targetDepts.length;
   let received = 0;
   let remarks = 0;
   let pending = 0;
   
-  state.departments.forEach(dept => {
+  targetDepts.forEach(dept => {
     const chk = checklists[dept.id] || { status: 'pending' };
     if (chk.status === 'received') received++;
     else if (chk.status === 'remarks') remarks++;
@@ -398,6 +401,11 @@ function openCreateEventModal() {
   document.getElementById('event-edit-id').value = '';
   document.getElementById('create-event-form').reset();
   
+  // Check all scopes by default
+  document.getElementById('event-scope-shift1').checked = true;
+  document.getElementById('event-scope-shift2').checked = true;
+  document.getElementById('event-scope-admin').checked = true;
+  
   document.getElementById('create-event-modal').classList.add('open');
   const defaultDate = new Date();
   defaultDate.setDate(defaultDate.getDate() + 7);
@@ -415,6 +423,12 @@ function openEditEventModal(eventId) {
   
   document.getElementById('event-title').value = evt.title;
   document.getElementById('event-desc').value = evt.description;
+  
+  // Set scopes checkboxes
+  const scope = evt.shifts_scope || 'Shift 1,Shift 2,Administrative Units';
+  document.getElementById('event-scope-shift1').checked = scope.includes('Shift 1');
+  document.getElementById('event-scope-shift2').checked = scope.includes('Shift 2');
+  document.getElementById('event-scope-admin').checked = scope.includes('Administrative Units');
   
   const dateObj = new Date(evt.deadline);
   dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
@@ -436,16 +450,27 @@ document.getElementById('create-event-form').addEventListener('submit', async fu
   const deadline = new Date(document.getElementById('event-deadline').value).toISOString();
   const editId = document.getElementById('event-edit-id').value;
 
+  const selectedShifts = [];
+  if (document.getElementById('event-scope-shift1').checked) selectedShifts.push('Shift 1');
+  if (document.getElementById('event-scope-shift2').checked) selectedShifts.push('Shift 2');
+  if (document.getElementById('event-scope-admin').checked) selectedShifts.push('Administrative Units');
+
+  if (selectedShifts.length === 0) {
+    alert("Please select at least one target shift / department group.");
+    return;
+  }
+  const shifts_scope = selectedShifts.join(',');
+
   try {
     if (editId) {
       await fetchAPI(`/events/${editId}`, {
         method: 'PUT',
-        body: JSON.stringify({ title, description, deadline })
+        body: JSON.stringify({ title, description, deadline, shifts_scope })
       });
     } else {
       await fetchAPI('/events', {
         method: 'POST',
-        body: JSON.stringify({ title, description, deadline })
+        body: JSON.stringify({ title, description, deadline, shifts_scope })
       });
     }
     
@@ -630,6 +655,10 @@ async function renderStaffChecklist() {
   container.innerHTML = '';
 
   const filteredDepts = state.departments.filter(dept => {
+    // Filter by event shifts scope
+    const scope = evt.shifts_scope || 'Shift 1,Shift 2,Administrative Units';
+    if (!scope.includes(dept.shift)) return false;
+
     // 1. Shift Tab
     if (state.checklistTab !== 'all') {
       if (state.checklistTab === 'Shift 1' && dept.shift !== 'Shift 1') return false;
@@ -700,13 +729,13 @@ async function renderStaffChecklist() {
         </div>
       `;
       actionButtons = `
-        <button class="btn btn-primary btn-sm" onclick="updateChecklistStatus('${dept.id}', 'received')">Click Received</button>
+        <button class="btn btn-primary btn-sm" onclick="openReceivedTimeModal('${dept.id}')">Click Received</button>
         <button class="btn btn-secondary btn-sm" onclick="openRemarksModal('${dept.id}')">Edit Remark</button>
       `;
     } else {
       statusBadge = `<span class="badge badge-pending">Pending</span>`;
       actionButtons = `
-        <button class="btn btn-primary btn-sm" onclick="updateChecklistStatus('${dept.id}', 'received')">Click Received</button>
+        <button class="btn btn-primary btn-sm" onclick="openReceivedTimeModal('${dept.id}')">Click Received</button>
         <button class="btn btn-secondary btn-sm" onclick="openRemarksModal('${dept.id}')">Add Remark</button>
       `;
     }
@@ -760,6 +789,94 @@ async function updateChecklistStatus(deptId, newStatus) {
 
   renderStaffChecklist();
 }
+
+// Received Time selection modal
+let currentTimeInterval = null;
+
+function openReceivedTimeModal(deptId) {
+  const dept = state.departments.find(d => d.id === deptId);
+  if (!dept) return;
+
+  document.getElementById('received-time-dept-id').value = deptId;
+  document.getElementById('received-time-dept-label').innerText = `Department: ${dept.name} (${dept.shift})`;
+  
+  // Reset choices
+  document.querySelector('input[name="time-option"][value="current"]').checked = true;
+  document.getElementById('manual-time-input-group').style.display = 'none';
+  document.getElementById('option-current-wrapper').style.borderColor = 'var(--primary)';
+  document.getElementById('option-manual-wrapper').style.borderColor = 'var(--card-border)';
+  
+  // Set default manual time to now (local timezone adjusted)
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('manual-received-time').value = now.toISOString().slice(0, 16);
+
+  // Current time live preview
+  const updatePreview = () => {
+    const previewEl = document.getElementById('current-time-preview');
+    if (previewEl) previewEl.innerText = new Date().toLocaleString();
+  };
+  updatePreview();
+  clearInterval(currentTimeInterval);
+  currentTimeInterval = setInterval(updatePreview, 1000);
+
+  document.getElementById('received-time-modal').classList.add('open');
+}
+
+function closeReceivedTimeModal() {
+  clearInterval(currentTimeInterval);
+  document.getElementById('received-time-modal').classList.remove('open');
+}
+
+function toggleManualTimeInput() {
+  const isManual = document.querySelector('input[name="time-option"]:checked').value === 'manual';
+  document.getElementById('manual-time-input-group').style.display = isManual ? 'block' : 'none';
+  
+  if (isManual) {
+    document.getElementById('option-manual-wrapper').style.borderColor = 'var(--primary)';
+    document.getElementById('option-current-wrapper').style.borderColor = 'var(--card-border)';
+  } else {
+    document.getElementById('option-current-wrapper').style.borderColor = 'var(--primary)';
+    document.getElementById('option-manual-wrapper').style.borderColor = 'var(--card-border)';
+  }
+}
+
+document.getElementById('received-time-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const deptId = document.getElementById('received-time-dept-id').value;
+  const isManual = document.querySelector('input[name="time-option"]:checked').value === 'manual';
+  
+  let receivedTime;
+  if (isManual) {
+    const val = document.getElementById('manual-received-time').value;
+    receivedTime = new Date(val).toISOString();
+  } else {
+    receivedTime = new Date().toISOString();
+  }
+
+  const evt = state.events.find(e => e.id === state.selectedEventId);
+  if (!evt) return;
+
+  try {
+    const payload = {
+      event_id: evt.id,
+      department_id: deptId,
+      status: 'received',
+      received_time: receivedTime,
+      remarks: null
+    };
+
+    await fetchAPI('/submissions', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    closeReceivedTimeModal();
+    renderStaffChecklist();
+  } catch (err) {
+    // Handled
+  }
+});
 
 // Remarks update modal
 async function openRemarksModal(deptId) {
@@ -918,6 +1035,10 @@ async function renderDirectorDetail() {
 
   // 1. Filter
   let filteredDepts = state.departments.filter(dept => {
+    // Filter by event shifts scope
+    const scope = evt.shifts_scope || 'Shift 1,Shift 2,Administrative Units';
+    if (!scope.includes(dept.shift)) return false;
+
     // tab
     if (state.directorTab !== 'all') {
       if (state.directorTab === 'Shift 1' && dept.shift !== 'Shift 1') return false;
@@ -1157,7 +1278,65 @@ async function getExportData() {
   try {
     const checklists = await fetchAPI(`/submissions/${evt.id}`);
     
-    const rows = state.departments.map(dept => {
+    // Determine active view and filter set
+    const isDirector = state.activeSubView === 'director-detail';
+    const activeTab = isDirector ? state.directorTab : state.checklistTab;
+    const activeSearch = isDirector ? state.directorSearch : state.checklistSearch;
+    const activeStatus = isDirector ? state.directorStatus : state.checklistStatus;
+
+    // Filter departments
+    let targetDepts = state.departments.filter(dept => {
+      // 0. shifts scope
+      const scope = evt.shifts_scope || 'Shift 1,Shift 2,Administrative Units';
+      if (!scope.includes(dept.shift)) return false;
+
+      // 1. Shift Tab
+      if (activeTab !== 'all') {
+        if (activeTab === 'Shift 1' && dept.shift !== 'Shift 1') return false;
+        if (activeTab === 'Shift 2' && dept.shift !== 'Shift 2') return false;
+        if (activeTab === 'Administrative Units' && dept.shift !== 'Administrative Units') return false;
+      }
+
+      // 2. Search
+      if (activeSearch) {
+        const nameMatch = dept.name.toLowerCase().includes(activeSearch);
+        const catMatch = dept.category.toLowerCase().includes(activeSearch);
+        if (!nameMatch && !catMatch) return false;
+      }
+
+      // 3. Status filter
+      const chk = checklists[dept.id] || { status: 'pending' };
+      const isLate = isSubmissionLate(chk.receivedTime, evt.deadline);
+
+      if (activeStatus !== 'all') {
+        if (isDirector) {
+          if (activeStatus === 'unsubmitted' && chk.status === 'received') return false;
+          if (activeStatus === 'submitted' && chk.status !== 'received') return false;
+          if (activeStatus === 'remarks' && chk.status !== 'remarks') return false;
+          if (activeStatus === 'delayed' && (chk.status !== 'received' || !isLate)) return false;
+        } else {
+          if (activeStatus === 'pending' && chk.status !== 'pending') return false;
+          if (activeStatus === 'remarks' && chk.status !== 'remarks') return false;
+          if (activeStatus === 'received' && (chk.status !== 'received' || isLate)) return false;
+          if (activeStatus === 'delayed' && (chk.status !== 'received' || !isLate)) return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Sort matching screen display (for Director view, sort unsubmitted first)
+    if (isDirector) {
+      targetDepts.sort((a, b) => {
+        const chkA = checklists[a.id] || { status: 'pending' };
+        const chkB = checklists[b.id] || { status: 'pending' };
+        if (chkA.status === 'received' && chkB.status !== 'received') return 1;
+        if (chkA.status !== 'received' && chkB.status === 'received') return -1;
+        return 0;
+      });
+    }
+
+    const rows = targetDepts.map(dept => {
       const chk = checklists[dept.id] || { status: 'pending', receivedTime: null, remarks: null };
       const isLate = isSubmissionLate(chk.receivedTime, evt.deadline);
       
@@ -1186,7 +1365,17 @@ async function getExportData() {
       };
     });
 
-    return { event: evt, rows };
+    // Return current filter settings for document headers
+    const filterDesc = [];
+    if (activeTab !== 'all') filterDesc.push(`Shift: ${activeTab}`);
+    if (activeSearch) filterDesc.push(`Search: "${activeSearch}"`);
+    if (activeStatus !== 'all') filterDesc.push(`Status: ${activeStatus}`);
+    
+    return { 
+      event: evt, 
+      rows, 
+      filterInfo: filterDesc.length > 0 ? `Filtered By: ${filterDesc.join(', ')}` : 'All Records'
+    };
   } catch (err) {
     console.error("Failed to load export data:", err);
     alert("Failed to load latest checklist details for export.");
@@ -1213,6 +1402,7 @@ async function exportChecklistExcel() {
   const csvRows = [
     [escapeCsv('Event Title:'), escapeCsv(event.title)],
     [escapeCsv('Deadline:'), escapeCsv(new Date(event.deadline).toLocaleString())],
+    [escapeCsv('Report Scope:'), escapeCsv(data.filterInfo)],
     [],
     csvHeaders
   ];
@@ -1258,14 +1448,14 @@ async function exportChecklistPDF() {
     doc.setFontSize(10);
     doc.setTextColor(71, 85, 105);
     doc.text(`Deadline: ${new Date(event.deadline).toLocaleString()}`, 14, 34);
+    doc.text(`Report Scope: ${data.filterInfo}`, 14, 40);
     
     const total = rows.length;
     const received = rows.filter(r => r.status.startsWith('Received')).length;
     const pending = rows.filter(r => r.status === 'Pending').length;
     const remarks = rows.filter(r => r.status === 'Needs Correction').length;
-    const completion = Math.round((received / total) * 100);
     
-    doc.text(`Completion: ${completion}% (${received}/${total} Submitted, ${remarks} Needs Correction, ${pending} Pending)`, 14, 40);
+    doc.text(`Stats: ${received} Submitted, ${remarks} Needs Correction, ${pending} Pending (Total matching: ${total})`, 14, 46);
 
     // Prepare table columns and rows
     const tableHeaders = [['Department', 'Shift', 'Status', 'Submitted At', 'Remarks']];
@@ -1278,7 +1468,7 @@ async function exportChecklistPDF() {
     ]);
 
     doc.autoTable({
-      startY: 46,
+      startY: 52,
       head: tableHeaders,
       body: tableBody,
       theme: 'striped',

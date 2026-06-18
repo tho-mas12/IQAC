@@ -184,7 +184,7 @@
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>Event Details</th>
+                    <th>Event Activities</th>
                     <th>Created On</th>
                     <th>Deadline</th>
                     <th>Submissions</th>
@@ -402,7 +402,7 @@
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>Event Details</th>
+                    <th>Event Activities</th>
                     <th>Created On</th>
                     <th>Deadline</th>
                     <th>Submitted / Total</th>
@@ -554,6 +554,23 @@
           <textarea id="event-desc" class="form-control" style="padding-left: 16px; min-height: 80px; resize: vertical;" placeholder="Provide brief instructions..." required></textarea>
         </div>
         <div class="form-group">
+          <label class="form-label">Target Shifts / Departments</label>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px; padding: 12px; border: 1px solid var(--card-border); border-radius: 8px; background: #f8fafc;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text-main); font-weight: 500;">
+              <input type="checkbox" id="event-scope-shift1" value="Shift 1" checked>
+              <span>Shift 1 (Day) Departments</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text-main); font-weight: 500;">
+              <input type="checkbox" id="event-scope-shift2" value="Shift 2" checked>
+              <span>Shift 2 (Evening) Departments</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text-main); font-weight: 500;">
+              <input type="checkbox" id="event-scope-admin" value="Administrative Units" checked>
+              <span>Administrative Units / Offices</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
           <label class="form-label" for="event-deadline">Deadline Date & Time</label>
           <input type="datetime-local" id="event-deadline" class="form-control" style="padding-left: 16px;" required>
         </div>
@@ -584,6 +601,52 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeRemarksModal()">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Remarks</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CHOOSE RECEIVED TIME ================= -->
+  <div id="received-time-modal" class="modal-overlay">
+    <div class="modal-container glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Submission Time</h3>
+        <button class="modal-close" onclick="closeReceivedTimeModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="received-time-form">
+        <input type="hidden" id="received-time-dept-id">
+        <div class="form-group">
+          <label class="form-label" id="received-time-dept-label">Department: Botany</label>
+          <p class="section-desc" style="margin-bottom: 16px;">Choose how you want to record the submission timestamp.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px; border: 1px solid var(--card-border); border-radius: 8px; background: #f8fafc;" id="option-current-wrapper">
+              <input type="radio" name="time-option" value="current" checked onchange="toggleManualTimeInput()">
+              <div>
+                <strong style="display: block; font-size: 14px; color: var(--text-main);">Current Date & Time</strong>
+                <span style="font-size: 12px; color: var(--text-muted);" id="current-time-preview">Loading current time...</span>
+              </div>
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px; border: 1px solid var(--card-border); border-radius: 8px;" id="option-manual-wrapper">
+              <input type="radio" name="time-option" value="manual" onchange="toggleManualTimeInput()">
+              <div>
+                <strong style="display: block; font-size: 14px; color: var(--text-main);">Manual Date & Time</strong>
+                <span style="font-size: 12px; color: var(--text-muted);">Pick custom date and time</span>
+              </div>
+            </label>
+          </div>
+          
+          <div id="manual-time-input-group" style="display: none;">
+            <label class="form-label" for="manual-received-time">Select Date & Time</label>
+            <input type="datetime-local" id="manual-received-time" class="form-control" style="padding-left: 16px;">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeReceivedTimeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Record</button>
         </div>
       </form>
     </div>

@@ -168,7 +168,8 @@ function createTables(dbRunExecutor, callback) {
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     created_at VARCHAR(255) NOT NULL,
-    deadline VARCHAR(255) NOT NULL
+    deadline VARCHAR(255) NOT NULL,
+    shifts_scope VARCHAR(255) DEFAULT 'Shift 1,Shift 2,Administrative Units'
   )`;
 
   const submissionsSql = usePostgres
@@ -209,8 +210,16 @@ function createTables(dbRunExecutor, callback) {
 // Cascading Seed Data Initialization
 function initializeDatabase() {
   createTables(db.run, () => {
-    // 1. Seed users
-    db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
+    // Migration: Add shifts_scope to events if it doesn't exist
+    db.run("ALTER TABLE events ADD COLUMN shifts_scope VARCHAR(255) DEFAULT 'Shift 1,Shift 2,Administrative Units'", [], (err) => {
+      if (err) {
+        console.log("Migration: Column shifts_scope might already exist (or error ignored).");
+      } else {
+        console.log("Migration: Added shifts_scope column to events successfully.");
+      }
+      
+      // 1. Seed users
+      db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
       if (row && (row.count === 0 || row.count === '0')) {
         db.run("INSERT INTO users (username, password, name, role) VALUES ('staff', 'staff123', 'IQAC Coordinator', 'Staff')", [], () => {
           db.run("INSERT INTO users (username, password, name, role) VALUES ('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director')", [], () => {
@@ -223,6 +232,7 @@ function initializeDatabase() {
       }
     });
   });
+});
 }
 
 function seedDepartments() {
@@ -501,22 +511,23 @@ app.get('/api/events', (req, res) => {
 });
 
 app.post('/api/events', (req, res) => {
-  const { title, description, deadline } = req.body;
+  const { title, description, deadline, shifts_scope } = req.body;
   const id = 'evt-' + Date.now();
   const created_at = new Date().toISOString();
+  const scope = shifts_scope || 'Shift 1,Shift 2,Administrative Units';
 
-  db.run("INSERT INTO events (id, title, description, created_at, deadline) VALUES (?, ?, ?, ?, ?)", [id, title, description, created_at, deadline], function(err) {
+  db.run("INSERT INTO events (id, title, description, created_at, deadline, shifts_scope) VALUES (?, ?, ?, ?, ?, ?)", [id, title, description, created_at, deadline, scope], function(err) {
     if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ id, title, description, created_at, deadline });
+    res.status(201).json({ id, title, description, created_at, deadline, shifts_scope: scope });
   });
 });
 
 app.put('/api/events/:id', (req, res) => {
-  const { title, description, deadline } = req.body;
-  if (!title || !description || !deadline) {
+  const { title, description, deadline, shifts_scope } = req.body;
+  if (!title || !description || !deadline || !shifts_scope) {
     return res.status(400).json({ error: 'All fields are required' });
   }
-  db.run("UPDATE events SET title = ?, description = ?, deadline = ? WHERE id = ?", [title, description, deadline, req.params.id], function(err) {
+  db.run("UPDATE events SET title = ?, description = ?, deadline = ?, shifts_scope = ? WHERE id = ?", [title, description, deadline, shifts_scope, req.params.id], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Event updated successfully' });
   });
