@@ -366,6 +366,9 @@ async function renderManageEvents() {
           <button class="btn btn-secondary btn-sm" onclick="openEventChecklist('${evt.id}')" title="Edit Checklist">
             Checklist
           </button>
+          <button class="btn btn-secondary btn-sm btn-icon-only" onclick="openEditEventModal('${evt.id}')" title="Edit Event">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
           <button class="btn btn-danger btn-sm btn-icon-only" onclick="deleteEvent('${evt.id}')" title="Delete Event">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           </button>
@@ -390,6 +393,11 @@ async function renderManageEvents() {
 
 // Manage Event Modals
 function openCreateEventModal() {
+  document.getElementById('event-modal-title').textContent = 'Create New Event';
+  document.getElementById('event-submit-btn').textContent = 'Create Event';
+  document.getElementById('event-edit-id').value = '';
+  document.getElementById('create-event-form').reset();
+  
   document.getElementById('create-event-modal').classList.add('open');
   const defaultDate = new Date();
   defaultDate.setDate(defaultDate.getDate() + 7);
@@ -397,9 +405,28 @@ function openCreateEventModal() {
   document.getElementById('event-deadline').value = defaultDate.toISOString().slice(0, 16);
 }
 
+function openEditEventModal(eventId) {
+  const evt = state.events.find(e => e.id === eventId);
+  if (!evt) return;
+
+  document.getElementById('event-modal-title').textContent = 'Edit Event';
+  document.getElementById('event-submit-btn').textContent = 'Save Changes';
+  document.getElementById('event-edit-id').value = eventId;
+  
+  document.getElementById('event-title').value = evt.title;
+  document.getElementById('event-desc').value = evt.description;
+  
+  const dateObj = new Date(evt.deadline);
+  dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
+  document.getElementById('event-deadline').value = dateObj.toISOString().slice(0, 16);
+
+  document.getElementById('create-event-modal').classList.add('open');
+}
+
 function closeCreateEventModal() {
   document.getElementById('create-event-modal').classList.remove('open');
   document.getElementById('create-event-form').reset();
+  document.getElementById('event-edit-id').value = '';
 }
 
 document.getElementById('create-event-form').addEventListener('submit', async function(e) {
@@ -407,12 +434,20 @@ document.getElementById('create-event-form').addEventListener('submit', async fu
   const title = document.getElementById('event-title').value.trim();
   const description = document.getElementById('event-desc').value.trim();
   const deadline = new Date(document.getElementById('event-deadline').value).toISOString();
+  const editId = document.getElementById('event-edit-id').value;
 
   try {
-    await fetchAPI('/events', {
-      method: 'POST',
-      body: JSON.stringify({ title, description, deadline })
-    });
+    if (editId) {
+      await fetchAPI(`/events/${editId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ title, description, deadline })
+      });
+    } else {
+      await fetchAPI('/events', {
+        method: 'POST',
+        body: JSON.stringify({ title, description, deadline })
+      });
+    }
     
     closeCreateEventModal();
     await loadEvents();

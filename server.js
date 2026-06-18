@@ -511,6 +511,17 @@ app.post('/api/events', (req, res) => {
   });
 });
 
+app.put('/api/events/:id', (req, res) => {
+  const { title, description, deadline } = req.body;
+  if (!title || !description || !deadline) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+  db.run("UPDATE events SET title = ?, description = ?, deadline = ? WHERE id = ?", [title, description, deadline, req.params.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Event updated successfully' });
+  });
+});
+
 app.delete('/api/events/:id', (req, res) => {
   db.run("DELETE FROM submissions WHERE event_id = ?", [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });

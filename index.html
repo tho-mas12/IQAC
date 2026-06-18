@@ -512,12 +512,13 @@
   <div id="create-event-modal" class="modal-overlay">
     <div class="modal-container glass-panel">
       <div class="modal-header">
-        <h3 class="modal-title">Create New Event</h3>
+        <h3 class="modal-title" id="event-modal-title">Create New Event</h3>
         <button class="modal-close" onclick="closeCreateEventModal()">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <form id="create-event-form">
+        <input type="hidden" id="event-edit-id">
         <div class="form-group">
           <label class="form-label" for="event-title">Event Title</label>
           <input type="text" id="event-title" class="form-control" style="padding-left: 16px;" placeholder="e.g. Annual Report Submission 2026" required>
@@ -532,7 +533,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeCreateEventModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Create Event</button>
+          <button type="submit" id="event-submit-btn" class="btn btn-primary">Create Event</button>
         </div>
       </form>
     </div>
