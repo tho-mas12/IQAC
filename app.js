@@ -687,6 +687,14 @@ async function renderStaffChecklist() {
     return true;
   });
 
+  const shiftOrder = { 'Shift 1': 1, 'Shift 2': 2, 'Administrative Units': 3 };
+  filteredDepts.sort((a, b) => {
+    const orderA = shiftOrder[a.shift] || 99;
+    const orderB = shiftOrder[b.shift] || 99;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.name.localeCompare(b.name);
+  });
+
   filteredDepts.forEach(dept => {
     const chk = checklists[dept.id] || { status: 'pending', receivedTime: null, remarks: null };
     const isLate = isSubmissionLate(chk.receivedTime, evt.deadline);
@@ -1067,15 +1075,13 @@ async function renderDirectorDetail() {
     return true;
   });
 
-  // 2. SORTING: Unsubmitted departments (pending/remarks) come first. Submitted (received) come second.
+  // 2. SORTING: Sort by shift order first, and then alphabetically as a secondary key
+  const shiftOrder = { 'Shift 1': 1, 'Shift 2': 2, 'Administrative Units': 3 };
   filteredDepts.sort((a, b) => {
-    const chkA = checklists[a.id] || { status: 'pending' };
-    const chkB = checklists[b.id] || { status: 'pending' };
-
-    const valA = chkA.status === 'received' ? 1 : 0;
-    const valB = chkB.status === 'received' ? 1 : 0;
-
-    return valA - valB; // 0 comes before 1
+    const orderA = shiftOrder[a.shift] || 99;
+    const orderB = shiftOrder[b.shift] || 99;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.name.localeCompare(b.name);
   });
 
   // 3. Render
@@ -1268,7 +1274,7 @@ function downloadCSV(csvContent, filename) {
   document.body.removeChild(link);
 }
 
-async function getExportData() {
+async function getExportData(selectedShift = 'all') {
   const evt = state.events.find(e => e.id === state.selectedEventId);
   if (!evt) {
     alert("No event selected.");
@@ -1280,7 +1286,6 @@ async function getExportData() {
     
     // Determine active view and filter set
     const isDirector = state.activeSubView === 'director-detail';
-    const activeTab = isDirector ? state.directorTab : state.checklistTab;
     const activeSearch = isDirector ? state.directorSearch : state.checklistSearch;
     const activeStatus = isDirector ? state.directorStatus : state.checklistStatus;
 
@@ -1290,11 +1295,9 @@ async function getExportData() {
       const scope = evt.shifts_scope || 'Shift 1,Shift 2,Administrative Units';
       if (!scope.includes(dept.shift)) return false;
 
-      // 1. Shift Tab
-      if (activeTab !== 'all') {
-        if (activeTab === 'Shift 1' && dept.shift !== 'Shift 1') return false;
-        if (activeTab === 'Shift 2' && dept.shift !== 'Shift 2') return false;
-        if (activeTab === 'Administrative Units' && dept.shift !== 'Administrative Units') return false;
+      // 1. Shift filter (selected in export dialog)
+      if (selectedShift !== 'all') {
+        if (dept.shift !== selectedShift) return false;
       }
 
       // 2. Search
@@ -1325,16 +1328,14 @@ async function getExportData() {
       return true;
     });
 
-    // Sort matching screen display (for Director view, sort unsubmitted first)
-    if (isDirector) {
-      targetDepts.sort((a, b) => {
-        const chkA = checklists[a.id] || { status: 'pending' };
-        const chkB = checklists[b.id] || { status: 'pending' };
-        if (chkA.status === 'received' && chkB.status !== 'received') return 1;
-        if (chkA.status !== 'received' && chkB.status === 'received') return -1;
-        return 0;
-      });
-    }
+    // Sort shift-wise and department alphabetical ascending
+    const shiftOrder = { 'Shift 1': 1, 'Shift 2': 2, 'Administrative Units': 3 };
+    targetDepts.sort((a, b) => {
+      const orderA = shiftOrder[a.shift] || 99;
+      const orderB = shiftOrder[b.shift] || 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name);
+    });
 
     const rows = targetDepts.map(dept => {
       const chk = checklists[dept.id] || { status: 'pending', receivedTime: null, remarks: null };
@@ -1367,14 +1368,14 @@ async function getExportData() {
 
     // Return current filter settings for document headers
     const filterDesc = [];
-    if (activeTab !== 'all') filterDesc.push(`Shift: ${activeTab}`);
+    filterDesc.push(`Exported Shift: ${selectedShift === 'all' ? 'All' : selectedShift}`);
     if (activeSearch) filterDesc.push(`Search: "${activeSearch}"`);
     if (activeStatus !== 'all') filterDesc.push(`Status: ${activeStatus}`);
     
     return { 
       event: evt, 
       rows, 
-      filterInfo: filterDesc.length > 0 ? `Filtered By: ${filterDesc.join(', ')}` : 'All Records'
+      filterInfo: filterDesc.length > 0 ? `Export Scope: ${filterDesc.join(', ')}` : 'All Records'
     };
   } catch (err) {
     console.error("Failed to load export data:", err);
@@ -1383,8 +1384,42 @@ async function getExportData() {
   }
 }
 
+function openExportModal(format) {
+  document.getElementById('export-format-type').value = format;
+  document.getElementById('export-modal-title').innerText = format === 'excel' ? 'Export to Excel (CSV)' : 'Export to PDF';
+  document.getElementById('export-submit-btn').innerText = format === 'excel' ? 'Download Excel' : 'Download PDF';
+  document.getElementById('export-shift-filter').value = 'all';
+  document.getElementById('export-modal').classList.add('open');
+}
+
+function closeExportModal() {
+  document.getElementById('export-modal').classList.remove('open');
+}
+
+// Add the submit listener for export-form
+document.getElementById('export-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const format = document.getElementById('export-format-type').value;
+  const shiftFilter = document.getElementById('export-shift-filter').value;
+  closeExportModal();
+
+  if (format === 'excel') {
+    await runExportExcel(shiftFilter);
+  } else {
+    await runExportPDF(shiftFilter);
+  }
+});
+
 async function exportChecklistExcel() {
-  const data = await getExportData();
+  openExportModal('excel');
+}
+
+async function exportChecklistPDF() {
+  openExportModal('pdf');
+}
+
+async function runExportExcel(shiftFilter) {
+  const data = await getExportData(shiftFilter);
   if (!data) return;
 
   const { event, rows } = data;
@@ -1419,13 +1454,13 @@ async function exportChecklistExcel() {
   });
 
   const csvContent = csvRows.map(e => e.join(",")).join("\n");
-  const filename = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_checklist.csv`;
+  const filename = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_checklist_${shiftFilter.replace(/\s+/g, '_').toLowerCase()}.csv`;
   
   downloadCSV(csvContent, filename);
 }
 
-async function exportChecklistPDF() {
-  const data = await getExportData();
+async function runExportPDF(shiftFilter) {
+  const data = await getExportData(shiftFilter);
   if (!data) return;
 
   const { event, rows } = data;
@@ -1483,7 +1518,7 @@ async function exportChecklistPDF() {
       }
     });
 
-    const filename = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_checklist.pdf`;
+    const filename = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_checklist_${shiftFilter.replace(/\s+/g, '_').toLowerCase()}.pdf`;
     doc.save(filename);
   } catch (err) {
     console.error("PDF generation failed:", err);

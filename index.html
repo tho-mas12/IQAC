@@ -652,6 +652,37 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: EXPORT OPTIONS ================= -->
+  <div id="export-modal" class="modal-overlay">
+    <div class="modal-container glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title" id="export-modal-title">Export Options</h3>
+        <button class="modal-close" onclick="closeExportModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="export-form">
+        <input type="hidden" id="export-format-type">
+        <div class="form-group">
+          <label class="form-label" for="export-shift-filter">Select Shift / Scope to Export</label>
+          <select id="export-shift-filter" class="form-control" style="padding-left: 16px;">
+            <option value="all">All Shifts (Matching Event Scope)</option>
+            <option value="Shift 1">Shift 1 Only</option>
+            <option value="Shift 2">Shift 2 Only</option>
+            <option value="Administrative Units">Administrative Units Only</option>
+          </select>
+          <p class="section-desc" style="margin-top: 10px;">
+            The exported file will filter the departments according to your selection. The rows will be ordered shift-wise (Shift 1, Shift 2, Administrative Units) and alphabetically by department name in ascending order.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="export-submit-btn">Export</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ================= MODAL: DEPARTMENT CRUD ================= -->
   <div id="dept-modal" class="modal-overlay">
     <div class="modal-container glass-panel">
