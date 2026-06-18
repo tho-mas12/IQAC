@@ -1132,6 +1132,169 @@ async function deleteUser(userId) {
       await loadUsers();
       renderDirectorUsers();
     } catch(err) {}
+// ================= EXPORT UTILITIES (Excel / PDF) =================
+function downloadCSV(csvContent, filename) {
+  const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+async function getExportData() {
+  const evt = state.events.find(e => e.id === state.selectedEventId);
+  if (!evt) {
+    alert("No event selected.");
+    return null;
+  }
+
+  try {
+    const checklists = await fetchAPI(`/submissions/${evt.id}`);
+    
+    const rows = state.departments.map(dept => {
+      const chk = checklists[dept.id] || { status: 'pending', receivedTime: null, remarks: null };
+      const isLate = isSubmissionLate(chk.receivedTime, evt.deadline);
+      
+      let statusText = 'Pending';
+      if (chk.status === 'received') {
+        statusText = isLate ? 'Received (Late)' : 'Received (On Time)';
+      } else if (chk.status === 'remarks') {
+        statusText = 'Needs Correction';
+      }
+
+      let submittedTimeStr = '-';
+      if (chk.receivedTime) {
+        submittedTimeStr = new Date(chk.receivedTime).toLocaleString();
+        if (isLate) {
+          submittedTimeStr += ` (Late by ${getLateDurationText(chk.receivedTime, evt.deadline)})`;
+        }
+      }
+
+      return {
+        department: dept.name,
+        category: dept.category,
+        shift: dept.shift,
+        status: statusText,
+        submittedAt: submittedTimeStr,
+        remarks: chk.remarks || '-'
+      };
+    });
+
+    return { event: evt, rows };
+  } catch (err) {
+    console.error("Failed to load export data:", err);
+    alert("Failed to load latest checklist details for export.");
+    return null;
+  }
+}
+
+async function exportChecklistExcel() {
+  const data = await getExportData();
+  if (!data) return;
+
+  const { event, rows } = data;
+  
+  const escapeCsv = (str) => {
+    if (str === null || str === undefined) return '';
+    const stringified = String(str).replace(/"/g, '""');
+    if (stringified.includes(',') || stringified.includes('\n') || stringified.includes('"')) {
+      return `"${stringified}"`;
+    }
+    return stringified;
+  };
+
+  const csvHeaders = ['Department', 'Category', 'Shift', 'Status', 'Submitted At', 'Remarks / Correction Notes'];
+  const csvRows = [
+    [escapeCsv('Event Title:'), escapeCsv(event.title)],
+    [escapeCsv('Deadline:'), escapeCsv(new Date(event.deadline).toLocaleString())],
+    [],
+    csvHeaders
+  ];
+
+  rows.forEach(r => {
+    csvRows.push([
+      escapeCsv(r.department),
+      escapeCsv(r.category),
+      escapeCsv(r.shift),
+      escapeCsv(r.status),
+      escapeCsv(r.submittedAt),
+      escapeCsv(r.remarks)
+    ]);
+  });
+
+  const csvContent = csvRows.map(e => e.join(",")).join("\n");
+  const filename = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_checklist.csv`;
+  
+  downloadCSV(csvContent, filename);
+}
+
+async function exportChecklistPDF() {
+  const data = await getExportData();
+  if (!data) return;
+
+  const { event, rows } = data;
+  
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+
+    // Header styling (premium corporate look)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(109, 40, 217); // Premium Violet
+    doc.text("Internal Quality Assurance Cell (IQAC)", 14, 20);
+
+    doc.setFontSize(12);
+    doc.setTextColor(15, 23, 42); // Dark Slate
+    doc.text(`Event Checklist Status: ${event.title}`, 14, 28);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Deadline: ${new Date(event.deadline).toLocaleString()}`, 14, 34);
+    
+    const total = rows.length;
+    const received = rows.filter(r => r.status.startsWith('Received')).length;
+    const pending = rows.filter(r => r.status === 'Pending').length;
+    const remarks = rows.filter(r => r.status === 'Needs Correction').length;
+    const completion = Math.round((received / total) * 100);
+    
+    doc.text(`Completion: ${completion}% (${received}/${total} Submitted, ${remarks} Needs Correction, ${pending} Pending)`, 14, 40);
+
+    // Prepare table columns and rows
+    const tableHeaders = [['Department', 'Shift', 'Status', 'Submitted At', 'Remarks']];
+    const tableBody = rows.map(r => [
+      r.department,
+      r.shift,
+      r.status,
+      r.submittedAt,
+      r.remarks
+    ]);
+
+    doc.autoTable({
+      startY: 46,
+      head: tableHeaders,
+      body: tableBody,
+      theme: 'striped',
+      headStyles: { fillColor: [109, 40, 217], textColor: [255, 255, 255] },
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 'auto' }
+      }
+    });
+
+    const filename = `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_checklist.pdf`;
+    doc.save(filename);
+  } catch (err) {
+    console.error("PDF generation failed:", err);
+    alert("Failed to generate PDF. Make sure the browser is online and scripts are loaded.");
   }
 }
 
