@@ -1132,6 +1132,9 @@ async function deleteUser(userId) {
       await loadUsers();
       renderDirectorUsers();
     } catch(err) {}
+  }
+}
+
 // ================= EXPORT UTILITIES (Excel / PDF) =================
 function downloadCSV(csvContent, filename) {
   const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
