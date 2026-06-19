@@ -437,6 +437,15 @@ a:hover {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: calc(100% - var(--sidebar-width));
+  width: calc(100% - var(--sidebar-width));
+}
+
+.subview {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Header */
@@ -538,7 +547,11 @@ a:hover {
 
 /* Table Design */
 .table-responsive {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  max-height: 450px;
+  overflow-y: auto;
 }
 
 .custom-table {
@@ -556,6 +569,9 @@ a:hover {
   letter-spacing: 0.5px;
   border-bottom: 1.5px solid var(--card-border);
   background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .custom-table td {
@@ -938,6 +954,7 @@ a:hover {
   
   .main-content {
     margin-left: 80px;
+    max-width: calc(100% - 80px);
   }
   
   .app-header {
@@ -1019,6 +1036,8 @@ a:hover {
   
   .main-content {
     margin-left: 0;
+    width: 100%;
+    max-width: 100%;
     padding-bottom: 80px; /* space for fixed bottom bar */
   }
   
@@ -1088,5 +1107,171 @@ a:hover {
   }
   .header-logout-btn {
     padding: 8px;
+  }
+}
+
+/* Public Status Dashboard Mode */
+body.public-status-mode .sidebar {
+  display: none !important;
+}
+body.public-status-mode .main-content {
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+body.public-status-mode .header-logout-btn {
+  display: none !important;
+}
+
+/* Split Screen Layout for Public Status */
+.status-split-container {
+  display: flex;
+  height: calc(100vh - 120px);
+  background: var(--bg-main);
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+}
+.status-left-panel {
+  width: 380px;
+  border-right: 1px solid var(--card-border);
+  background: #ffffff;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.status-right-panel {
+  flex: 1;
+  background: #f8fafc;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+.status-event-card {
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--card-border);
+  background: #ffffff;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.status-event-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.05);
+}
+.status-event-card.active {
+  border-color: var(--accent);
+  background: #f5f3ff;
+}
+.status-event-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  display: block;
+}
+.status-event-card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  display: block;
+}
+.status-event-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+/* Toggle Switch styling */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .3s;
+  border-radius: 22px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: var(--accent);
+}
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+/* Staff Involvement Styling */
+.involvement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+.involvement-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.involvement-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 12px;
+}
+.involvement-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.involvement-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .status-split-container {
+    flex-direction: column;
+    height: auto;
+  }
+  .status-left-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--card-border);
+    max-height: 300px;
   }
 }

@@ -7,6 +7,10 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+  <!-- Mammoth.js for Word parsing, PDF.js for PDF parsing, Chart.js for data visualization -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -75,6 +79,18 @@
             <span>Departments</span>
           </a>
         </li>
+        <li class="menu-item" id="menu-staff-involvement">
+          <a onclick="switchSubView('staff-involvement')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span>Staff Involvement</span>
+          </a>
+        </li>
+        <li class="menu-item" id="menu-staff-users">
+          <a onclick="switchSubView('director-users')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>User Access Control</span>
+          </a>
+        </li>
       </ul>
 
       <!-- Director Menu -->
@@ -85,10 +101,14 @@
             <span>Director Dashboard</span>
           </a>
         </li>
-        <li class="menu-item" id="menu-director-users">
-          <a onclick="switchSubView('director-users')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span>User Access Control</span>
+      </ul>
+
+      <!-- User Menu -->
+      <ul id="user-menu" class="sidebar-menu" style="display: none;">
+        <li class="menu-item active" id="menu-user-action-plan">
+          <a onclick="switchSubView('user-action-plan')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span>Action Plan Form</span>
           </a>
         </li>
       </ul>
@@ -184,12 +204,40 @@
               <table class="custom-table">
                 <thead>
                   <tr>
-                    <th>Event Activities</th>
-                    <th>Created On</th>
-                    <th>Deadline</th>
+                    <th>
+                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <span>Event Activities</span>
+                        <select class="form-select sort-select" onchange="sortDashboardEvents('title', this.value)" style="width: auto; height: 26px; font-size: 11px; padding: 2px 4px; border: 1px solid var(--card-border); background: #ffffff; cursor: pointer; border-radius: 4px; color: var(--text-main);">
+                          <option value="">Sort</option>
+                          <option value="asc">↑ A-Z</option>
+                          <option value="desc">↓ Z-A</option>
+                        </select>
+                      </div>
+                    </th>
+                    <th>
+                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <span>Created On</span>
+                        <select class="form-select sort-select" onchange="sortDashboardEvents('created', this.value)" style="width: auto; height: 26px; font-size: 11px; padding: 2px 4px; border: 1px solid var(--card-border); background: #ffffff; cursor: pointer; border-radius: 4px; color: var(--text-main);">
+                          <option value="">Sort</option>
+                          <option value="asc">↑ Oldest</option>
+                          <option value="desc">↓ Newest</option>
+                        </select>
+                      </div>
+                    </th>
+                    <th>
+                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <span>Deadline</span>
+                        <select class="form-select sort-select" onchange="sortDashboardEvents('deadline', this.value)" style="width: auto; height: 26px; font-size: 11px; padding: 2px 4px; border: 1px solid var(--card-border); background: #ffffff; cursor: pointer; border-radius: 4px; color: var(--text-main);">
+                          <option value="">Sort</option>
+                          <option value="asc">↑ Closest</option>
+                          <option value="desc">↓ Farthest</option>
+                        </select>
+                      </div>
+                    </th>
                     <th>Submissions</th>
                     <th>Progress</th>
-                    <th>Action</th>
+                    <th>Action (Public View)</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody id="staff-dashboard-events-table">
@@ -261,7 +309,7 @@
                 <option value="all">All Shifts</option>
                 <option value="Shift 1">Shift 1</option>
                 <option value="Shift 2">Shift 2</option>
-                <option value="Administrative Units">Administrative Units</option>
+                <option value="Combined Department">Combined Department</option>
               </select>
             </div>
           </div>
@@ -336,7 +384,7 @@
             <button class="tab-btn active" onclick="setChecklistTab('all')">All Units</button>
             <button class="tab-btn" onclick="setChecklistTab('Shift 1')">Shift 1</button>
             <button class="tab-btn" onclick="setChecklistTab('Shift 2')">Shift 2</button>
-            <button class="tab-btn" onclick="setChecklistTab('Administrative Units')">Administrative Units</button>
+            <button class="tab-btn" onclick="setChecklistTab('Combined Department')">Combined Department</button>
           </div>
 
           <div class="glass-panel">
@@ -369,7 +417,7 @@
           </div>
 
           <!-- Summary Grid -->
-          <div class="stats-grid">
+          <div class="stats-grid" style="margin-bottom: 24px;">
             <div class="stat-card glass-panel">
               <div class="stat-details">
                 <span class="stat-label">Total Listed Events</span>
@@ -386,6 +434,58 @@
               </div>
               <div class="stat-icon-box stat-icon-purple">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </div>
+            </div>
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">On-Time Submissions</span>
+                <span id="director-stat-ontime" class="stat-value" style="color: var(--text-success);">0</span>
+              </div>
+              <div class="stat-icon-box stat-icon-green">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+            </div>
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">Delayed Submissions</span>
+                <span id="director-stat-delayed" class="stat-value" style="color: var(--text-danger);">0</span>
+              </div>
+              <div class="stat-icon-box stat-icon-red">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+            </div>
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">Correction Remarks</span>
+                <span id="director-stat-remarks" class="stat-value" style="color: var(--text-warning);">0</span>
+              </div>
+              <div class="stat-icon-box stat-icon-yellow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14a2 2 0 0 0 1.73 3h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+            </div>
+            <div class="stat-card glass-panel">
+              <div class="stat-details">
+                <span class="stat-label">Pending Checklist</span>
+                <span id="director-stat-pending" class="stat-value">0</span>
+              </div>
+              <div class="stat-icon-box stat-icon-blue" style="background: #e2e8f0; color: #475569;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Section -->
+          <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); margin-bottom: 24px; gap: 24px;">
+            <div class="glass-panel" style="padding: 20px; min-height: 320px; display: flex; flex-direction: column;">
+              <h4 style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 16px;">Overall Submissions Breakdown</h4>
+              <div style="flex: 1; position: relative;">
+                <canvas id="director-status-chart-canvas"></canvas>
+              </div>
+            </div>
+            <div class="glass-panel" style="padding: 20px; min-height: 320px; display: flex; flex-direction: column;">
+              <h4 style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 16px;">Submissions by Shift Group</h4>
+              <div style="flex: 1; position: relative;">
+                <canvas id="director-shift-chart-canvas"></canvas>
               </div>
             </div>
           </div>
@@ -507,7 +607,7 @@
             <button class="tab-btn active" onclick="setDirectorTab('all')">All Units</button>
             <button class="tab-btn" onclick="setDirectorTab('Shift 1')">Shift 1</button>
             <button class="tab-btn" onclick="setDirectorTab('Shift 2')">Shift 2</button>
-            <button class="tab-btn" onclick="setDirectorTab('Administrative Units')">Administrative Units</button>
+            <button class="tab-btn" onclick="setDirectorTab('Combined Department')">Combined Department</button>
           </div>
 
           <!-- Checklist Table -->
@@ -528,6 +628,343 @@
               </table>
             </div>
           </div>
+        </div>
+
+        <!-- ================= PUBLIC SUB-VIEW: STATUS DASHBOARD ================= -->
+        <div id="subview-public-status" class="subview animate-fade-in" style="display: none;">
+          <!-- Top Control Panel -->
+          <div class="glass-panel" style="padding: 20px; border-radius: 16px; border: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 20px; background: #ffffff;">
+            <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 250px;">
+              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Select Event Activity</label>
+              <select id="public-event-select" class="form-select" onchange="onPublicEventSelect(this.value)" style="height: 38px; font-weight: 500; padding: 0 10px;"></select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0; width: 200px;">
+              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Status</label>
+              <select id="public-status-filter" class="form-select" onchange="onPublicStatusFilterChange()" style="height: 38px; padding: 0 10px;">
+                <option value="all">All Statuses</option>
+                <option value="received">Received</option>
+                <option value="remarks">Needs Correction</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Detailed Status Table (Full Width) -->
+          <div class="glass-panel" id="public-detail-panel" style="padding: 24px; border-radius: 16px; border: 1px solid var(--border); background: #ffffff;">
+            <div style="text-align: center; margin: auto; padding: 40px; color: var(--text-muted);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); margin-bottom: 16px; opacity: 0.7;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg>
+              <h3>Select an Activity from the Dropdown</h3>
+              <p>Choose any visible public activity to view its real-time checklist status and statistics in full page layout.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= STAFF SUB-VIEW: STAFF INVOLVEMENT ================= -->
+        <div id="subview-staff-involvement" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div class="section-title">
+              <h3>Staff Involvement</h3>
+              <p class="section-desc">Search and view staff activities, publications, and involvements.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button id="btn-export-excel" class="btn btn-secondary btn-sm" onclick="exportAllInvolvementsExcel()">
+                📥 Export Excel (All)
+              </button>
+              <button id="btn-export-pdf" class="btn btn-primary btn-sm" onclick="exportAllInvolvementsPDF()">
+                📄 Export PDF (All)
+              </button>
+            </div>
+          </div>
+
+          <!-- Global Filter & Search Bar -->
+          <div class="glass-panel" style="padding: 16px; border-radius: 12px; border: 1px solid var(--card-border); display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; align-items: end; margin-bottom: 20px; background: #ffffff;">
+            <div class="form-group" style="margin-bottom: 0; position: relative;">
+              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Global Search</label>
+              <input type="text" id="involvement-global-search" class="form-control" placeholder="Search staff name, activity, or keyword across all plans..." oninput="renderStaffInvolvement()" style="font-size: 13px; height: 36px; padding-left: 32px;">
+              <span style="position: absolute; left: 10px; top: 34px; color: var(--text-muted);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Department</label>
+              <select id="involvement-global-dept" class="form-select" onchange="renderStaffInvolvement()" style="font-size: 13px; height: 36px; padding: 0 10px;"></select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Shift</label>
+              <select id="involvement-global-shift" class="form-select" onchange="renderStaffInvolvement()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                <option value="all">All Shifts</option>
+                <option value="Shift 1">Shift 1</option>
+                <option value="Shift 2">Shift 2</option>
+                <option value="Combined Department">Combined Department</option>
+              </select>
+            </div>
+          </div>
+          
+          <div id="involvement-cards-container" class="involvement-grid">
+            <!-- JS Dynamic Cards -->
+          </div>
+        </div>
+
+        <!-- ================= STAFF SUB-VIEW: STAFF INVOLVEMENT DETAIL (NEW PAGE VIEW) ================= -->
+        <div id="subview-staff-involvement-detail" class="subview animate-fade-in" style="display: none;">
+          <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 12px;">
+            <button class="btn btn-secondary btn-sm" onclick="switchSubView('staff-involvement')">
+              ← Back to Categories
+            </button>
+          </div>
+          
+          <!-- Meta-Information Block -->
+          <div class="glass-panel" style="padding: 16px; border-radius: 12px; border: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; align-items: end; margin-bottom: 16px; background: var(--bg-card);">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Department</label>
+              <select id="involvement-detail-dept" class="form-select" style="font-size: 13px; height: 36px; padding: 0 10px;"></select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Head / Coordinator</label>
+              <input type="text" id="involvement-detail-coordinator" class="form-control" placeholder="e.g. Dr. A. John" style="font-size: 13px; height: 36px; padding: 0 10px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Shift (I / II)</label>
+              <select id="involvement-detail-shift" class="form-select" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                <option value="Shift 1">Shift 1</option>
+                <option value="Shift 2">Shift 2</option>
+                <option value="Combined Department">Combined Department</option>
+              </select>
+            </div>
+            <div>
+              <button class="btn btn-primary btn-sm" id="save-involvement-meta-btn" style="height: 36px; width: 100%; font-size: 13px;">Save Plan Info</button>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 20px; border-radius: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; background: var(--bg-card);">
+            <!-- Title & Top actions -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 16px;">
+              <div>
+                <h3 id="involvement-detail-title" style="font-size: 20px; font-weight: 700; color: var(--text-main);">Category Details</h3>
+                <p id="involvement-detail-subtitle" class="section-desc">View and manage staff involvements under this category.</p>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 4px;">
+                  <button class="btn btn-secondary btn-sm" id="involvement-detail-export-csv-btn">CSV</button>
+                  <button class="btn btn-secondary btn-sm" id="involvement-detail-export-pdf-btn">PDF</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabbed Navigation -->
+            <div class="tab-container" style="margin-bottom: 8px;">
+              <button class="tab-btn active" data-section="Part A" onclick="setInvolvementSection('Part A')">Part A: Faculty Responsibilities</button>
+              <button class="tab-btn" data-section="Clubs" onclick="setInvolvementSection('Clubs')">Clubs</button>
+              <button class="tab-btn" data-section="Class Mentors" onclick="setInvolvementSection('Class Mentors')">Class Mentors</button>
+              <button class="tab-btn" data-section="Part B" onclick="setInvolvementSection('Part B')">Part B: Academic Activities</button>
+              <button class="tab-btn" data-section="Conferences" onclick="setInvolvementSection('Conferences')">Conferences/FDPs/Webinars</button>
+              <button class="tab-btn" data-section="AAA Proposed Plan" onclick="setInvolvementSection('AAA Proposed Plan')">AAA Proposed Plan</button>
+            </div>
+
+            <!-- Search Filter -->
+            <div style="position: relative;">
+              <input type="text" id="involvement-detail-search" class="form-control" placeholder="Search active tab records..." oninput="renderCategoryDetailPage()" style="font-size: 13px; padding-left: 32px; height: 38px;">
+              <span style="position: absolute; left: 10px; top: 12px; color: var(--text-muted);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </span>
+            </div>
+
+            <!-- Table -->
+            <div style="overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; max-height: 450px; overflow-y: auto;">
+              <table class="table" style="width: 100%; border-collapse: collapse; margin-bottom: 0;">
+                <thead id="involvement-detail-table-head">
+                  <!-- JS Dynamic Headers -->
+                </thead>
+                <tbody id="involvement-detail-table-body">
+                  <!-- JS Dynamic Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= USER SUB-VIEW: ACTION PLAN FORM ================= -->
+        <div id="subview-user-action-plan" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header" style="margin-bottom: 16px;">
+            <div class="section-title">
+              <h3>Department Action Plan Entry Form</h3>
+              <p class="section-desc">Manually enter your department's action plan. Click submit to save directly into the Staff Involvement database.</p>
+            </div>
+          </div>
+
+          <form id="user-action-plan-form" onsubmit="submitUserActionPlan(event)">
+            <!-- Step 1: Plan Metadata -->
+            <div class="glass-panel" style="padding: 24px; margin-bottom: 24px; background: #ffffff;">
+              <h4 style="margin-bottom: 16px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">1. Plan Metadata</h4>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                <div class="form-group">
+                  <label class="form-label" for="user-plan-dept" style="font-weight: 600;">Department</label>
+                  <input type="text" id="user-plan-dept" class="form-control" placeholder="e.g. Computer Science" style="height: 38px; padding-left: 10px;" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="user-plan-coordinator" style="font-weight: 600;">Head / Coordinator</label>
+                  <input type="text" id="user-plan-coordinator" class="form-control" placeholder="e.g. Mr. A. Charles" style="height: 38px; padding-left: 10px;" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="user-plan-shift" style="font-weight: 600;">Shift (I / II)</label>
+                  <select id="user-plan-shift" class="form-select" style="height: 38px; padding: 0 10px;" required>
+                    <option value="Shift 1">Shift 1</option>
+                    <option value="Shift 2">Shift 2</option>
+                    <option value="Combined Department">Combined Department</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Part A: Faculty Responsibilities -->
+            <div class="glass-panel" style="padding: 24px; margin-bottom: 24px; background: #ffffff;">
+              <h4 style="margin-bottom: 16px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">2. PART - A: Faculty Responsibilities</h4>
+              <div class="table-responsive" style="margin-bottom: 16px; max-height: 500px; overflow-y: auto;">
+                <table class="custom-table" id="user-plan-part-a-table" style="width:100%; border: 1px solid var(--card-border);">
+                  <thead>
+                    <tr style="background: #f8fafc;">
+                      <th style="width: 80px; padding: 10px;">S.No</th>
+                      <th style="padding: 10px;">Area of Responsibility</th>
+                      <th style="padding: 10px;">Faculty In-charge</th>
+                      <th style="width: 80px; text-align: right; padding: 10px;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-plan-part-a-body">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addUserPlanPartARow()">+ Add Responsibility Row</button>
+            </div>
+
+            <!-- Step 3: Clubs & Class Mentors -->
+            <div class="glass-panel" style="padding: 24px; margin-bottom: 24px; background: #ffffff;">
+              <h4 style="margin-bottom: 16px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">3. Clubs & Class Mentors</h4>
+              
+              <!-- Clubs -->
+              <h5 style="margin: 16px 0 8px; font-weight: 600; color: var(--primary);">Clubs (Mention all the clubs of the Department)</h5>
+              <div class="table-responsive" style="margin-bottom: 20px;">
+                <table class="custom-table" id="user-plan-clubs-table" style="width:100%; border: 1px solid var(--card-border);">
+                  <thead>
+                    <tr style="background: #f8fafc;">
+                      <th style="width: 80px; padding: 10px;">S.No</th>
+                      <th style="padding: 10px;">Club Name</th>
+                      <th style="padding: 10px;">Nature of Club (Technical/Cultural/Domain/others)</th>
+                      <th style="padding: 10px;">Faculty Assigned</th>
+                      <th style="width: 80px; text-align: right; padding: 10px;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-plan-clubs-body">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addUserPlanClubRow()" style="margin-bottom: 24px;">+ Add Club Row</button>
+
+              <!-- Class Mentors -->
+              <h5 style="margin: 16px 0 8px; font-weight: 600; color: var(--primary);">Class Mentors</h5>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <div class="form-group">
+                  <label class="form-label" style="font-size:12px; font-weight:600;">I UG Mentor</label>
+                  <input type="text" id="user-mentor-i-ug" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" style="font-size:12px; font-weight:600;">II UG Mentor</label>
+                  <input type="text" id="user-mentor-ii-ug" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" style="font-size:12px; font-weight:600;">III UG Mentor</label>
+                  <input type="text" id="user-mentor-iii-ug" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" style="font-size:12px; font-weight:600;">I PG Mentor</label>
+                  <input type="text" id="user-mentor-i-pg" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" style="font-size:12px; font-weight:600;">II PG Mentor</label>
+                  <input type="text" id="user-mentor-ii-pg" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Part B: Academic & Co-curricular Activities -->
+            <div class="glass-panel" style="padding: 24px; margin-bottom: 24px; background: #ffffff;">
+              <h4 style="margin-bottom: 16px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">4. PART - B: Academic & Co-curricular Activities</h4>
+              <div class="table-responsive" style="margin-bottom: 16px; max-height: 500px; overflow-y: auto;">
+                <table class="custom-table" id="user-plan-part-b-table" style="width:100%; border: 1px solid var(--card-border);">
+                  <thead>
+                    <tr style="background: #f8fafc;">
+                      <th style="width: 80px; padding: 10px;">S.No</th>
+                      <th style="padding: 10px;">Activity</th>
+                      <th style="width: 140px; padding: 10px;">Tentative Month</th>
+                      <th style="width: 160px; padding: 10px;">Class / Target Group</th>
+                      <th style="padding: 10px;">Faculty Coordinator</th>
+                      <th style="width: 80px; text-align: right; padding: 10px;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-plan-part-b-body">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addUserPlanPartBRow()">+ Add Activity Row</button>
+            </div>
+
+            <!-- Step 5: Conferences & AAA Plan -->
+            <div class="glass-panel" style="padding: 24px; margin-bottom: 24px; background: #ffffff;">
+              <h4 style="margin-bottom: 16px; font-weight: 600; color: var(--text-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">5. Conferences & AAA Proposed Plan</h4>
+              
+              <!-- Conferences -->
+              <h5 style="margin: 16px 0 8px; font-weight: 600; color: var(--primary);">Conferences/FDPs/ Seminars / Workshops / Webinars</h5>
+              <div class="table-responsive" style="margin-bottom: 20px;">
+                <table class="custom-table" id="user-plan-conferences-table" style="width:100%; border: 1px solid var(--card-border);">
+                  <thead>
+                    <tr style="background: #f8fafc;">
+                      <th style="width: 80px; padding: 10px;">S.No</th>
+                      <th style="padding: 10px;">Title / Theme</th>
+                      <th style="width: 110px; padding: 10px;">Type (C/F/S/W/WB)</th>
+                      <th style="width: 100px; padding: 10px;">Nature (N/IN)</th>
+                      <th style="width: 120px; padding: 10px;">Tentative Month</th>
+                      <th style="padding: 10px;">Faculty Coordinator(s)</th>
+                      <th style="width: 110px; padding: 10px;">IKS Aligned (Yes/-)</th>
+                      <th style="width: 110px; padding: 10px;">SDG Aligned (Yes/-)</th>
+                      <th style="width: 80px; text-align: right; padding: 10px;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-plan-conferences-body">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addUserPlanConferenceRow()" style="margin-bottom: 24px;">+ Add Conference Row</button>
+
+              <!-- AAA Plan -->
+              <h5 style="margin: 24px 0 8px; font-weight: 600; color: var(--primary);">Department Action Plan (as proposed in the AAA 2025-2026)</h5>
+              <div class="table-responsive" style="margin-bottom: 20px;">
+                <table class="custom-table" id="user-plan-aaa-table" style="width:100%; border: 1px solid var(--card-border);">
+                  <thead>
+                    <tr style="background: #f8fafc;">
+                      <th style="width: 80px; padding: 10px;">S.No</th>
+                      <th style="padding: 10px;">Planned Activity</th>
+                      <th style="width: 150px; padding: 10px;">Tentative Month</th>
+                      <th style="padding: 10px;">Faculty Assigned</th>
+                      <th style="width: 80px; text-align: right; padding: 10px;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-plan-aaa-body">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addUserPlanAaaRow()">+ Add AAA Row</button>
+            </div>
+
+            <!-- Submit Panel -->
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-bottom: 40px;">
+              <button type="button" class="btn btn-secondary" onclick="resetUserActionPlanForm()">Reset Form</button>
+              <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">Submit Department Action Plan</button>
+            </div>
+          </form>
         </div>
 
       </div>
@@ -565,8 +1002,8 @@
               <span>Shift 2 (Evening) Departments</span>
             </label>
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text-main); font-weight: 500;">
-              <input type="checkbox" id="event-scope-admin" value="Administrative Units" checked>
-              <span>Administrative Units / Offices</span>
+              <input type="checkbox" id="event-scope-admin" value="Combined Department" checked>
+              <span>Combined Department Units</span>
             </label>
           </div>
         </div>
@@ -669,10 +1106,10 @@
             <option value="all">All Shifts (Matching Event Scope)</option>
             <option value="Shift 1">Shift 1 Only</option>
             <option value="Shift 2">Shift 2 Only</option>
-            <option value="Administrative Units">Administrative Units Only</option>
+            <option value="Combined Department">Combined Department Only</option>
           </select>
           <p class="section-desc" style="margin-top: 10px;">
-            The exported file will filter the departments according to your selection. The rows will be ordered shift-wise (Shift 1, Shift 2, Administrative Units) and alphabetically by department name in ascending order.
+            The exported file will filter the departments according to your selection. The rows will be ordered shift-wise (Shift 1, Shift 2, Combined Department) and alphabetically by department name in ascending order.
           </p>
         </div>
         <div class="modal-footer">
@@ -700,14 +1137,14 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="dept-category">Category</label>
-          <input type="text" id="dept-category" class="form-control" style="padding-left: 16px;" placeholder="e.g. Science, Arts, Applied Sciences, Administrative Units" required>
+          <input type="text" id="dept-category" class="form-control" style="padding-left: 16px;" placeholder="e.g. Science, Arts, Applied Sciences, Combined Department" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="dept-shift">Shift Type</label>
           <select id="dept-shift" class="form-select">
             <option value="Shift 1">Shift 1</option>
             <option value="Shift 2">Shift 2</option>
-            <option value="Administrative Units">Administrative Units</option>
+            <option value="Combined Department">Combined Department</option>
           </select>
         </div>
         <div class="modal-footer">
@@ -751,6 +1188,53 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
           <button type="submit" class="btn btn-primary" id="user-submit-btn">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADD INVOLVEMENT CATEGORY ================= -->
+  <div id="involvement-category-modal" class="modal-overlay">
+    <div class="modal-container glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Involvement Category</h3>
+        <button class="modal-close" onclick="closeAddCategoryModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="involvement-category-form">
+        <div class="form-group">
+          <label class="form-label" for="category-name">Category Name</label>
+          <input type="text" id="category-name" class="form-control" style="padding-left: 16px;" placeholder="e.g. Research Papers, Awards, Workshops" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAddCategoryModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Card</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: ADD INVOLVEMENT RECORD ================= -->
+  <div id="involvement-record-modal" class="modal-overlay">
+    <div class="modal-container glass-panel" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="record-modal-title">Add Involvement Record</h3>
+        <button class="modal-close" onclick="closeAddRecordModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="involvement-record-form">
+        <input type="hidden" id="record-category-id">
+        <input type="hidden" id="record-edit-id">
+        
+        <div id="involvement-record-dynamic-fields">
+          <!-- Dynamically generated fields based on section_type in JS -->
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeAddRecordModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="record-submit-btn">Save Record</button>
         </div>
       </form>
     </div>

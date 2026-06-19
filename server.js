@@ -18,6 +18,11 @@ app.use(express.json());
 // Serve static assets from the current directory
 app.use(express.static(__dirname));
 
+// Serve index.html for public status URL path
+app.get('/status', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // Block sensitive backend files from direct browser access
 app.use((req, res, next) => {
   const file = req.url.toLowerCase();
@@ -169,7 +174,8 @@ function createTables(dbRunExecutor, callback) {
     description TEXT NOT NULL,
     created_at VARCHAR(255) NOT NULL,
     deadline VARCHAR(255) NOT NULL,
-    shifts_scope VARCHAR(255) DEFAULT 'Shift 1,Shift 2,Administrative Units'
+    shifts_scope VARCHAR(255) DEFAULT 'Shift 1,Shift 2,Combined Department',
+    is_visible_public INTEGER DEFAULT 1
   )`;
 
   const submissionsSql = usePostgres
@@ -196,11 +202,53 @@ function createTables(dbRunExecutor, callback) {
         FOREIGN KEY (department_id) REFERENCES departments (id) ON DELETE CASCADE
       )`;
 
+  const invCategoriesSql = `CREATE TABLE IF NOT EXISTS staff_involvement_categories (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) UNIQUE NOT NULL,
+    department VARCHAR(255),
+    coordinator VARCHAR(255),
+    shift VARCHAR(100)
+  )`;
+
+  const invRecordsSql = usePostgres
+    ? `CREATE TABLE IF NOT EXISTS staff_involvement_records (
+        id SERIAL PRIMARY KEY,
+        category_id VARCHAR(255) NOT NULL,
+        section_type VARCHAR(50) NOT NULL,
+        col1 TEXT,
+        col2 TEXT,
+        col3 TEXT,
+        col4 TEXT,
+        col5 TEXT,
+        col6 TEXT,
+        col7 TEXT,
+        col8 TEXT,
+        FOREIGN KEY (category_id) REFERENCES staff_involvement_categories (id) ON DELETE CASCADE
+      )`
+    : `CREATE TABLE IF NOT EXISTS staff_involvement_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_id TEXT NOT NULL,
+        section_type TEXT NOT NULL,
+        col1 TEXT,
+        col2 TEXT,
+        col3 TEXT,
+        col4 TEXT,
+        col5 TEXT,
+        col6 TEXT,
+        col7 TEXT,
+        col8 TEXT,
+        FOREIGN KEY (category_id) REFERENCES staff_involvement_categories (id) ON DELETE CASCADE
+      )`;
+
   dbRunExecutor(usersSql, [], () => {
     dbRunExecutor(deptsSql, [], () => {
       dbRunExecutor(eventsSql, [], () => {
         dbRunExecutor(submissionsSql, [], () => {
-          callback();
+          dbRunExecutor(invCategoriesSql, [], () => {
+            dbRunExecutor(invRecordsSql, [], () => {
+              callback();
+            });
+          });
         });
       });
     });
@@ -209,30 +257,67 @@ function createTables(dbRunExecutor, callback) {
 
 // Cascading Seed Data Initialization
 function initializeDatabase() {
+  const addCol = (table, col, type, defVal) => {
+    let sql = `ALTER TABLE ${table} ADD COLUMN `;
+    if (usePostgres) sql += "IF NOT EXISTS ";
+    sql += `${col} ${type}`;
+    if (defVal !== undefined) sql += ` DEFAULT ${defVal}`;
+    return sql;
+  };
+
   createTables(db.run, () => {
-    // Migration: Add shifts_scope to events if it doesn't exist
-    db.run("ALTER TABLE events ADD COLUMN shifts_scope VARCHAR(255) DEFAULT 'Shift 1,Shift 2,Administrative Units'", [], (err) => {
-      if (err) {
-        console.log("Migration: Column shifts_scope might already exist (or error ignored).");
-      } else {
-        console.log("Migration: Added shifts_scope column to events successfully.");
-      }
-      
-      // 1. Seed users
-      db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
-      if (row && (row.count === 0 || row.count === '0')) {
-        db.run("INSERT INTO users (username, password, name, role) VALUES ('staff', 'staff123', 'IQAC Coordinator', 'Staff')", [], () => {
-          db.run("INSERT INTO users (username, password, name, role) VALUES ('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director')", [], () => {
-            console.log('Default users seeded.');
-            seedDepartments();
+    // Migration: Update existing data from 'Administrative Units' to 'Combined Department'
+    db.run("UPDATE departments SET shift = 'Combined Department' WHERE shift = 'Administrative Units'", [], () => {
+      db.run("UPDATE departments SET category = 'Combined Department' WHERE category = 'Administrative Units'", [], () => {
+        db.run("UPDATE events SET shifts_scope = REPLACE(shifts_scope, 'Administrative Units', 'Combined Department')", [], () => {
+          // Migration: Add columns to tables
+          db.run(addCol('events', 'shifts_scope', 'VARCHAR(255)', "'Shift 1,Shift 2,Combined Department'"), [], (err) => {
+            db.run(addCol('events', 'is_visible_public', 'INTEGER', 1), [], (err2) => {
+              db.run(addCol('staff_involvement_categories', 'department', 'VARCHAR(255)'), [], () => {
+                db.run(addCol('staff_involvement_categories', 'coordinator', 'VARCHAR(255)'), [], () => {
+                  db.run(addCol('staff_involvement_categories', 'shift', 'VARCHAR(100)'), [], () => {
+                    db.run(addCol('staff_involvement_records', 'section_type', 'VARCHAR(50)'), [], () => {
+                      db.run(addCol('staff_involvement_records', 'col1', 'TEXT'), [], () => {
+                        db.run(addCol('staff_involvement_records', 'col2', 'TEXT'), [], () => {
+                          db.run(addCol('staff_involvement_records', 'col3', 'TEXT'), [], () => {
+                            db.run(addCol('staff_involvement_records', 'col4', 'TEXT'), [], () => {
+                              db.run(addCol('staff_involvement_records', 'col5', 'TEXT'), [], () => {
+                                db.run(addCol('staff_involvement_records', 'col6', 'TEXT'), [], () => {
+                                  db.run(addCol('staff_involvement_records', 'col7', 'TEXT'), [], () => {
+                                    db.run(addCol('staff_involvement_records', 'col8', 'TEXT'), [], () => {
+                                      // 1. Seed users
+                                      db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
+                                        if (row && (row.count === 0 || row.count === '0')) {
+                                          db.run("INSERT INTO users (username, password, name, role) VALUES ('staff', 'staff123', 'IQAC Coordinator', 'Staff')", [], () => {
+                                            db.run("INSERT INTO users (username, password, name, role) VALUES ('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director')", [], () => {
+                                              db.run("INSERT INTO users (username, password, name, role) VALUES ('user', 'user123', 'Department User', 'User')", [], () => {
+                                                console.log('Default users seeded.');
+                                                seedDepartments();
+                                              });
+                                            });
+                                          });
+                                        } else {
+                                          seedDepartments();
+                                        }
+                                      });
+                                    });
+                                  });
+                                });
+                              });
+                            });
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
           });
         });
-      } else {
-        seedDepartments();
-      }
+      });
     });
   });
-});
 }
 
 function seedDepartments() {
@@ -296,26 +381,26 @@ function seedDepartments() {
         // Shift 2 - Physical Education
         { id: "s2-pe-pe", name: "Physical Education", category: "Physical Education", shift: "Shift 2" },
 
-        // Administrative Units
-        { id: "admin-iqac", name: "IQAC Office", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-principal", name: "Principal Office", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-coe", name: "Controller of Examinations", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-library", name: "Library", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-placement", name: "Placement Cell", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-research", name: "Research Cell", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-nss", name: "NSS", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-ncc", name: "NCC", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-yrc", name: "YRC", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-rrc", name: "RRC", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-sports", name: "Sports Department", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-hostel", name: "Hostel", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-alumni", name: "Alumni Association", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-wec", name: "Women Empowerment Cell", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-cgc", name: "Career Guidance Cell", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-edc", name: "Entrepreneurship Development Cell", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-icc", name: "Internal Complaints Committee", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-antirag", name: "Anti-Ragging Cell", category: "Administrative Units", shift: "Administrative Units" },
-        { id: "admin-discipline", name: "Discipline Committee", category: "Administrative Units", shift: "Administrative Units" }
+        // Combined Department
+        { id: "admin-iqac", name: "IQAC Office", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-principal", name: "Principal Office", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-coe", name: "Controller of Examinations", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-library", name: "Library", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-placement", name: "Placement Cell", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-research", name: "Research Cell", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-nss", name: "NSS", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-ncc", name: "NCC", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-yrc", name: "YRC", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-rrc", name: "RRC", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-sports", name: "Sports Department", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-hostel", name: "Hostel", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-alumni", name: "Alumni Association", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-wec", name: "Women Empowerment Cell", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-cgc", name: "Career Guidance Cell", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-edc", name: "Entrepreneurship Development Cell", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-icc", name: "Internal Complaints Committee", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-antirag", name: "Anti-Ragging Cell", category: "Combined Department", shift: "Combined Department" },
+        { id: "admin-discipline", name: "Discipline Committee", category: "Combined Department", shift: "Combined Department" }
       ];
 
       if (usePostgres) {
@@ -329,7 +414,9 @@ function seedDepartments() {
         db.run(sql, values, (err) => {
           if (err) console.error("Error seeding departments:", err.message);
           else console.log('Default departments seeded.');
-          seedEvents();
+          if (process.env.SEED_DUMMY_DATA === 'true') {
+            seedEvents();
+          }
         });
       } else {
         let insertCount = 0;
@@ -338,13 +425,17 @@ function seedDepartments() {
             insertCount++;
             if (insertCount === initialDepts.length) {
               console.log('Default departments seeded.');
-              seedEvents();
+              if (process.env.SEED_DUMMY_DATA === 'true') {
+                seedEvents();
+              }
             }
           });
         });
       }
     } else {
-      seedEvents();
+      if (process.env.SEED_DUMMY_DATA === 'true') {
+        seedEvents();
+      }
     }
   });
 }
@@ -390,10 +481,130 @@ function seedSubmissions() {
           db.run("INSERT INTO submissions (event_id, department_id, status, received_time) VALUES ('evt-nirf-2026', 's1-sci-chemistry', 'received', ?)", [new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()], () => {
             db.run("INSERT INTO submissions (event_id, department_id, status, received_time) VALUES ('evt-nirf-2026', 's1-sci-physics', 'received', ?)", [new Date().toISOString()], () => {
               console.log('Default submissions seeded.');
+              seedInvolvementData();
             });
           });
         });
       });
+    } else {
+      seedInvolvementData();
+    }
+  });
+}
+
+function seedInvolvementData() {
+  db.get("SELECT COUNT(*) as count FROM staff_involvement_categories WHERE id = 'dept_action_plan_2026_2027'", (err, row) => {
+    if (row && (row.count === 0 || row.count === '0')) {
+      const catId = "dept_action_plan_2026_2027";
+      const catName = "Department Action Plan: 2026-2027";
+      const dept = "Department of Artificial Intelligence";
+      const coord = "Mr. A. Charles";
+      const shift = "Shift II";
+      
+      db.run("INSERT INTO staff_involvement_categories (id, name, department, coordinator, shift) VALUES (?, ?, ?, ?, ?)",
+        [catId, catName, dept, coord, shift],
+        (err) => {
+          if (err) return console.error("Seeding involvement category failed:", err.message);
+          console.log("Seeding involvement category succeeded.");
+          
+          const records = [];
+          
+          // Part A
+          records.push(
+            { sec: "Part A", c1: "1", c2: "PhD Programme", c3: "-" },
+            { sec: "Part A", c1: "2", c2: "PG Programme", c3: "Mr. A. Charles" },
+            { sec: "Part A", c1: "3", c2: "UG Programme", c3: "Mr. A. Charles" },
+            { sec: "Part A", c1: "4", c2: "MQC\nNote: Assign faculty members with five or more years of experience", c3: "1. Dr. J.Hirudhaya Mary Asha\n2. Mr. C. Mohanraja\n3. Mr Mr.Jesudoss" },
+            { sec: "Part A", c1: "5", c2: "JosTEL", c3: "Mr. C. Mohanraja" },
+            { sec: "Part A", c1: "6", c2: "Question Bank\nNote: For SPL & Comprehensive Courses", c3: "UG\nSPL: Dr. J.Hirudhaya Mary Asha\nCE: Nil\n\nPG\nSPL: Mr. C. Mohanraja\nCE: Nil" },
+            { sec: "Part A", c1: "7", c2: "Internship", c3: "UG: Dr. J.Hirudhaya Mary Asha\nPG: Mr. C. Mohanraja" },
+            { sec: "Part A", c1: "8", c2: "Project", c3: "UG: Dr. J.Hirudhaya Mary Asha\nPG: Mr. C. Mohanraja" },
+            { sec: "Part A", c1: "9", c2: "MOOCs", c3: "UG: I Yr: Ms. V. Infine Sinduja\nII Yr:Dr. S.Lakshmanan\nPG: I Yr: Mr M.Jesudoss" },
+            { sec: "Part A", c1: "10", c2: "Student Progression", c3: "UG: I Yr: Ms. V. Infine Sinduja\nII Yr: Dr. S.Lakshmanan\nIII Yr: Dr. J. Hirudhaya Mary Asha\nPG: I Yr: Mr M.Jesudoss\nII Yr: Mr. C. Mohanraja" },
+            { sec: "Part A", c1: "11", c2: "Placement", c3: "UG: Dr. J.Hirudhaya Mary Asha\nPG: Mr. C. Mohanraja" },
+            { sec: "Part A", c1: "12", c2: "Industry Collaboration", c3: "Mr. C. Mohanraja, Mr. M. Jesudoss" },
+            { sec: "Part A", c1: "13", c2: "Coaching Programmes for Competitive Exams", c3: "Mr. C. Mohanraja\nMs. P. Diana Jennifer" },
+            { sec: "Part A", c1: "14", c2: "Association", c3: "President: Dr. S. Josephine Theresa\nVice – President: Dr. S. Lakshmanan" },
+            { sec: "Part A", c1: "15", c2: "INDEP", c3: "Dr. S. Josephine Theresa\nDr. S. Lakshmanan" },
+            { sec: "Part A", c1: "16", c2: "Sports Activities", c3: "Dr. S. Josephine Theresa\nDr. S. Lakshmanan\nMs. P. Diana Jennifer" },
+            { sec: "Part A", c1: "17", c2: "Consultancy & Corporate Training", c3: "Mr. A. Charles, Mr. C. Mohanraja" },
+            { sec: "Part A", c1: "18", c2: "Girls' Student In-charge", c3: "Ms. V. Infine Sinduja, Dr. T.Thilagavathi" },
+            { sec: "Part A", c1: "19", c2: "SHEPHERD", c3: "Boys: Dr. S. Lakshmanan\nGirls: Dr. T.Thilagavathi" },
+            { sec: "Part A", c1: "20", c2: "Department Inventory & Procurement", c3: "Mr. A. Charles, Mr. C. Mohanraja" },
+            { sec: "Part A", c1: "21", c2: "Department Library", c3: "Mr.M.Jesudoss, Ms. G. Keerthana Darathi" },
+            { sec: "Part A", c1: "22", c2: "Department Website", c3: "Mr.M.Jesudoss, Dr. S. Josephine Theresa,\nMs. G. Keerthana Darathi" },
+            { sec: "Part A", c1: "23", c2: "Specific Lab(s) in the Department", c3: "Nil" }
+          );
+          
+          // Clubs
+          records.push(
+            { sec: "Clubs", c1: "1", c2: "Coder’s Club", c3: "Technical", c4: "Dr. J.Hirudhaya Mary Asha\nMs. V. Infine Sinduja" },
+            { sec: "Clubs", c1: "2", c2: "Zestia Club", c3: "Cultural", c4: "Dr. T. Thilagavathi\nMs. P. Diana Jennifer" }
+          );
+          
+          // Class Mentors
+          records.push(
+            { sec: "Class Mentors", c1: "I UG", c2: "Ms. V. Infine Sinduja" },
+            { sec: "Class Mentors", c1: "II UG", c2: "Dr. S.Lakshmanan" },
+            { sec: "Class Mentors", c1: "III UG", c2: "Dr. J. Hirudhaya Mary Asha" },
+            { sec: "Class Mentors", c1: "I PG", c2: "Mr M.Jesudoss" },
+            { sec: "Class Mentors", c1: "II PG", c2: "Mr. C. Mohanraja" }
+          );
+          
+          // Part B
+          records.push(
+            { sec: "Part B", c1: "1", c2: "Value-Added Course", c3: "-", c4: "-", c5: "-" },
+            { sec: "Part B", c1: "2", c2: "Certificate Course", c3: "July-August", c4: "III UG & II PG", c5: "Mr. C. Mohanraja\nDr.J.Hirudhaya Mary Asha\nMr.M.Jesudoss\nDr.S.Josephine Theresa\nMs.P.Diana Jennifer" },
+            { sec: "Part B", c1: "3", c2: "Association Inauguration", c3: "July", c4: "Department Students", c5: "Dr.S.Josephine Theresa\nDr.S.Lakshmanan" },
+            { sec: "Part B", c1: "4", c2: "Association Valediction", c3: "February", c4: "Department Students", c5: "Dr.S.Josephine Theresa\nDr.S.Lakshmanan" },
+            { sec: "Part B", c1: "5", c2: "Skill Development Programmes", c3: "July", c4: "UG I Yr:\nII Yr:\nIII Yr\nPG: I Yr:", c5: "Ms. V. Infine Sinduja\nDr. S.Lakshmanan\nDr. J. Hirudhaya Mary Asha\nMr M.Jesudoss" },
+            { sec: "Part B", c1: "6", c2: "Technical Club Activities", c3: "July-February", c4: "Department Students", c5: "Dr. J.Hirudhaya Mary Asha\nMs. V. Infine Sinduja" },
+            { sec: "Part B", c1: "7", c2: "Cultural Club Activities", c3: "July-February", c4: "Department Students/ Inter College/ Interdepartment", c5: "Dr. T. Thilagavathi\nMs. P. Diana Jennifer" },
+            { sec: "Part B", c1: "8", c2: "Technical / Cultural Festival", c3: "September", c4: "Department Students/ Inter College/ Interdepartment", c5: "Dr.J.Hirudhaya Mary Asha\nMr.C.Mohanraja\nMr.M.Jesudoss" },
+            { sec: "Part B", c1: "9", c2: "Diversity & Inclusion Activities", c3: "October", c4: "Department students", c5: "Ms. P. Diana Jennifer\nMs. G. Keerthana Darathi" },
+            { sec: "Part B", c1: "10", c2: "Ideation Workshops / Hackathons", c3: "December", c4: "Department students", c5: "Dr. S. Lakshmanan\nDr. T. Thilagavathi" },
+            { sec: "Part B", c1: "11", c2: "Mental Health / Wellness Activities", c3: "January", c4: "Department students", c5: "Ms. V. Infine Sinduja" },
+            { sec: "Part B", c1: "12", c2: "Gender Sensitization & Health Programmes", c3: "September", c4: "Department", c5: "Dr.S.Josephine Theresa" },
+            { sec: "Part B", c1: "13", c2: "Community Awareness and Social Outreach Activities", c3: "July", c4: "School students", c5: "Dr.J.Hirudhaya Mary Asha" },
+            { sec: "Part B", c1: "14", c2: "IKS Activities", c3: "September", c4: "Department Students", c5: "Mr.C.Mohanraja" },
+            { sec: "Part B", c1: "15", c2: "Remedial Coaching", c3: "-", c4: "II UG Students", c5: "Dr.S.Lakshmanan" },
+            { sec: "Part B", c1: "16", c2: "Educational Tour", c3: "July", c4: "III UG", c5: "Dr.J.Hirudhaya Mary Asha" },
+            { sec: "Part B", c1: "17", c2: "Parent – Teacher Meet (other than the common meeting by the College)", c3: "September", c4: "UG I Yr:\nII Yr:\nIII Yr\nPG: I Yr:\nII Yr:", c5: "Ms. V. Infine Sinduja\nDr. S.Lakshmanan\nDr. J. Hirudhaya Mary Asha\nMr M.Jesudoss\nMr. C. Mohanraja" },
+            { sec: "Part B", c1: "18", c2: "Alumni Meeting (other than the Global Reunion)", c3: "-", c4: "-", c5: "-" },
+            { sec: "Part B", c1: "19", c2: "Endowment Lecture(s)\n1.\n2.", c3: "-", c4: "-", c5: "-" }
+          );
+          
+          // Conferences
+          records.push(
+            { sec: "Conferences", c1: "1", c2: "Teaching Pedagogy", c3: "FDP", c4: "N", c5: "July", c6: "Dr.T.Thilagavthi", c7: "-", c8: "-" },
+            { sec: "Conferences", c1: "2", c2: "Empowering Teaching with AI tools", c3: "FDP", c4: "N", c5: "November", c6: "Mr.M.Jesudoss", c7: "-", c8: "Yes" },
+            { sec: "Conferences", c1: "3", c2: "3D Printing-Robotics", c3: "Workshop", c4: "N", c5: "July", c6: "Dr.J.Hirudhaya Mary Asha", c7: "-", c8: "Yes" }
+          );
+          
+          // AAA Proposed Plan
+          records.push(
+            { sec: "AAA Proposed Plan", c1: "1", c2: "Provide certificate courses for AI students", c3: "July", c4: "Mr. C. Mohanraja\nDr.J.Hirudhaya Mary Asha" },
+            { sec: "AAA Proposed Plan", c1: "2", c2: "Provide training for placement aptitude and technical skills", c3: "July", c4: "Mr. C. Mohanraja\nMs.P. Diana Jennifer" },
+            { sec: "AAA Proposed Plan", c1: "3", c2: "Conducting National level Seminar with industry colloboration", c3: "September", c4: "Mr.C.Mohanraja" },
+            { sec: "AAA Proposed Plan", c1: "4", c2: "Arrange industrial visits to software companies", c3: "September", c4: "Mr. A. Charles,\nMr.C.Mohanraja" },
+            { sec: "AAA Proposed Plan", c1: "5", c2: "Encourage student mini-projects solving societal problems", c3: "July- December", c4: "Dr.J.Hirudhaya Mary Asha" }
+          );
+          
+          let completed = 0;
+          records.forEach(r => {
+            db.run("INSERT INTO staff_involvement_records (category_id, section_type, col1, col2, col3, col4, col5, col6, col7, col8) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              [catId, r.sec, r.c1, r.c2, r.c3 || '', r.c4 || '', r.c5 || '', r.c6 || '', r.c7 || '', r.c8 || ''],
+              (err2) => {
+                if (err2) console.error("Error seeding record:", err2.message);
+                completed++;
+                if (completed === records.length) {
+                  console.log("Seeding involvement records completed.");
+                }
+              }
+            );
+          });
+        }
+      );
     }
   });
 }
@@ -514,7 +725,7 @@ app.post('/api/events', (req, res) => {
   const { title, description, deadline, shifts_scope } = req.body;
   const id = 'evt-' + Date.now();
   const created_at = new Date().toISOString();
-  const scope = shifts_scope || 'Shift 1,Shift 2,Administrative Units';
+  const scope = shifts_scope || 'Shift 1,Shift 2,Combined Department';
 
   db.run("INSERT INTO events (id, title, description, created_at, deadline, shifts_scope) VALUES (?, ?, ?, ?, ?, ?)", [id, title, description, created_at, deadline, scope], function(err) {
     if (err) return res.status(500).json({ error: err.message });
@@ -582,6 +793,131 @@ app.post('/api/submissions', (req, res) => {
   db.run(query, [event_id, department_id, status, received_time, remarks], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Submission status saved successfully' });
+  });
+});
+
+// Event visibility toggle endpoint
+app.patch('/api/events/:id/visibility', (req, res) => {
+  const { is_visible_public } = req.body;
+  const val = is_visible_public ? 1 : 0;
+  db.run("UPDATE events SET is_visible_public = ? WHERE id = ?", [val, req.params.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, is_visible_public: val });
+  });
+});
+
+// Staff Involvement: Get all categories
+app.get('/api/involvement/categories', (req, res) => {
+  db.all("SELECT * FROM staff_involvement_categories ORDER BY name ASC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Staff Involvement: Add new category card
+app.post('/api/involvement/categories', (req, res) => {
+  const { name, department, coordinator, shift } = req.body;
+  if (!name) return res.status(400).json({ error: 'Category name is required' });
+  const id = 'cat-' + Date.now();
+  db.run("INSERT INTO staff_involvement_categories (id, name, department, coordinator, shift) VALUES (?, ?, ?, ?, ?)",
+    [id, name, department || null, coordinator || null, shift || null],
+    function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE') || err.message.includes('duplicate key') || err.code === '23505') {
+          return res.status(400).json({ error: 'A department action plan card with this name already exists.' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ id, name, department, coordinator, shift });
+    }
+  );
+});
+
+// Staff Involvement: Update category card details
+app.put('/api/involvement/categories/:id', (req, res) => {
+  const { name, department, coordinator, shift } = req.body;
+  db.run("UPDATE staff_involvement_categories SET name = COALESCE(?, name), department = ?, coordinator = ?, shift = ? WHERE id = ?",
+    [name, department, coordinator, shift, req.params.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, id: req.params.id, name, department, coordinator, shift });
+    }
+  );
+});
+
+// Staff Involvement: Delete category card
+app.delete('/api/involvement/categories/:id', (req, res) => {
+  db.run("DELETE FROM staff_involvement_categories WHERE id = ?", [req.params.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Category deleted successfully' });
+  });
+});
+
+// Staff Involvement: Get all records
+app.get('/api/involvement/records', (req, res) => {
+  db.all("SELECT * FROM staff_involvement_records ORDER BY id ASC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Staff Involvement: Add record manually
+app.post('/api/involvement/records', (req, res) => {
+  const { category_id, section_type, col1, col2, col3, col4, col5, col6, col7, col8 } = req.body;
+  if (!category_id || !section_type) {
+    return res.status(400).json({ error: 'Required fields are missing' });
+  }
+  db.run("INSERT INTO staff_involvement_records (category_id, section_type, col1, col2, col3, col4, col5, col6, col7, col8) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [category_id, section_type, col1, col2, col3, col4, col5, col6, col7, col8],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID, category_id, section_type, col1, col2, col3, col4, col5, col6, col7, col8 });
+    }
+  );
+});
+
+// Staff Involvement: Bulk import records
+app.post('/api/involvement/records/bulk', (req, res) => {
+  const { category_id, records, clear_existing } = req.body;
+  if (!category_id || !Array.isArray(records)) {
+    return res.status(400).json({ error: 'Invalid payload' });
+  }
+  
+  const insertRecords = () => {
+    if (records.length === 0) return res.json({ success: true, count: 0 });
+    
+    let completed = 0;
+    let errors = 0;
+    
+    records.forEach(r => {
+      db.run("INSERT INTO staff_involvement_records (category_id, section_type, col1, col2, col3, col4, col5, col6, col7, col8) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [category_id, r.section_type, r.col1, r.col2, r.col3, r.col4, r.col5, r.col6, r.col7, r.col8],
+        function(err) {
+          if (err) errors++;
+          completed++;
+          if (completed === records.length) {
+            res.json({ success: true, count: completed - errors, failed: errors });
+          }
+        }
+      );
+    });
+  };
+
+  if (clear_existing) {
+    db.run("DELETE FROM staff_involvement_records WHERE category_id = ?", [category_id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      insertRecords();
+    });
+  } else {
+    insertRecords();
+  }
+});
+
+// Staff Involvement: Delete record
+app.delete('/api/involvement/records/:id', (req, res) => {
+  db.run("DELETE FROM staff_involvement_records WHERE id = ?", [req.params.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Record deleted successfully' });
   });
 });
 
