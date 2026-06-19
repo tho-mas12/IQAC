@@ -1425,7 +1425,7 @@ function openUserModal(userId = null) {
     passInput.value = '';
     passInput.required = true;
     passLabel.innerText = 'Password';
-    roleInput.value = 'Staff';
+    roleInput.value = 'User';
     editIdInput.value = '';
   }
 
