@@ -746,6 +746,7 @@
           
           <!-- Data Table Container -->
           <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); background: #ffffff;">
+            <h4 id="involvement-table-heading" style="margin-bottom: 16px; font-weight: 700; color: var(--primary); font-size: 16px;">All Department Action Plans</h4>
             <div class="table-responsive">
               <table class="custom-table" id="involvement-restructured-table" style="width: 100%; border: 1px solid var(--card-border);">
                 <thead id="involvement-restructured-thead">
@@ -858,7 +859,26 @@
           <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
             <h5 style="margin-bottom: 12px; font-weight: 600; color: var(--primary);">Filter Options</h5>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
-              <!-- 1. Month Filter -->
+              <!-- 1. Shift Filter -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Shift</label>
+                <select id="tentative-filter-shift" class="form-select" onchange="renderStaffTentativePlan()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <option value="all">All Shifts</option>
+                  <option value="Shift 1">Shift 1</option>
+                  <option value="Shift 2">Shift 2</option>
+                  <option value="Combined Department">Combined Department</option>
+                </select>
+              </div>
+
+              <!-- 2. Department Filter -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Department</label>
+                <select id="tentative-filter-dept" class="form-select" onchange="renderStaffTentativePlan()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <!-- Dynamic Departments -->
+                </select>
+              </div>
+
+              <!-- 3. Month Filter -->
               <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Tentative Month</label>
                 <select id="tentative-filter-month" class="form-select" onchange="renderStaffTentativePlan()" style="font-size: 13px; height: 36px; padding: 0 10px;">
@@ -875,25 +895,6 @@
                   <option value="October">October</option>
                   <option value="November">November</option>
                   <option value="December">December</option>
-                </select>
-              </div>
-
-              <!-- 2. Department Filter -->
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Department</label>
-                <select id="tentative-filter-dept" class="form-select" onchange="renderStaffTentativePlan()" style="font-size: 13px; height: 36px; padding: 0 10px;">
-                  <!-- Dynamic Departments -->
-                </select>
-              </div>
-
-              <!-- 3. Shift Filter -->
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Shift</label>
-                <select id="tentative-filter-shift" class="form-select" onchange="renderStaffTentativePlan()" style="font-size: 13px; height: 36px; padding: 0 10px;">
-                  <option value="all">All Shifts</option>
-                  <option value="Shift 1">Shift 1</option>
-                  <option value="Shift 2">Shift 2</option>
-                  <option value="Combined Department">Combined Department</option>
                 </select>
               </div>
 
@@ -934,6 +935,7 @@
 
           <!-- Table Panel -->
           <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); background: #ffffff;">
+            <h4 id="tentative-table-heading" style="margin-bottom: 16px; font-weight: 700; color: var(--primary); font-size: 16px;">Part B Academic Activities</h4>
             <div class="table-responsive">
               <table class="custom-table" id="tentative-plan-table" style="width: 100%; border: 1px solid var(--card-border);">
                 <thead id="tentative-plan-thead">
@@ -963,7 +965,9 @@
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
                 <div class="form-group">
                   <label class="form-label" for="user-plan-dept" style="font-weight: 600;">Department</label>
-                  <input type="text" id="user-plan-dept" class="form-control" placeholder="e.g. Computer Science" style="height: 38px; padding-left: 10px;" required>
+                  <select id="user-plan-dept" class="form-select" style="height: 38px; padding: 0 10px;" required>
+                    <option value="">Select Department</option>
+                  </select>
                 </div>
                 <div class="form-group">
                   <label class="form-label" for="user-plan-coordinator" style="font-weight: 600;">Head / Coordinator</label>

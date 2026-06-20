@@ -250,6 +250,8 @@ async function switchSubView(viewId) {
     const menuEl = document.getElementById('menu-staff-involvement');
     if (menuEl) menuEl.classList.add('active');
     document.getElementById('header-title').innerText = 'Category Details';
+    await loadInvolvementData();
+    await loadDepartments();
     renderCategoryDetailPage();
   } else if (viewId === 'public-status') {
     document.getElementById('subview-public-status').style.display = 'block';
@@ -1975,6 +1977,31 @@ function escapeHtml(string) {
     .replace(/'/g, '&#39;');
 }
 
+function getCleanDeptAndShift(category) {
+  let dept = category.department || '';
+  let shift = category.shift || '';
+  
+  // Normalize shift always
+  if (shift === 'Shift I') shift = 'Shift 1';
+  else if (shift === 'Shift II') shift = 'Shift 2';
+  
+  if ((!dept || !shift) && category.name) {
+    const match = category.name.match(/^(.*?)\s*\((Shift 1|Shift 2|Combined Department|Shift I|Shift II)\)/i);
+    if (match) {
+      if (!dept) dept = match[1].trim();
+      if (!shift) {
+        let shiftVal = match[2].trim();
+        if (shiftVal === 'Shift I') shift = 'Shift 1';
+        else if (shiftVal === 'Shift II') shift = 'Shift 2';
+        else shift = shiftVal;
+      }
+    } else {
+      if (!dept) dept = category.name;
+    }
+  }
+  return { department: dept, shift: shift };
+}
+
 function renderStaffInvolvementRestructured() {
   // Populate the Department filter dropdown if it doesn't have options yet
   const deptSelect = document.getElementById('involvement-filter-dept');
@@ -1987,6 +2014,24 @@ function renderStaffInvolvementRestructured() {
   const selectedResp = document.getElementById('involvement-filter-responsibility').value;
   const selectedDept = document.getElementById('involvement-filter-dept').value;
   const selectedShift = document.getElementById('involvement-filter-shift').value;
+
+  const headingEl = document.getElementById('involvement-table-heading');
+  if (headingEl) {
+    let modeText = "Department Action Plans";
+    if (selectedResp !== 'all') {
+      modeText = `Responsibility Data (${selectedResp})`;
+    }
+    
+    let parts = [];
+    if (selectedShift !== 'all') parts.push(`Shift: ${selectedShift}`);
+    if (selectedDept !== 'all') parts.push(`Department: ${selectedDept}`);
+    
+    let filterText = modeText;
+    if (parts.length > 0) {
+      filterText += " - " + parts.join(' | ');
+    }
+    headingEl.innerHTML = `<span style="font-weight: 700; font-size: 16px; color: var(--primary);">${escapeHtml(filterText)}</span>`;
+  }
 
   const thead = document.getElementById('involvement-restructured-thead');
   const tbody = document.getElementById('involvement-restructured-tbody');
@@ -2021,8 +2066,9 @@ function renderStaffInvolvementRestructured() {
   thead.innerHTML = headersHtml;
 
   const filteredCategories = (state.involvementCategories || []).filter(c => {
-    if (selectedDept !== 'all' && c.department !== selectedDept) return false;
-    if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
+    const info = getCleanDeptAndShift(c);
+    if (selectedDept !== 'all' && info.department !== selectedDept) return false;
+    if (selectedShift !== 'all' && info.shift !== selectedShift) return false;
     return true;
   });
 
@@ -2045,12 +2091,13 @@ function renderStaffInvolvementRestructured() {
     tr.onmouseover = () => { tr.style.background = '#f8fafc'; };
     tr.onmouseout = () => { tr.style.background = 'transparent'; };
 
-    const deptName = category.department || '';
+    const info = getCleanDeptAndShift(category);
+    const deptName = info.department;
+    const shift = info.shift;
     const coordinator = category.coordinator || '-';
-    const shift = category.shift || '';
     const viewButtonHtml = `
       <td style="padding: 12px 16px; text-align: center;">
-        <button class="btn btn-primary btn-xs" onclick="viewActionPlanFromStaff('${escapeHtml(deptName)}', '${escapeHtml(shift)}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">
+        <button class="btn btn-primary btn-xs" onclick="viewActionPlanFromStaff('${category.id}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">
           View Data
         </button>
       </td>
@@ -2089,9 +2136,8 @@ function renderStaffInvolvementRestructured() {
   });
 }
 
-function viewActionPlanFromStaff(department, shift) {
-  state.staffViewPlanDept = department;
-  state.staffViewPlanShift = shift;
+function viewActionPlanFromStaff(categoryId) {
+  state.staffViewPlanId = categoryId;
   switchSubView('user-action-plan');
 }
 
@@ -2319,6 +2365,29 @@ function renderStaffTentativePlan() {
     mode = 'B';
   }
 
+  const headingEl = document.getElementById('tentative-table-heading');
+  if (headingEl) {
+    let modeText = "Part B Academic Activities";
+    if (mode === 'A') {
+      modeText = "Type (Conferences/FDP/Webinar)";
+    } else if (mode === 'B') {
+      modeText = "AAA Proposed Plan Month";
+    }
+    
+    let parts = [];
+    if (selectedShift !== 'all') parts.push(`Shift: ${selectedShift}`);
+    if (selectedDept !== 'all') parts.push(`Department: ${selectedDept}`);
+    if (selectedMonth !== 'all') parts.push(`Tentative Month: ${selectedMonth}`);
+    if (selectedType !== 'all') parts.push(`Type: ${selectedType}`);
+    if (selectedAaaMonth !== 'all') parts.push(`AAA Month: ${selectedAaaMonth}`);
+    
+    let filterText = modeText;
+    if (parts.length > 0) {
+      filterText += " - " + parts.join(' | ');
+    }
+    headingEl.innerHTML = `<span style="font-weight: 700; font-size: 16px; color: var(--primary);">${escapeHtml(filterText)}</span>`;
+  }
+
   let headersHtml = '';
   if (mode === 'A') {
     headersHtml = `
@@ -2333,6 +2402,7 @@ function renderStaffTentativePlan() {
         <th style="padding: 10px; text-align: left;">Faculty Coordinator(s)</th>
         <th style="padding: 10px; text-align: left; width: 100px;">IKS Aligned</th>
         <th style="padding: 10px; text-align: left; width: 100px;">SDG Aligned</th>
+        <th style="padding: 10px; text-align: left; width: 160px;">Status / Remark</th>
       </tr>
     `;
   } else if (mode === 'B') {
@@ -2344,6 +2414,7 @@ function renderStaffTentativePlan() {
         <th style="padding: 10px; text-align: left;">Planned Activity</th>
         <th style="padding: 10px; text-align: left; width: 120px;">Tentative Month</th>
         <th style="padding: 10px; text-align: left;">Faculty Assigned</th>
+        <th style="padding: 10px; text-align: left; width: 160px;">Status / Remark</th>
       </tr>
     `;
   } else {
@@ -2355,14 +2426,16 @@ function renderStaffTentativePlan() {
         <th style="padding: 10px; text-align: left;">Activity</th>
         <th style="padding: 10px; text-align: left;">Class / Target Group</th>
         <th style="padding: 10px; text-align: left;">Faculty Coordinator</th>
+        <th style="padding: 10px; text-align: left; width: 160px;">Status / Remark</th>
       </tr>
     `;
   }
   thead.innerHTML = headersHtml;
 
   const filteredCats = (state.involvementCategories || []).filter(c => {
-    if (selectedDept !== 'all' && c.department !== selectedDept) return false;
-    if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
+    const info = getCleanDeptAndShift(c);
+    if (selectedDept !== 'all' && info.department !== selectedDept) return false;
+    if (selectedShift !== 'all' && info.shift !== selectedShift) return false;
     return true;
   });
 
@@ -2374,13 +2447,26 @@ function renderStaffTentativePlan() {
     return recordMonth.trim().toLowerCase() === selectedMonth.trim().toLowerCase();
   };
 
+  const matchConfType = (recordType, selectedType) => {
+    if (selectedType === 'all') return true;
+    if (!recordType) return false;
+    
+    const rType = recordType.trim().toLowerCase();
+    const sType = selectedType.trim().toLowerCase();
+    
+    const rNorm = rType.endsWith('s') ? rType.slice(0, -1) : rType;
+    const sNorm = sType.endsWith('s') ? sType.slice(0, -1) : sType;
+    
+    return rNorm === sNorm;
+  };
+
   filteredCats.forEach(cat => {
     const catRecords = (state.involvementRecords || []).filter(r => r.category_id === cat.id);
     
     if (mode === 'A') {
       const confRecords = catRecords.filter(r => r.section_type === 'Conferences');
       confRecords.forEach(r => {
-        if (selectedType !== 'all' && r.col3 && r.col3.trim().toLowerCase() !== selectedType.trim().toLowerCase()) return;
+        if (!matchConfType(r.col3, selectedType)) return;
         if (!isMonthMatch(r.col5)) return;
         recordsToDisplay.push({ category: cat, record: r });
       });
@@ -2401,7 +2487,7 @@ function renderStaffTentativePlan() {
   });
 
   if (recordsToDisplay.length === 0) {
-    const colSpan = mode === 'A' ? 10 : (mode === 'B' ? 6 : 6);
+    const colSpan = mode === 'A' ? 11 : (mode === 'B' ? 7 : 7);
     tbody.innerHTML = `
       <tr>
         <td colspan="${colSpan}" style="text-align: center; padding: 40px; color: var(--text-muted);">
@@ -2418,9 +2504,37 @@ function renderStaffTentativePlan() {
     
     const cat = item.category;
     const r = item.record;
-    const dept = cat.department || '';
-    const shift = cat.shift || '';
+    const info = getCleanDeptAndShift(cat);
+    const dept = info.department;
+    const shift = info.shift;
     const coordinator = cat.coordinator || '-';
+    const status = r.status || 'Pending';
+    const remark = r.remark || '';
+
+    const statusCellHtml = `
+      <td style="padding: 10px; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div>
+            <span class="badge ${status === 'Done' ? 'badge-success' : 'badge-secondary'}" style="padding: 4px 8px; font-size: 11px;">
+              ${escapeHtml(status)}
+            </span>
+          </div>
+          ${remark ? `<div style="font-size: 11px; color: var(--text-muted); font-style: italic; max-width: 140px; word-wrap: break-word;">Remark: ${escapeHtml(remark)}</div>` : ''}
+          <div style="display: flex; gap: 6px; margin-top: 4px;">
+            <button class="btn ${status === 'Done' ? 'btn-secondary' : 'btn-success'} btn-xs" 
+                    onclick="toggleRecordStatus('${r.id}', '${status === 'Done' ? 'Pending' : 'Done'}', \`${escapeHtml(remark).replace(/'/g, "\\'")}\`)" 
+                    style="padding: 2px 6px; font-size: 11px;">
+              ${status === 'Done' ? 'Undo' : 'Done'}
+            </button>
+            <button class="btn btn-primary btn-xs" 
+                    onclick="editRecordRemark('${r.id}', '${status}', \`${escapeHtml(remark).replace(/'/g, "\\'")}\`)" 
+                    style="padding: 2px 6px; font-size: 11px;">
+              Remark
+            </button>
+          </div>
+        </div>
+      </td>
+    `;
 
     if (mode === 'A') {
       tr.innerHTML = `
@@ -2434,6 +2548,7 @@ function renderStaffTentativePlan() {
         <td style="padding: 10px;">${escapeHtml(r.col6 || '-')}</td>
         <td style="padding: 10px;">${escapeHtml(r.col7 || '-')}</td>
         <td style="padding: 10px;">${escapeHtml(r.col8 || '-')}</td>
+        ${statusCellHtml}
       `;
     } else if (mode === 'B') {
       tr.innerHTML = `
@@ -2443,6 +2558,7 @@ function renderStaffTentativePlan() {
         <td style="padding: 10px; font-weight: 500;">${escapeHtml(r.col2 || '-')}</td>
         <td style="padding: 10px; color: var(--primary); font-weight: 500;">${escapeHtml(r.col3 || '-')}</td>
         <td style="padding: 10px;">${escapeHtml(r.col4 || '-')}</td>
+        ${statusCellHtml}
       `;
     } else {
       tr.innerHTML = `
@@ -2452,11 +2568,40 @@ function renderStaffTentativePlan() {
         <td style="padding: 10px; font-weight: 500;">${escapeHtml(r.col2 || '-')}</td>
         <td style="padding: 10px;">${escapeHtml(r.col4 || '-')}</td>
         <td style="padding: 10px;">${escapeHtml(r.col5 || '-')}</td>
+        ${statusCellHtml}
       `;
     }
 
     tbody.appendChild(tr);
   });
+}
+
+async function toggleRecordStatus(recordId, newStatus, currentRemark) {
+  try {
+    await fetchAPI(`/involvement/records/${recordId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: newStatus, remark: currentRemark })
+    });
+    await loadInvolvementData();
+    renderStaffTentativePlan();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function editRecordRemark(recordId, currentStatus, currentRemark) {
+  const newRemark = prompt("Enter Remark (or cancel to keep current):", currentRemark);
+  if (newRemark === null) return;
+  try {
+    await fetchAPI(`/involvement/records/${recordId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: currentStatus, remark: newRemark })
+    });
+    await loadInvolvementData();
+    renderStaffTentativePlan();
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function exportTentativePlanExcel() {
@@ -2965,12 +3110,12 @@ function renderCategoryDetailPage() {
   
   // Populate meta-info values
   const deptSelect = document.getElementById('involvement-detail-dept');
-  if (deptSelect && deptSelect.children.length === 0) {
-    deptSelect.innerHTML = '<option value="">-- Select Department --</option>' + 
-      state.departments.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
-  }
   if (deptSelect) {
-    deptSelect.value = category.department || '';
+    const currentVal = category.department || '';
+    deptSelect.innerHTML = '<option value="">-- Select Department --</option>' + 
+      [...new Set((state.departments || []).map(d => d.name))].filter(Boolean).sort()
+        .map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+    deptSelect.value = currentVal;
   }
   
   const coordInput = document.getElementById('involvement-detail-coordinator');
@@ -4499,6 +4644,31 @@ const partBFields = [
 function renderUserActionPlanForm() {
   const deptInput = document.getElementById('user-plan-dept');
   if (deptInput) {
+    const uniqueDepts = [...new Set((state.departments || []).map(d => d.name))].filter(Boolean).sort();
+    
+    // Get currently viewed category's department name
+    let editDept = '';
+    if (state.staffViewPlanId) {
+      const cat = (state.involvementCategories || []).find(c => c.id === state.staffViewPlanId);
+      if (cat && cat.department) {
+        editDept = cat.department;
+      }
+    }
+    
+    // Get logged-in user's department name
+    let userDept = '';
+    if (state.currentUser && state.currentUser.role === 'User' && state.currentUser.name && state.currentUser.name !== 'Department User') {
+      userDept = state.currentUser.name.trim();
+    }
+    
+    const allDepts = new Set(uniqueDepts);
+    if (editDept) allDepts.add(editDept);
+    if (userDept) allDepts.add(userDept);
+    
+    const sortedDepts = [...allDepts].sort();
+    
+    deptInput.innerHTML = '<option value="">Select Department</option>' +
+      sortedDepts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
     deptInput.value = '';
     deptInput.readOnly = false;
   }
@@ -4512,22 +4682,11 @@ function renderUserActionPlanForm() {
     shiftInput.disabled = false;
   }
 
-  // Handle staff/admin redirecting to view/edit a plan
-  if (state.staffViewPlanDept && state.staffViewPlanShift) {
-    const dept = state.staffViewPlanDept;
-    const shift = state.staffViewPlanShift;
-    state.staffViewPlanDept = null;
-    state.staffViewPlanShift = null;
-
-    if (deptInput) {
-      deptInput.value = dept;
-      deptInput.readOnly = false;
-    }
-    if (shiftInput) {
-      shiftInput.value = shift;
-      shiftInput.disabled = false;
-    }
-    loadExistingActionPlan(dept, shift);
+  // Handle staff/admin redirecting to view/edit a plan by category ID
+  if (state.staffViewPlanId) {
+    const catId = state.staffViewPlanId;
+    state.staffViewPlanId = null;
+    loadExistingActionPlanById(catId);
     return;
   }
 
@@ -4539,7 +4698,7 @@ function renderUserActionPlanForm() {
   if (!state.actionPlanListenersBound) {
     if (deptInput && shiftInput) {
       const handler = () => {
-        const dept = deptInput.value.trim();
+        const dept = deptInput.value;
         const shift = shiftInput.value;
         if (dept && shift) {
           loadExistingActionPlan(dept, shift);
@@ -4607,129 +4766,149 @@ function renderUserActionPlanForm() {
   addUserPlanAaaRow();
 }
 
+function loadActionPlanFromCategory(category) {
+  if (!category) return;
+  
+  const isStaff = (state.currentUser && (state.currentUser.role === 'Staff' || state.currentUser.role === 'Director'));
+  const isDefaultMode = !isStaff;
+
+  const deptInput = document.getElementById('user-plan-dept');
+  const shiftInput = document.getElementById('user-plan-shift');
+  const coordinatorInput = document.getElementById('user-plan-coordinator');
+
+  if (deptInput) {
+    deptInput.value = category.department || '';
+  }
+  if (shiftInput) {
+    shiftInput.value = category.shift || 'Shift 1';
+  }
+  if (coordinatorInput) {
+    coordinatorInput.value = category.coordinator || '';
+  }
+
+  // Fetch all records for this category
+  const catRecords = (state.involvementRecords || []).filter(r => r.category_id === category.id);
+  
+  // Clear and populate Part A
+  const tbodyA = document.getElementById('user-plan-part-a-body');
+  if (tbodyA) {
+    tbodyA.innerHTML = '';
+    const partARecords = catRecords.filter(r => r.section_type === 'Part A');
+    
+    // Populate defaults first (preserving their default status)
+    partAFields.forEach(f => {
+      const record = partARecords.find(r => r.col2 === f.label || parseInt(r.col1) === f.id);
+      const val = record ? record.col3 : '';
+      addUserPlanPartARow(f.id, f.label, val, isDefaultMode);
+    });
+    
+    // Populate custom rows
+    const defaultLabels = partAFields.map(f => f.label.toLowerCase());
+    partARecords.forEach(r => {
+      const isDefaultRow = defaultLabels.includes(r.col2.toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 23);
+      if (!isDefaultRow) {
+        addUserPlanPartARow(r.col1, r.col2, r.col3, false);
+      }
+    });
+  }
+  
+  // Clear and populate Part B
+  const tbodyB = document.getElementById('user-plan-part-b-body');
+  if (tbodyB) {
+    tbodyB.innerHTML = '';
+    const partBRecords = catRecords.filter(r => r.section_type === 'Part B');
+    
+    // Populate defaults first
+    partBFields.forEach(f => {
+      const record = partBRecords.find(r => r.col2 === f.label || parseInt(r.col1) === f.id);
+      const month = record ? record.col3 : '';
+      const target = record ? record.col4 : '';
+      const coord = record ? record.col5 : '';
+      addUserPlanPartBRow(f.id, f.label, month, target, coord, isDefaultMode);
+    });
+    
+    // Populate custom rows
+    const defaultLabels = partBFields.map(f => f.label.toLowerCase());
+    partBRecords.forEach(r => {
+      const isDefaultRow = defaultLabels.includes(r.col2.toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 19);
+      if (!isDefaultRow) {
+        addUserPlanPartBRow(r.col1, r.col2, r.col3, r.col4, r.col5, false);
+      }
+    });
+  }
+  
+  // Clear and populate Class Mentors
+  const tbodyMentors = document.getElementById('user-plan-mentors-body');
+  if (tbodyMentors) {
+    tbodyMentors.innerHTML = '';
+    const mentorRecords = catRecords.filter(r => r.section_type === 'Class Mentors');
+    if (mentorRecords.length > 0) {
+      mentorRecords.forEach(r => {
+        addUserPlanMentorRow(r.col1, r.col2);
+      });
+    } else {
+      addUserPlanMentorRow('', '');
+    }
+  }
+  
+  // Clear and populate Clubs
+  const tbodyClubs = document.getElementById('user-plan-clubs-body');
+  if (tbodyClubs) {
+    tbodyClubs.innerHTML = '';
+    const clubRecords = catRecords.filter(r => r.section_type === 'Clubs');
+    if (clubRecords.length > 0) {
+      clubRecords.forEach(r => {
+        addUserPlanClubRow(r.col1, r.col2, r.col3, r.col4);
+      });
+    } else {
+      addUserPlanClubRow();
+    }
+  }
+  
+  // Clear and populate Conferences
+  const tbodyConferences = document.getElementById('user-plan-conferences-body');
+  if (tbodyConferences) {
+    tbodyConferences.innerHTML = '';
+    const confRecords = catRecords.filter(r => r.section_type === 'Conferences');
+    if (confRecords.length > 0) {
+      confRecords.forEach(r => {
+        addUserPlanConferenceRow(r.col1, r.col2, r.col3, r.col4, r.col5, r.col6, r.col7, r.col8);
+      });
+    } else {
+      addUserPlanConferenceRow();
+    }
+  }
+  
+  // Clear and populate AAA Proposed Plan
+  const tbodyAaa = document.getElementById('user-plan-aaa-body');
+  if (tbodyAaa) {
+    tbodyAaa.innerHTML = '';
+    const aaaRecords = catRecords.filter(r => r.section_type === 'AAA Proposed Plan');
+    if (aaaRecords.length > 0) {
+      aaaRecords.forEach(r => {
+        addUserPlanAaaRow(r.col1, r.col2, r.col3, r.col4);
+      });
+    } else {
+      addUserPlanAaaRow();
+    }
+  }
+}
+
 async function loadExistingActionPlan(department, shift) {
   if (!state.involvementCategories) {
     await loadInvolvementData();
   }
   const cardName = `${department} (${shift}) Action Plan 2026-2027`;
-  const category = state.involvementCategories.find(c => c.name.toLowerCase() === cardName.toLowerCase());
+  const category = state.involvementCategories.find(c => 
+    c.name.toLowerCase() === cardName.toLowerCase() ||
+    (c.department && c.department.toLowerCase() === department.toLowerCase() && c.shift && c.shift.toLowerCase() === shift.toLowerCase())
+  );
   
   const isStaff = (state.currentUser && (state.currentUser.role === 'Staff' || state.currentUser.role === 'Director'));
   const isDefaultMode = !isStaff;
   
   if (category) {
-    // Populate coordinator
-    const coordinatorInput = document.getElementById('user-plan-coordinator');
-    if (coordinatorInput) {
-      coordinatorInput.value = category.coordinator || '';
-    }
-    
-    // Fetch all records for this category
-    const catRecords = (state.involvementRecords || []).filter(r => r.category_id === category.id);
-    
-    // Clear and populate Part A
-    const tbodyA = document.getElementById('user-plan-part-a-body');
-    if (tbodyA) {
-      tbodyA.innerHTML = '';
-      const partARecords = catRecords.filter(r => r.section_type === 'Part A');
-      
-      // Populate defaults first (preserving their default status)
-      partAFields.forEach(f => {
-        const record = partARecords.find(r => r.col2 === f.label || parseInt(r.col1) === f.id);
-        const val = record ? record.col3 : '';
-        addUserPlanPartARow(f.id, f.label, val, isDefaultMode);
-      });
-      
-      // Populate custom rows
-      const defaultLabels = partAFields.map(f => f.label.toLowerCase());
-      partARecords.forEach(r => {
-        const isDefaultRow = defaultLabels.includes(r.col2.toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 23);
-        if (!isDefaultRow) {
-          addUserPlanPartARow(r.col1, r.col2, r.col3, false);
-        }
-      });
-    }
-    
-    // Clear and populate Part B
-    const tbodyB = document.getElementById('user-plan-part-b-body');
-    if (tbodyB) {
-      tbodyB.innerHTML = '';
-      const partBRecords = catRecords.filter(r => r.section_type === 'Part B');
-      
-      // Populate defaults first
-      partBFields.forEach(f => {
-        const record = partBRecords.find(r => r.col2 === f.label || parseInt(r.col1) === f.id);
-        const month = record ? record.col3 : '';
-        const target = record ? record.col4 : '';
-        const coord = record ? record.col5 : '';
-        addUserPlanPartBRow(f.id, f.label, month, target, coord, isDefaultMode);
-      });
-      
-      // Populate custom rows
-      const defaultLabels = partBFields.map(f => f.label.toLowerCase());
-      partBRecords.forEach(r => {
-        const isDefaultRow = defaultLabels.includes(r.col2.toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 19);
-        if (!isDefaultRow) {
-          addUserPlanPartBRow(r.col1, r.col2, r.col3, r.col4, r.col5, false);
-        }
-      });
-    }
-    
-    // Clear and populate Class Mentors
-    const tbodyMentors = document.getElementById('user-plan-mentors-body');
-    if (tbodyMentors) {
-      tbodyMentors.innerHTML = '';
-      const mentorRecords = catRecords.filter(r => r.section_type === 'Class Mentors');
-      if (mentorRecords.length > 0) {
-        mentorRecords.forEach(r => {
-          addUserPlanMentorRow(r.col1, r.col2);
-        });
-      } else {
-        addUserPlanMentorRow('', '');
-      }
-    }
-    
-    // Clear and populate Clubs
-    const tbodyClubs = document.getElementById('user-plan-clubs-body');
-    if (tbodyClubs) {
-      tbodyClubs.innerHTML = '';
-      const clubRecords = catRecords.filter(r => r.section_type === 'Clubs');
-      if (clubRecords.length > 0) {
-        clubRecords.forEach(r => {
-          addUserPlanClubRow(r.col1, r.col2, r.col3, r.col4);
-        });
-      } else {
-        addUserPlanClubRow();
-      }
-    }
-    
-    // Clear and populate Conferences
-    const tbodyConferences = document.getElementById('user-plan-conferences-body');
-    if (tbodyConferences) {
-      tbodyConferences.innerHTML = '';
-      const confRecords = catRecords.filter(r => r.section_type === 'Conferences');
-      if (confRecords.length > 0) {
-        confRecords.forEach(r => {
-          addUserPlanConferenceRow(r.col1, r.col2, r.col3, r.col4, r.col5, r.col6, r.col7, r.col8);
-        });
-      } else {
-        addUserPlanConferenceRow();
-      }
-    }
-    
-    // Clear and populate AAA Proposed Plan
-    const tbodyAaa = document.getElementById('user-plan-aaa-body');
-    if (tbodyAaa) {
-      tbodyAaa.innerHTML = '';
-      const aaaRecords = catRecords.filter(r => r.section_type === 'AAA Proposed Plan');
-      if (aaaRecords.length > 0) {
-        aaaRecords.forEach(r => {
-          addUserPlanAaaRow(r.col1, r.col2, r.col3, r.col4);
-        });
-      } else {
-        addUserPlanAaaRow();
-      }
-    }
+    loadActionPlanFromCategory(category);
   } else {
     // Keep inputs but reset tables
     const tbodyA = document.getElementById('user-plan-part-a-body');
@@ -4758,6 +4937,16 @@ async function loadExistingActionPlan(department, shift) {
     addUserPlanClubRow();
     addUserPlanConferenceRow();
     addUserPlanAaaRow();
+  }
+}
+
+async function loadExistingActionPlanById(categoryId) {
+  if (!state.involvementCategories) {
+    await loadInvolvementData();
+  }
+  const category = state.involvementCategories.find(c => c.id === categoryId);
+  if (category) {
+    loadActionPlanFromCategory(category);
   }
 }
 

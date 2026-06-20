@@ -285,20 +285,61 @@ function initializeDatabase() {
                                 db.run(addCol('staff_involvement_records', 'col6', 'TEXT'), [], () => {
                                   db.run(addCol('staff_involvement_records', 'col7', 'TEXT'), [], () => {
                                     db.run(addCol('staff_involvement_records', 'col8', 'TEXT'), [], () => {
-                                      // 1. Seed users
-                                      db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
-                                        if (row && (row.count === 0 || row.count === '0')) {
-                                          db.run("INSERT INTO users (username, password, name, role) VALUES ('staff', 'staff123', 'IQAC Coordinator', 'Staff')", [], () => {
-                                            db.run("INSERT INTO users (username, password, name, role) VALUES ('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director')", [], () => {
-                                              db.run("INSERT INTO users (username, password, name, role) VALUES ('user', 'user123', 'Department User', 'User')", [], () => {
-                                                console.log('Default users seeded.');
-                                                seedDepartments();
+                                      db.run(addCol('staff_involvement_records', 'status', "VARCHAR(50)", "'Pending'"), [], () => {
+                                        db.run(addCol('staff_involvement_records', 'remark', "TEXT", "''"), [], () => {
+                                          // Clean up null/empty department & shift values from category names, and standardize shift values
+                                          db.all("SELECT id, name, department, shift FROM staff_involvement_categories", [], (err, rows) => {
+                                            if (rows) {
+                                              rows.forEach(row => {
+                                                let updateNeeded = false;
+                                                let dept = row.department;
+                                                let shift = row.shift;
+                                                
+                                                // Standardize existing shift values in DB
+                                                if (shift === 'Shift I' || shift === 'Shift II') {
+                                                  shift = (shift === 'Shift I') ? 'Shift 1' : 'Shift 2';
+                                                  updateNeeded = true;
+                                                }
+                                                
+                                                if (!dept || !shift) {
+                                                  const match = row.name.match(/^(.*?)\s*\((Shift 1|Shift 2|Combined Department|Shift I|Shift II)\)/i);
+                                                  if (match) {
+                                                    if (!dept) {
+                                                      dept = match[1].trim();
+                                                      updateNeeded = true;
+                                                    }
+                                                    if (!shift) {
+                                                      let shiftVal = match[2].trim();
+                                                      if (shiftVal === 'Shift I') shift = 'Shift 1';
+                                                      else if (shiftVal === 'Shift II') shift = 'Shift 2';
+                                                      else shift = shiftVal;
+                                                      updateNeeded = true;
+                                                    }
+                                                  }
+                                                }
+                                                if (updateNeeded) {
+                                                  db.run("UPDATE staff_involvement_categories SET department = ?, shift = ? WHERE id = ?", [dept, shift, row.id]);
+                                                }
                                               });
-                                            });
+                                            }
                                           });
-                                        } else {
-                                          seedDepartments();
-                                        }
+                                          
+                                          // 1. Seed users
+                                          db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
+                                            if (row && (row.count === 0 || row.count === '0')) {
+                                              db.run("INSERT INTO users (username, password, name, role) VALUES ('staff', 'staff123', 'IQAC Coordinator', 'Staff')", [], () => {
+                                                db.run("INSERT INTO users (username, password, name, role) VALUES ('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director')", [], () => {
+                                                  db.run("INSERT INTO users (username, password, name, role) VALUES ('user', 'user123', 'Department User', 'User')", [], () => {
+                                                    console.log('Default users seeded.');
+                                                    seedDepartments();
+                                                  });
+                                                });
+                                              });
+                                            } else {
+                                              seedDepartments();
+                                            }
+                                          });
+                                        });
                                       });
                                     });
                                   });
@@ -919,6 +960,18 @@ app.delete('/api/involvement/records/:id', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Record deleted successfully' });
   });
+});
+
+// Staff Involvement: Update record status and remark
+app.put('/api/involvement/records/:id/status', (req, res) => {
+  const { status, remark } = req.body;
+  db.run("UPDATE staff_involvement_records SET status = ?, remark = ? WHERE id = ?",
+    [status, remark, req.params.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, id: req.params.id, status, remark });
+    }
+  );
 });
 
 // Serve frontend SPA for any fallback routing (SPA support)
