@@ -85,6 +85,12 @@
             <span>Staff Involvement</span>
           </a>
         </li>
+        <li class="menu-item" id="menu-staff-tentative-plan">
+          <a onclick="switchSubView('staff-tentative-plan')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3.5"></path><path d="m12.5 17 3 3 5.5-5.5"></path><path d="M3 10h18"></path><path d="M8 2v4"></path><path d="M16 2v4"></path></svg>
+            <span>Tentative Plans</span>
+          </a>
+        </li>
         <li class="menu-item" id="menu-staff-action-plan">
           <a onclick="switchSubView('user-action-plan')">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -670,44 +676,86 @@
           <div class="section-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div class="section-title">
               <h3>Staff Involvement</h3>
-              <p class="section-desc">Search and view staff activities, publications, and involvements.</p>
+              <p class="section-desc">View and filter department responsibilities and details.</p>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button id="btn-export-excel" class="btn btn-secondary btn-sm" onclick="exportAllInvolvementsExcel()">
-                📥 Export Excel (All)
+              <button id="btn-export-excel" class="btn btn-secondary btn-sm" onclick="exportRestructuredInvolvementsExcel()">
+                📥 Export Excel
               </button>
-              <button id="btn-export-pdf" class="btn btn-primary btn-sm" onclick="exportAllInvolvementsPDF()">
-                📄 Export PDF (All)
+              <button id="btn-export-pdf" class="btn btn-primary btn-sm" onclick="exportRestructuredInvolvementsPDF()">
+                📄 Export PDF
               </button>
             </div>
           </div>
 
-          <!-- Global Filter & Search Bar -->
-          <div class="glass-panel" style="padding: 16px; border-radius: 12px; border: 1px solid var(--card-border); display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px; align-items: end; margin-bottom: 20px; background: #ffffff;">
-            <div class="form-group" style="margin-bottom: 0; position: relative;">
-              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Global Search</label>
-              <input type="text" id="involvement-global-search" class="form-control" placeholder="Search staff name, activity, or keyword across all plans..." oninput="renderStaffInvolvement()" style="font-size: 13px; height: 36px; padding-left: 32px;">
-              <span style="position: absolute; left: 10px; top: 34px; color: var(--text-muted);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </span>
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Department</label>
-              <select id="involvement-global-dept" class="form-select" onchange="renderStaffInvolvement()" style="font-size: 13px; height: 36px; padding: 0 10px;"></select>
-            </div>
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Shift</label>
-              <select id="involvement-global-shift" class="form-select" onchange="renderStaffInvolvement()" style="font-size: 13px; height: 36px; padding: 0 10px;">
-                <option value="all">All Shifts</option>
-                <option value="Shift 1">Shift 1</option>
-                <option value="Shift 2">Shift 2</option>
-                <option value="Combined Department">Combined Department</option>
-              </select>
+          <!-- Restructured Filters Panel -->
+          <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
+            <h5 style="margin-bottom: 12px; font-weight: 600; color: var(--primary);">Filter Options</h5>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+              <!-- 1. Responsibility Filter -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Responsibility (Part A Only)</label>
+                <select id="involvement-filter-responsibility" class="form-select" onchange="renderStaffInvolvementRestructured()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <option value="all">Select Responsibility (Show All)</option>
+                  <option value="PhD Programme">PhD Programme</option>
+                  <option value="PG Programme">PG Programme</option>
+                  <option value="UG Programme">UG Programme</option>
+                  <option value="MQC">MQC</option>
+                  <option value="JosTEL">JosTEL</option>
+                  <option value="Question Bank">Question Bank</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Project">Project</option>
+                  <option value="MOOCs">MOOCs</option>
+                  <option value="Student Progression">Student Progression</option>
+                  <option value="Placement">Placement</option>
+                  <option value="Industry Collaboration">Industry Collaboration</option>
+                  <option value="Coaching Programmes for Competitive Exams">Coaching Programmes for Competitive Exams</option>
+                  <option value="Association">Association</option>
+                  <option value="INDEP">INDEP</option>
+                  <option value="Sports Activities">Sports Activities</option>
+                  <option value="Consultancy & Corporate Training">Consultancy & Corporate Training</option>
+                  <option value="Girls’ Student In-charge">Girls’ Student In-charge</option>
+                  <option value="SHEPHERD">SHEPHERD</option>
+                  <option value="Department Inventory & Procurement">Department Inventory & Procurement</option>
+                  <option value="Department Library">Department Library</option>
+                  <option value="Department Website">Department Website</option>
+                  <option value="Specific Lab(s) in the Department">Specific Lab(s) in the Department</option>
+                </select>
+              </div>
+              
+              <!-- 2. Department Filter -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Department</label>
+                <select id="involvement-filter-dept" class="form-select" onchange="renderStaffInvolvementRestructured()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <!-- Dynamic Departments -->
+                </select>
+              </div>
+
+              <!-- 3. Shift Filter -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Shift</label>
+                <select id="involvement-filter-shift" class="form-select" onchange="renderStaffInvolvementRestructured()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <option value="all">All Shifts</option>
+                  <option value="Shift 1">Shift 1</option>
+                  <option value="Shift 2">Shift 2</option>
+                  <option value="Combined Department">Combined Department</option>
+                </select>
+              </div>
             </div>
           </div>
           
-          <div id="involvement-cards-container" class="involvement-grid">
-            <!-- JS Dynamic Cards -->
+          <!-- Data Table Container -->
+          <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); background: #ffffff;">
+            <div class="table-responsive">
+              <table class="custom-table" id="involvement-restructured-table" style="width: 100%; border: 1px solid var(--card-border);">
+                <thead id="involvement-restructured-thead">
+                  <!-- Dynamic Headers -->
+                </thead>
+                <tbody id="involvement-restructured-tbody">
+                  <!-- Dynamic Rows -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -783,6 +831,116 @@
                 </thead>
                 <tbody id="involvement-detail-table-body">
                   <!-- JS Dynamic Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= STAFF SUB-VIEW: TENTATIVE PLANS ================= -->
+        <div id="subview-staff-tentative-plan" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div class="section-title">
+              <h3>Tentative Department Action Plans</h3>
+              <p class="section-desc">View and filter tentative department plans for academic activities, conferences, and AAA proposals.</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button id="btn-tentative-export-excel" class="btn btn-secondary btn-sm" onclick="exportTentativePlanExcel()">
+                📥 Export Excel
+              </button>
+              <button id="btn-tentative-export-pdf" class="btn btn-primary btn-sm" onclick="exportTentativePlanPDF()">
+                📄 Export PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- Filters Panel -->
+          <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
+            <h5 style="margin-bottom: 12px; font-weight: 600; color: var(--primary);">Filter Options</h5>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+              <!-- 1. Month Filter -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Tentative Month</label>
+                <select id="tentative-filter-month" class="form-select" onchange="renderStaffTentativePlan()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <option value="all">Select Month (All)</option>
+                  <option value="January">January</option>
+                  <option value="February">February</option>
+                  <option value="March">March</option>
+                  <option value="April">April</option>
+                  <option value="May">May</option>
+                  <option value="June">June</option>
+                  <option value="July">July</option>
+                  <option value="August">August</option>
+                  <option value="September">September</option>
+                  <option value="October">October</option>
+                  <option value="November">November</option>
+                  <option value="December">December</option>
+                </select>
+              </div>
+
+              <!-- 2. Department Filter -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Department</label>
+                <select id="tentative-filter-dept" class="form-select" onchange="renderStaffTentativePlan()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <!-- Dynamic Departments -->
+                </select>
+              </div>
+
+              <!-- 3. Shift Filter -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Shift</label>
+                <select id="tentative-filter-shift" class="form-select" onchange="renderStaffTentativePlan()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <option value="all">All Shifts</option>
+                  <option value="Shift 1">Shift 1</option>
+                  <option value="Shift 2">Shift 2</option>
+                  <option value="Combined Department">Combined Department</option>
+                </select>
+              </div>
+
+              <!-- 4. Type Filter (Conferences/etc) -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Type (Conferences/FDP/Webinar)</label>
+                <select id="tentative-filter-type" class="form-select" onchange="onTentativeTypeChange()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <option value="all">Select Type (Show All)</option>
+                  <option value="Conferences">Conferences</option>
+                  <option value="FDPs">FDPs</option>
+                  <option value="Seminars">Seminars</option>
+                  <option value="Workshops">Workshops</option>
+                  <option value="Webinars">Webinars</option>
+                </select>
+              </div>
+
+              <!-- 5. AAA Proposed Plan Filter -->
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">AAA Proposed Plan Month</label>
+                <select id="tentative-filter-aaa-month" class="form-select" onchange="onTentativeAaaChange()" style="font-size: 13px; height: 36px; padding: 0 10px;">
+                  <option value="all">Select AAA Month (All)</option>
+                  <option value="January">January</option>
+                  <option value="February">February</option>
+                  <option value="March">March</option>
+                  <option value="April">April</option>
+                  <option value="May">May</option>
+                  <option value="June">June</option>
+                  <option value="July">July</option>
+                  <option value="August">August</option>
+                  <option value="September">September</option>
+                  <option value="October">October</option>
+                  <option value="November">November</option>
+                  <option value="December">December</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Panel -->
+          <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); background: #ffffff;">
+            <div class="table-responsive">
+              <table class="custom-table" id="tentative-plan-table" style="width: 100%; border: 1px solid var(--card-border);">
+                <thead id="tentative-plan-thead">
+                  <!-- Dynamic Headers -->
+                </thead>
+                <tbody id="tentative-plan-tbody">
+                  <!-- Dynamic Rows -->
                 </tbody>
               </table>
             </div>

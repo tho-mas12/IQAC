@@ -233,9 +233,18 @@ async function switchSubView(viewId) {
     document.getElementById('subview-staff-involvement').style.display = 'block';
     const menuEl = document.getElementById('menu-staff-involvement');
     if (menuEl) menuEl.classList.add('active');
-    document.getElementById('header-title').innerText = 'Staff Involvement Cards';
+    document.getElementById('header-title').innerText = 'Staff Involvement';
     await loadInvolvementData();
-    renderStaffInvolvement();
+    await loadDepartments();
+    renderStaffInvolvementRestructured();
+  } else if (viewId === 'staff-tentative-plan') {
+    document.getElementById('subview-staff-tentative-plan').style.display = 'block';
+    const menuEl = document.getElementById('menu-staff-tentative-plan');
+    if (menuEl) menuEl.classList.add('active');
+    document.getElementById('header-title').innerText = 'Tentative Plans';
+    await loadInvolvementData();
+    await loadDepartments();
+    renderStaffTentativePlan();
   } else if (viewId === 'staff-involvement-detail') {
     document.getElementById('subview-staff-involvement-detail').style.display = 'block';
     const menuEl = document.getElementById('menu-staff-involvement');
@@ -1953,260 +1962,808 @@ async function loadInvolvementData() {
 }
 
 function renderStaffInvolvement() {
-  const container = document.getElementById('involvement-cards-container');
-  if (!container) return;
-  
-  // Populate global department filter dropdown once or update it
-  const deptSelect = document.getElementById('involvement-global-dept');
-  if (deptSelect && deptSelect.children.length === 0) {
-    const uniqueDepts = [...new Set(state.departments.map(d => d.name))].filter(Boolean);
+  renderStaffInvolvementRestructured();
+}
+
+function escapeHtml(string) {
+  if (!string) return '';
+  return String(string)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderStaffInvolvementRestructured() {
+  // Populate the Department filter dropdown if it doesn't have options yet
+  const deptSelect = document.getElementById('involvement-filter-dept');
+  if (deptSelect && deptSelect.children.length <= 1) {
+    const uniqueDepts = [...new Set((state.departments || []).map(d => d.name))].filter(Boolean).sort();
     deptSelect.innerHTML = '<option value="all">All Departments</option>' +
-      uniqueDepts.map(d => `<option value="${d}">${d}</option>`).join('');
+      uniqueDepts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
   }
 
-  const searchVal = document.getElementById('involvement-global-search') ? document.getElementById('involvement-global-search').value.toLowerCase().trim() : '';
-  const selectedDept = document.getElementById('involvement-global-dept') ? document.getElementById('involvement-global-dept').value : 'all';
-  const selectedShift = document.getElementById('involvement-global-shift') ? document.getElementById('involvement-global-shift').value : 'all';
+  const selectedResp = document.getElementById('involvement-filter-responsibility').value;
+  const selectedDept = document.getElementById('involvement-filter-dept').value;
+  const selectedShift = document.getElementById('involvement-filter-shift').value;
 
-  const excelBtn = document.getElementById('btn-export-excel');
-  const pdfBtn = document.getElementById('btn-export-pdf');
-  if (searchVal) {
-    if (excelBtn) excelBtn.innerHTML = '📥 Export Excel (Filtered)';
-    if (pdfBtn) pdfBtn.innerHTML = '📄 Export PDF (Filtered)';
+  const thead = document.getElementById('involvement-restructured-thead');
+  const tbody = document.getElementById('involvement-restructured-tbody');
+  if (!thead || !tbody) return;
+
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+
+  const showResponsibilityColumn = (selectedResp !== 'all');
+
+  let headersHtml = '';
+  if (!showResponsibilityColumn) {
+    headersHtml = `
+      <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--card-border);">
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Department Name</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Head / Coordinator</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Shift</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 150px;">Action</th>
+      </tr>
+    `;
   } else {
-    if (excelBtn) excelBtn.innerHTML = '📥 Export Excel (All)';
-    if (pdfBtn) pdfBtn.innerHTML = '📄 Export PDF (All)';
+    headersHtml = `
+      <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--card-border);">
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Department Name</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Shift</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Head / Coordinator</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px; min-width: 250px;">Data (${escapeHtml(selectedResp)})</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 150px;">Action</th>
+      </tr>
+    `;
+  }
+  thead.innerHTML = headersHtml;
+
+  const filteredCategories = (state.involvementCategories || []).filter(c => {
+    if (selectedDept !== 'all' && c.department !== selectedDept) return false;
+    if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
+    return true;
+  });
+
+  if (filteredCategories.length === 0) {
+    const colSpan = showResponsibilityColumn ? 5 : 4;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="${colSpan}" style="text-align: center; padding: 40px; color: var(--text-muted);">
+          No action plans match your current filters.
+        </td>
+      </tr>
+    `;
+    return;
   }
 
-  container.innerHTML = '';
-  
-  // If search value is empty, render the cards grid
-  if (!searchVal) {
-    container.className = 'involvement-grid';
-    container.removeAttribute('style');
-    
-    const filteredCategories = (state.involvementCategories || []).filter(c => {
+  filteredCategories.forEach(category => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    tr.style.transition = 'background 0.2s';
+    tr.onmouseover = () => { tr.style.background = '#f8fafc'; };
+    tr.onmouseout = () => { tr.style.background = 'transparent'; };
+
+    const deptName = category.department || '';
+    const coordinator = category.coordinator || '-';
+    const shift = category.shift || '';
+    const viewButtonHtml = `
+      <td style="padding: 12px 16px; text-align: center;">
+        <button class="btn btn-primary btn-xs" onclick="viewActionPlanFromStaff('${escapeHtml(deptName)}', '${escapeHtml(shift)}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">
+          View Data
+        </button>
+      </td>
+    `;
+
+    if (!showResponsibilityColumn) {
+      tr.innerHTML = `
+        <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main); font-size: 13px;">${escapeHtml(deptName)}</td>
+        <td style="padding: 12px 16px; color: var(--text-main); font-size: 13px;">${escapeHtml(coordinator)}</td>
+        <td style="padding: 12px 16px; font-size: 13px;"><span class="badge ${shift === 'Shift 1' ? 'badge-primary' : (shift === 'Shift 2' ? 'badge-secondary' : 'badge-success')}">${escapeHtml(shift)}</span></td>
+        ${viewButtonHtml}
+      `;
+    } else {
+      const matchingRecords = (state.involvementRecords || []).filter(r => 
+        r.category_id === category.id &&
+        r.section_type === 'Part A' &&
+        r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
+      );
+
+      let dataText = '';
+      if (matchingRecords.length > 0) {
+        dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+      } else {
+        dataText = '<span style="color: var(--text-muted); font-style: italic;">Not Assigned</span>';
+      }
+
+      tr.innerHTML = `
+        <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main); font-size: 13px;">${escapeHtml(deptName)}</td>
+        <td style="padding: 12px 16px; font-size: 13px;"><span class="badge ${shift === 'Shift 1' ? 'badge-primary' : (shift === 'Shift 2' ? 'badge-secondary' : 'badge-success')}">${escapeHtml(shift)}</span></td>
+        <td style="padding: 12px 16px; color: var(--text-main); font-size: 13px;">${escapeHtml(coordinator)}</td>
+        <td style="padding: 12px 16px; font-size: 13px; color: var(--primary); font-weight: 500;">${dataText}</td>
+        ${viewButtonHtml}
+      `;
+    }
+    tbody.appendChild(tr);
+  });
+}
+
+function viewActionPlanFromStaff(department, shift) {
+  state.staffViewPlanDept = department;
+  state.staffViewPlanShift = shift;
+  switchSubView('user-action-plan');
+}
+
+async function exportRestructuredInvolvementsExcel() {
+  try {
+    const selectedResp = document.getElementById('involvement-filter-responsibility').value;
+    const selectedDept = document.getElementById('involvement-filter-dept').value;
+    const selectedShift = document.getElementById('involvement-filter-shift').value;
+
+    const filteredCats = (state.involvementCategories || []).filter(c => {
       if (selectedDept !== 'all' && c.department !== selectedDept) return false;
       if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
       return true;
     });
 
-    if (filteredCategories.length === 0) {
-      container.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted); background: #ffffff; border-radius: 12px; border: 1px solid var(--card-border);">
-          <h4>No Action Plans Found</h4>
-          <p>No cards match your current filters. Click "Add Category Card" or "Bulk Import Plans" to create one.</p>
-        </div>
-      `;
-      return;
-    }
+    const escapeCsv = (str) => {
+      if (str === null || str === undefined) return '';
+      const stringified = String(str).replace(/"/g, '""');
+      if (stringified.includes(',') || stringified.includes('\n') || stringified.includes('"')) {
+        return `"${stringified}"`;
+      }
+      return stringified;
+    };
 
-    filteredCategories.forEach(category => {
-      const cardRecords = (state.involvementRecords || []).filter(r => r.category_id === category.id);
-      
-      const card = document.createElement('div');
-      card.className = 'glass-panel involvement-card';
-      card.style.display = 'flex';
-      card.style.flexDirection = 'column';
-      card.style.padding = '20px';
-      card.style.borderRadius = '16px';
-      card.style.border = '1px solid var(--card-border)';
-      card.style.background = '#ffffff';
-      card.style.gap = '14px';
-      card.style.boxShadow = '0 4px 20px rgba(0,0,0,0.02)';
-      card.style.cursor = 'pointer';
-      card.onclick = (e) => {
-        if (e.target.closest('.delete-card-btn')) return;
-        openCategoryDetailPage(category.id);
-      };
-      
-      card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <h4 style="font-size: 16px; font-weight: 700; color: var(--text-main);">${category.name}</h4>
-            <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Total Records: ${cardRecords.length}</span>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">HOD: ${category.coordinator || '-'}</div>
-          </div>
-          <button class="btn btn-danger btn-sm delete-card-btn" onclick="deleteInvolvementCategory('${category.id}')" style="padding: 4px 8px; font-size:11px;">
-            Delete Card
-          </button>
-        </div>
-        <div style="margin-top: auto; display: flex; justify-content: flex-end;">
-          <span style="font-size: 13px; font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 4px;">
-            View Records Page →
-          </span>
-        </div>
-      `;
-      
-      container.appendChild(card);
-    });
-  } else {
-    // Render search results view
-    container.className = '';
-    container.style.display = 'block';
-    container.style.width = '100%';
+    let csvRows = [];
+    csvRows.push([escapeCsv("St. Joseph's College (Autonomous), Tiruchirappalli - 620 002")]);
+    csvRows.push([escapeCsv("Internal Quality Assurance Cell (IQAC)")]);
+    csvRows.push([escapeCsv("Staff Involvement Restructured Report")]);
     
-    const results = [];
-    (state.involvementRecords || []).forEach(r => {
-      const category = state.involvementCategories.find(c => c.id === r.category_id);
-      if (!category) return;
-      
-      // Apply filters
-      if (selectedDept !== 'all' && category.department !== selectedDept) return;
-      if (selectedShift !== 'all' && category.shift !== selectedShift) return;
-      
-      // Search all columns
-      const colsText = [r.col1, r.col2, r.col3, r.col4, r.col5, r.col6, r.col7, r.col8]
-        .map(v => (v || '').toLowerCase())
-        .join(' ');
-      
-      if (colsText.includes(searchVal)) {
-        results.push({ record: r, category });
-      }
-    });
+    let filterDesc = [];
+    filterDesc.push(`Responsibility: ${selectedResp === 'all' ? 'All' : selectedResp}`);
+    filterDesc.push(`Department: ${selectedDept === 'all' ? 'All' : selectedDept}`);
+    filterDesc.push(`Shift: ${selectedShift === 'all' ? 'All' : selectedShift}`);
+    csvRows.push([escapeCsv(`Filters - ${filterDesc.join(' | ')}`)]);
+    csvRows.push([]);
 
-    if (results.length === 0) {
-      container.innerHTML = `
-        <div style="text-align: center; padding: 40px; color: var(--text-muted); background: #ffffff; border-radius: 12px; border: 1px solid var(--card-border);">
-          <h4>No Matching Records Found</h4>
-          <p>Try searching for a different staff member name, activity, or keyword.</p>
-        </div>
-      `;
-      return;
+    const showResponsibilityColumn = (selectedResp !== 'all');
+    if (!showResponsibilityColumn) {
+      csvRows.push([
+        escapeCsv('Department Name'),
+        escapeCsv('Head / Coordinator'),
+        escapeCsv('Shift')
+      ]);
+
+      filteredCats.forEach(c => {
+        csvRows.push([
+          escapeCsv(c.department || c.name),
+          escapeCsv(c.coordinator || '-'),
+          escapeCsv(c.shift || '')
+        ]);
+      });
+    } else {
+      csvRows.push([
+        escapeCsv('Department Name'),
+        escapeCsv('Shift'),
+        escapeCsv('Head / Coordinator'),
+        escapeCsv(`Data (${selectedResp})`)
+      ]);
+
+      filteredCats.forEach(c => {
+        const matchingRecords = (state.involvementRecords || []).filter(r => 
+          r.category_id === c.id &&
+          r.section_type === 'Part A' &&
+          r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
+        );
+
+        let dataText = '';
+        if (matchingRecords.length > 0) {
+          dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+        } else {
+          dataText = 'Not Assigned';
+        }
+
+        csvRows.push([
+          escapeCsv(c.department || c.name),
+          escapeCsv(c.shift || ''),
+          escapeCsv(c.coordinator || '-'),
+          escapeCsv(dataText)
+        ]);
+      });
     }
 
-    const highlight = (text, query) => {
-      if (!text) return '';
-      if (!query) return text;
-      const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const regex = new RegExp(`(${escapedQuery})`, 'gi');
-      return text.replace(regex, '<mark style="background: #fef08a; color: #1e293b; padding: 1px 3px; border-radius: 2px;">$1</mark>');
-    };
+    const csvContent = csvRows.map(e => e.join(",")).join("\n");
+    const filename = `staff_involvement_restructured_${selectedResp.toLowerCase().replace(/[^a-z0-9]/g, '_')}.csv`;
+    downloadCSV(csvContent, filename);
+  } catch (err) {
+    console.error("CSV Export failed:", err);
+    alert("Failed to export Excel: " + err.message);
+  }
+}
 
-    const getSearchResultDetails = (r) => {
-      let activity = '';
-      let detailsHtml = '';
-      
-      const highlightVal = (val) => highlight(val || '-', searchVal);
+async function exportRestructuredInvolvementsPDF() {
+  try {
+    const selectedResp = document.getElementById('involvement-filter-responsibility').value;
+    const selectedDept = document.getElementById('involvement-filter-dept').value;
+    const selectedShift = document.getElementById('involvement-filter-shift').value;
 
-      if (r.section_type === 'Part A') {
-        activity = r.col2 || '';
-        detailsHtml = `
-          <div style="font-size: 12px; line-height: 1.5; color: var(--text-main);">
-            <div><strong>S.No:</strong> ${highlightVal(r.col1)}</div>
-            <div><strong>Area of Responsibility:</strong> ${highlightVal(r.col2)}</div>
-            <div><strong>Faculty In-charge:</strong> <span style="color: var(--primary); font-weight: 600;">${highlightVal(r.col3)}</span></div>
-          </div>
-        `;
-      } else if (r.section_type === 'Clubs') {
-        activity = r.col2 || '';
-        detailsHtml = `
-          <div style="font-size: 12px; line-height: 1.5; color: var(--text-main);">
-            <div><strong>S.No:</strong> ${highlightVal(r.col1)}</div>
-            <div><strong>Club Name:</strong> ${highlightVal(r.col2)}</div>
-            <div><strong>Nature of Club:</strong> ${highlightVal(r.col3)}</div>
-            <div><strong>Faculty Assigned:</strong> <span style="color: var(--primary); font-weight: 600;">${highlightVal(r.col4)}</span></div>
-          </div>
-        `;
-      } else if (r.section_type === 'Class Mentors') {
-        activity = `Class Mentor - ${r.col1 || ''}`;
-        detailsHtml = `
-          <div style="font-size: 12px; line-height: 1.5; color: var(--text-main);">
-            <div><strong>Class:</strong> ${highlightVal(r.col1)}</div>
-            <div><strong>Mentor:</strong> <span style="color: var(--primary); font-weight: 600;">${highlightVal(r.col2)}</span></div>
-          </div>
-        `;
-      } else if (r.section_type === 'Part B') {
-        activity = r.col2 || '';
-        detailsHtml = `
-          <div style="font-size: 12px; line-height: 1.5; color: var(--text-main);">
-            <div><strong>S.No:</strong> ${highlightVal(r.col1)}</div>
-            <div><strong>Activity:</strong> ${highlightVal(r.col2)}</div>
-            <div><strong>Tentative Month:</strong> ${highlightVal(r.col3)}</div>
-            <div><strong>Class / Target Group:</strong> ${highlightVal(r.col4)}</div>
-            <div><strong>Faculty Coordinator:</strong> <span style="color: var(--primary); font-weight: 600;">${highlightVal(r.col5)}</span></div>
-          </div>
-        `;
-      } else if (r.section_type === 'Conferences') {
-        activity = r.col2 || '';
-        detailsHtml = `
-          <div style="font-size: 12px; line-height: 1.5; color: var(--text-main);">
-            <div><strong>S.No:</strong> ${highlightVal(r.col1)}</div>
-            <div><strong>Title / Theme:</strong> ${highlightVal(r.col2)}</div>
-            <div><strong>Type:</strong> ${highlightVal(r.col3)}</div>
-            <div><strong>Nature:</strong> ${highlightVal(r.col4)}</div>
-            <div><strong>Tentative Month:</strong> ${highlightVal(r.col5)}</div>
-            <div><strong>Faculty Coordinator(s):</strong> <span style="color: var(--primary); font-weight: 600;">${highlightVal(r.col6)}</span></div>
-            <div><strong>IKS Aligned:</strong> ${highlightVal(r.col7)}</div>
-            <div><strong>SDG Aligned:</strong> ${highlightVal(r.col8)}</div>
-          </div>
-        `;
-      } else if (r.section_type === 'AAA Proposed Plan') {
-        activity = r.col2 || '';
-        detailsHtml = `
-          <div style="font-size: 12px; line-height: 1.5; color: var(--text-main);">
-            <div><strong>S.No:</strong> ${highlightVal(r.col1)}</div>
-            <div><strong>Planned Activity:</strong> ${highlightVal(r.col2)}</div>
-            <div><strong>Tentative Month:</strong> ${highlightVal(r.col3)}</div>
-            <div><strong>Faculty Assigned:</strong> <span style="color: var(--primary); font-weight: 600;">${highlightVal(r.col4)}</span></div>
-          </div>
-        `;
-      }
-      return { activity, detailsHtml };
-    };
-
-    let tableHtml = `
-      <div class="glass-panel" style="padding: 20px; overflow: hidden; background: #ffffff;">
-        <h4 style="margin-bottom: 16px; font-weight: 600; color: var(--text-main);">Search Results (${results.length} matches)</h4>
-        <div class="table-responsive">
-          <table class="custom-table" style="width: 100%;">
-            <thead>
-              <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--card-border);">
-                <th style="padding: 12px 16px;">Department</th>
-                <th style="padding: 12px 16px;">Shift</th>
-                <th style="padding: 12px 16px;">Section</th>
-                <th style="padding: 12px 16px;">Activity / Role</th>
-                <th style="padding: 12px 16px;">Whole Details</th>
-                <th style="padding: 12px 16px; width: 120px; text-align: right;">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-    `;
-
-    results.forEach(({ record: r, category: cat }) => {
-      const details = getSearchResultDetails(r);
-      const deptName = highlight(cat.department || cat.name, searchVal);
-      const shiftName = highlight(cat.shift || 'N/A', searchVal);
-      const sectionName = r.section_type;
-      const activityName = highlight(details.activity, searchVal);
-
-      tableHtml += `
-        <tr style="border-bottom: 1px solid var(--card-border); vertical-align: top;">
-          <td style="padding: 12px 16px; font-weight: 600;">${deptName}</td>
-          <td style="padding: 12px 16px;"><span class="badge" style="background: #f1f5f9; color: var(--text-main); font-size: 11px; padding: 4px 8px; border-radius: 4px;">${shiftName}</span></td>
-          <td style="padding: 12px 16px;"><span style="font-size: 12px; font-weight: 600; color: var(--primary);">${sectionName}</span></td>
-          <td style="padding: 12px 16px; font-weight: 500;">
-            <div>${activityName}</div>
-          </td>
-          <td style="padding: 12px 16px;">${details.detailsHtml}</td>
-          <td style="padding: 12px 16px; text-align: right;">
-            <button class="btn btn-secondary btn-sm" onclick="goToPlanSection('${cat.id}', '${r.section_type}', '${r.id}')">
-              Go to Plan
-            </button>
-          </td>
-        </tr>
-      `;
+    const filteredCats = (state.involvementCategories || []).filter(c => {
+      if (selectedDept !== 'all' && c.department !== selectedDept) return false;
+      if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
+      return true;
     });
 
-    tableHtml += `
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-    container.innerHTML = tableHtml;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text("St. Joseph's College (Autonomous), Tiruchirappalli - 620 002", 105, 15, { align: "center" });
+    
+    doc.setFontSize(11);
+    doc.text("Internal Quality Assurance Cell (IQAC)", 105, 21, { align: "center" });
+    doc.text("Staff Involvement Restructured Report", 105, 27, { align: "center" });
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, 31, 196, 31);
+    
+    const showResponsibilityColumn = (selectedResp !== 'all');
+    let tableHeaders = [];
+    let tableBody = [];
+
+    if (!showResponsibilityColumn) {
+      tableHeaders = [['Department Name', 'Head / Coordinator', 'Shift']];
+      filteredCats.forEach(c => {
+        tableBody.push([
+          c.department || c.name,
+          c.coordinator || '-',
+          c.shift || ''
+        ]);
+      });
+    } else {
+      tableHeaders = [['Department Name', 'Shift', 'Head / Coordinator', `Data (${selectedResp})`]];
+      filteredCats.forEach(c => {
+        const matchingRecords = (state.involvementRecords || []).filter(r => 
+          r.category_id === c.id &&
+          r.section_type === 'Part A' &&
+          r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
+        );
+
+        let dataText = '';
+        if (matchingRecords.length > 0) {
+          dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+        } else {
+          dataText = 'Not Assigned';
+        }
+
+        tableBody.push([
+          c.department || c.name,
+          c.shift || '',
+          c.coordinator || '-',
+          dataText
+        ]);
+      });
+    }
+
+    if (tableBody.length === 0) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text("No records found matching the criteria.", 14, 40);
+    } else {
+      doc.autoTable({
+        startY: 36,
+        head: tableHeaders,
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [109, 40, 217], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 9, cellPadding: 3, textColor: [50, 50, 50] },
+        margin: { left: 14, right: 14 }
+      });
+    }
+    
+    const filename = `staff_involvement_restructured_${selectedResp.toLowerCase().replace(/[^a-z0-9]/g, '_')}.pdf`;
+    doc.save(filename);
+  } catch(err) {
+    console.error("PDF Export failed:", err);
+    alert("Failed to export PDF: " + err.message);
   }
-}function openCategoryDetailPage(categoryId) {
+}
+
+function onTentativeTypeChange() {
+  const typeSelect = document.getElementById('tentative-filter-type');
+  if (typeSelect && typeSelect.value !== 'all') {
+    const aaaSelect = document.getElementById('tentative-filter-aaa-month');
+    if (aaaSelect) aaaSelect.value = 'all';
+  }
+  renderStaffTentativePlan();
+}
+
+function onTentativeAaaChange() {
+  const aaaSelect = document.getElementById('tentative-filter-aaa-month');
+  if (aaaSelect && aaaSelect.value !== 'all') {
+    const typeSelect = document.getElementById('tentative-filter-type');
+    if (typeSelect) typeSelect.value = 'all';
+  }
+  renderStaffTentativePlan();
+}
+
+function renderStaffTentativePlan() {
+  // Populate the Department filter dropdown if it doesn't have options yet
+  const deptSelect = document.getElementById('tentative-filter-dept');
+  if (deptSelect && deptSelect.children.length <= 1) {
+    const uniqueDepts = [...new Set((state.departments || []).map(d => d.name))].filter(Boolean).sort();
+    deptSelect.innerHTML = '<option value="all">All Departments</option>' +
+      uniqueDepts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+  }
+
+  const selectedMonth = document.getElementById('tentative-filter-month').value;
+  const selectedDept = document.getElementById('tentative-filter-dept').value;
+  const selectedShift = document.getElementById('tentative-filter-shift').value;
+  const selectedType = document.getElementById('tentative-filter-type').value;
+  const selectedAaaMonth = document.getElementById('tentative-filter-aaa-month').value;
+
+  const thead = document.getElementById('tentative-plan-thead');
+  const tbody = document.getElementById('tentative-plan-tbody');
+  if (!thead || !tbody) return;
+
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+
+  let mode = 'C';
+  if (selectedType !== 'all') {
+    mode = 'A';
+  } else if (selectedAaaMonth !== 'all') {
+    mode = 'B';
+  }
+
+  let headersHtml = '';
+  if (mode === 'A') {
+    headersHtml = `
+      <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--card-border);">
+        <th style="padding: 10px; text-align: left;">Department Name</th>
+        <th style="padding: 10px; text-align: left; width: 80px;">Shift</th>
+        <th style="padding: 10px; text-align: left;">Head / Coordinator</th>
+        <th style="padding: 10px; text-align: left;">Title / Theme</th>
+        <th style="padding: 10px; text-align: left; width: 100px;">Type</th>
+        <th style="padding: 10px; text-align: left; width: 100px;">Nature</th>
+        <th style="padding: 10px; text-align: left; width: 120px;">Tentative Month</th>
+        <th style="padding: 10px; text-align: left;">Faculty Coordinator(s)</th>
+        <th style="padding: 10px; text-align: left; width: 100px;">IKS Aligned</th>
+        <th style="padding: 10px; text-align: left; width: 100px;">SDG Aligned</th>
+      </tr>
+    `;
+  } else if (mode === 'B') {
+    headersHtml = `
+      <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--card-border);">
+        <th style="padding: 10px; text-align: left;">Department Name</th>
+        <th style="padding: 10px; text-align: left; width: 80px;">Shift</th>
+        <th style="padding: 10px; text-align: left;">Head / Coordinator</th>
+        <th style="padding: 10px; text-align: left;">Planned Activity</th>
+        <th style="padding: 10px; text-align: left; width: 120px;">Tentative Month</th>
+        <th style="padding: 10px; text-align: left;">Faculty Assigned</th>
+      </tr>
+    `;
+  } else {
+    headersHtml = `
+      <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--card-border);">
+        <th style="padding: 10px; text-align: left;">Department Name</th>
+        <th style="padding: 10px; text-align: left; width: 80px;">Shift</th>
+        <th style="padding: 10px; text-align: left; width: 120px;">Tentative Month</th>
+        <th style="padding: 10px; text-align: left;">Activity</th>
+        <th style="padding: 10px; text-align: left;">Class / Target Group</th>
+        <th style="padding: 10px; text-align: left;">Faculty Coordinator</th>
+      </tr>
+    `;
+  }
+  thead.innerHTML = headersHtml;
+
+  const filteredCats = (state.involvementCategories || []).filter(c => {
+    if (selectedDept !== 'all' && c.department !== selectedDept) return false;
+    if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
+    return true;
+  });
+
+  let recordsToDisplay = [];
+
+  const isMonthMatch = (recordMonth) => {
+    if (selectedMonth === 'all') return true;
+    if (!recordMonth) return false;
+    return recordMonth.trim().toLowerCase() === selectedMonth.trim().toLowerCase();
+  };
+
+  filteredCats.forEach(cat => {
+    const catRecords = (state.involvementRecords || []).filter(r => r.category_id === cat.id);
+    
+    if (mode === 'A') {
+      const confRecords = catRecords.filter(r => r.section_type === 'Conferences');
+      confRecords.forEach(r => {
+        if (selectedType !== 'all' && r.col3 && r.col3.trim().toLowerCase() !== selectedType.trim().toLowerCase()) return;
+        if (!isMonthMatch(r.col5)) return;
+        recordsToDisplay.push({ category: cat, record: r });
+      });
+    } else if (mode === 'B') {
+      const aaaRecords = catRecords.filter(r => r.section_type === 'AAA Proposed Plan');
+      aaaRecords.forEach(r => {
+        if (selectedAaaMonth !== 'all' && r.col3 && r.col3.trim().toLowerCase() !== selectedAaaMonth.trim().toLowerCase()) return;
+        if (!isMonthMatch(r.col3)) return;
+        recordsToDisplay.push({ category: cat, record: r });
+      });
+    } else {
+      const partBRecords = catRecords.filter(r => r.section_type === 'Part B');
+      partBRecords.forEach(r => {
+        if (!isMonthMatch(r.col3)) return;
+        recordsToDisplay.push({ category: cat, record: r });
+      });
+    }
+  });
+
+  if (recordsToDisplay.length === 0) {
+    const colSpan = mode === 'A' ? 10 : (mode === 'B' ? 6 : 6);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="${colSpan}" style="text-align: center; padding: 40px; color: var(--text-muted);">
+          No tentative plans found matching the selected filters.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  recordsToDisplay.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    
+    const cat = item.category;
+    const r = item.record;
+    const dept = cat.department || '';
+    const shift = cat.shift || '';
+    const coordinator = cat.coordinator || '-';
+
+    if (mode === 'A') {
+      tr.innerHTML = `
+        <td style="padding: 10px; font-weight: 600; color: var(--text-main);">${escapeHtml(dept)}</td>
+        <td style="padding: 10px;"><span class="badge ${shift === 'Shift 1' ? 'badge-primary' : (shift === 'Shift 2' ? 'badge-secondary' : 'badge-success')}">${escapeHtml(shift)}</span></td>
+        <td style="padding: 10px;">${escapeHtml(coordinator)}</td>
+        <td style="padding: 10px; font-weight: 500;">${escapeHtml(r.col2 || '-')}</td>
+        <td style="padding: 10px;">${escapeHtml(r.col3 || '-')}</td>
+        <td style="padding: 10px;">${escapeHtml(r.col4 || '-')}</td>
+        <td style="padding: 10px; color: var(--primary); font-weight: 500;">${escapeHtml(r.col5 || '-')}</td>
+        <td style="padding: 10px;">${escapeHtml(r.col6 || '-')}</td>
+        <td style="padding: 10px;">${escapeHtml(r.col7 || '-')}</td>
+        <td style="padding: 10px;">${escapeHtml(r.col8 || '-')}</td>
+      `;
+    } else if (mode === 'B') {
+      tr.innerHTML = `
+        <td style="padding: 10px; font-weight: 600; color: var(--text-main);">${escapeHtml(dept)}</td>
+        <td style="padding: 10px;"><span class="badge ${shift === 'Shift 1' ? 'badge-primary' : (shift === 'Shift 2' ? 'badge-secondary' : 'badge-success')}">${escapeHtml(shift)}</span></td>
+        <td style="padding: 10px;">${escapeHtml(coordinator)}</td>
+        <td style="padding: 10px; font-weight: 500;">${escapeHtml(r.col2 || '-')}</td>
+        <td style="padding: 10px; color: var(--primary); font-weight: 500;">${escapeHtml(r.col3 || '-')}</td>
+        <td style="padding: 10px;">${escapeHtml(r.col4 || '-')}</td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td style="padding: 10px; font-weight: 600; color: var(--text-main);">${escapeHtml(dept)}</td>
+        <td style="padding: 10px;"><span class="badge ${shift === 'Shift 1' ? 'badge-primary' : (shift === 'Shift 2' ? 'badge-secondary' : 'badge-success')}">${escapeHtml(shift)}</span></td>
+        <td style="padding: 10px; color: var(--primary); font-weight: 500;">${escapeHtml(r.col3 || '-')}</td>
+        <td style="padding: 10px; font-weight: 500;">${escapeHtml(r.col2 || '-')}</td>
+        <td style="padding: 10px;">${escapeHtml(r.col4 || '-')}</td>
+        <td style="padding: 10px;">${escapeHtml(r.col5 || '-')}</td>
+      `;
+    }
+
+    tbody.appendChild(tr);
+  });
+}
+
+function exportTentativePlanExcel() {
+  try {
+    const selectedMonth = document.getElementById('tentative-filter-month').value;
+    const selectedDept = document.getElementById('tentative-filter-dept').value;
+    const selectedShift = document.getElementById('tentative-filter-shift').value;
+    const selectedType = document.getElementById('tentative-filter-type').value;
+    const selectedAaaMonth = document.getElementById('tentative-filter-aaa-month').value;
+
+    let mode = 'C';
+    if (selectedType !== 'all') {
+      mode = 'A';
+    } else if (selectedAaaMonth !== 'all') {
+      mode = 'B';
+    }
+
+    const filteredCats = (state.involvementCategories || []).filter(c => {
+      if (selectedDept !== 'all' && c.department !== selectedDept) return false;
+      if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
+      return true;
+    });
+
+    const isMonthMatch = (recordMonth) => {
+      if (selectedMonth === 'all') return true;
+      if (!recordMonth) return false;
+      return recordMonth.trim().toLowerCase() === selectedMonth.trim().toLowerCase();
+    };
+
+    const escapeCsv = (str) => {
+      if (str === null || str === undefined) return '';
+      const stringified = String(str).replace(/"/g, '""');
+      if (stringified.includes(',') || stringified.includes('\n') || stringified.includes('"')) {
+        return `"${stringified}"`;
+      }
+      return stringified;
+    };
+
+    let csvRows = [];
+    csvRows.push([escapeCsv("St. Joseph's College (Autonomous), Tiruchirappalli - 620 002")]);
+    csvRows.push([escapeCsv("Internal Quality Assurance Cell (IQAC)")]);
+    csvRows.push([escapeCsv(`Tentative Department Action Plan Report - Mode ${mode}`)]);
+    
+    let filterDesc = [];
+    filterDesc.push(`Month: ${selectedMonth === 'all' ? 'All' : selectedMonth}`);
+    filterDesc.push(`Dept: ${selectedDept === 'all' ? 'All' : selectedDept}`);
+    filterDesc.push(`Shift: ${selectedShift === 'all' ? 'All' : selectedShift}`);
+    if (mode === 'A') filterDesc.push(`Type: ${selectedType}`);
+    if (mode === 'B') filterDesc.push(`AAA Month: ${selectedAaaMonth}`);
+    csvRows.push([escapeCsv(`Filters - ${filterDesc.join(' | ')}`)]);
+    csvRows.push([]);
+
+    let recordsToDisplay = [];
+    filteredCats.forEach(cat => {
+      const catRecords = (state.involvementRecords || []).filter(r => r.category_id === cat.id);
+      if (mode === 'A') {
+        catRecords.filter(r => r.section_type === 'Conferences').forEach(r => {
+          if (selectedType !== 'all' && r.col3 && r.col3.trim().toLowerCase() !== selectedType.trim().toLowerCase()) return;
+          if (!isMonthMatch(r.col5)) return;
+          recordsToDisplay.push({ category: cat, record: r });
+        });
+      } else if (mode === 'B') {
+        catRecords.filter(r => r.section_type === 'AAA Proposed Plan').forEach(r => {
+          if (selectedAaaMonth !== 'all' && r.col3 && r.col3.trim().toLowerCase() !== selectedAaaMonth.trim().toLowerCase()) return;
+          if (!isMonthMatch(r.col3)) return;
+          recordsToDisplay.push({ category: cat, record: r });
+        });
+      } else {
+        catRecords.filter(r => r.section_type === 'Part B').forEach(r => {
+          if (!isMonthMatch(r.col3)) return;
+          recordsToDisplay.push({ category: cat, record: r });
+        });
+      }
+    });
+
+    if (mode === 'A') {
+      csvRows.push([
+        escapeCsv('Department Name'),
+        escapeCsv('Shift'),
+        escapeCsv('Head / Coordinator'),
+        escapeCsv('Title / Theme'),
+        escapeCsv('Type'),
+        escapeCsv('Nature'),
+        escapeCsv('Tentative Month'),
+        escapeCsv('Faculty Coordinator(s)'),
+        escapeCsv('IKS Aligned'),
+        escapeCsv('SDG Aligned')
+      ]);
+
+      recordsToDisplay.forEach(item => {
+        const c = item.category;
+        const r = item.record;
+        csvRows.push([
+          escapeCsv(c.department || ''),
+          escapeCsv(c.shift || ''),
+          escapeCsv(c.coordinator || '-'),
+          escapeCsv(r.col2 || ''),
+          escapeCsv(r.col3 || ''),
+          escapeCsv(r.col4 || ''),
+          escapeCsv(r.col5 || ''),
+          escapeCsv(r.col6 || ''),
+          escapeCsv(r.col7 || ''),
+          escapeCsv(r.col8 || '')
+        ]);
+      });
+    } else if (mode === 'B') {
+      csvRows.push([
+        escapeCsv('Department Name'),
+        escapeCsv('Shift'),
+        escapeCsv('Head / Coordinator'),
+        escapeCsv('Planned Activity'),
+        escapeCsv('Tentative Month'),
+        escapeCsv('Faculty Assigned')
+      ]);
+
+      recordsToDisplay.forEach(item => {
+        const c = item.category;
+        const r = item.record;
+        csvRows.push([
+          escapeCsv(c.department || ''),
+          escapeCsv(c.shift || ''),
+          escapeCsv(c.coordinator || '-'),
+          escapeCsv(r.col2 || ''),
+          escapeCsv(r.col3 || ''),
+          escapeCsv(r.col4 || '')
+        ]);
+      });
+    } else {
+      csvRows.push([
+        escapeCsv('Department Name'),
+        escapeCsv('Shift'),
+        escapeCsv('Tentative Month'),
+        escapeCsv('Activity'),
+        escapeCsv('Class / Target Group'),
+        escapeCsv('Faculty Coordinator')
+      ]);
+
+      recordsToDisplay.forEach(item => {
+        const c = item.category;
+        const r = item.record;
+        csvRows.push([
+          escapeCsv(c.department || ''),
+          escapeCsv(c.shift || ''),
+          escapeCsv(r.col3 || ''),
+          escapeCsv(r.col2 || ''),
+          escapeCsv(r.col4 || ''),
+          escapeCsv(r.col5 || '')
+        ]);
+      });
+    }
+
+    const csvContent = csvRows.map(e => e.join(",")).join("\n");
+    const filename = `tentative_plan_mode_${mode.toLowerCase()}_export.csv`;
+    downloadCSV(csvContent, filename);
+  } catch (err) {
+    console.error("CSV Export failed:", err);
+    alert("Failed to export Excel: " + err.message);
+  }
+}
+
+async function exportTentativePlanPDF() {
+  try {
+    const selectedMonth = document.getElementById('tentative-filter-month').value;
+    const selectedDept = document.getElementById('tentative-filter-dept').value;
+    const selectedShift = document.getElementById('tentative-filter-shift').value;
+    const selectedType = document.getElementById('tentative-filter-type').value;
+    const selectedAaaMonth = document.getElementById('tentative-filter-aaa-month').value;
+
+    let mode = 'C';
+    if (selectedType !== 'all') {
+      mode = 'A';
+    } else if (selectedAaaMonth !== 'all') {
+      mode = 'B';
+    }
+
+    const filteredCats = (state.involvementCategories || []).filter(c => {
+      if (selectedDept !== 'all' && c.department !== selectedDept) return false;
+      if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
+      return true;
+    });
+
+    const isMonthMatch = (recordMonth) => {
+      if (selectedMonth === 'all') return true;
+      if (!recordMonth) return false;
+      return recordMonth.trim().toLowerCase() === selectedMonth.trim().toLowerCase();
+    };
+
+    let recordsToDisplay = [];
+    filteredCats.forEach(cat => {
+      const catRecords = (state.involvementRecords || []).filter(r => r.category_id === cat.id);
+      if (mode === 'A') {
+        catRecords.filter(r => r.section_type === 'Conferences').forEach(r => {
+          if (selectedType !== 'all' && r.col3 && r.col3.trim().toLowerCase() !== selectedType.trim().toLowerCase()) return;
+          if (!isMonthMatch(r.col5)) return;
+          recordsToDisplay.push({ category: cat, record: r });
+        });
+      } else if (mode === 'B') {
+        catRecords.filter(r => r.section_type === 'AAA Proposed Plan').forEach(r => {
+          if (selectedAaaMonth !== 'all' && r.col3 && r.col3.trim().toLowerCase() !== selectedAaaMonth.trim().toLowerCase()) return;
+          if (!isMonthMatch(r.col3)) return;
+          recordsToDisplay.push({ category: cat, record: r });
+        });
+      } else {
+        catRecords.filter(r => r.section_type === 'Part B').forEach(r => {
+          if (!isMonthMatch(r.col3)) return;
+          recordsToDisplay.push({ category: cat, record: r });
+        });
+      }
+    });
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF(mode === 'A' ? 'l' : 'p', 'mm', 'a4');
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    const centerOffset = mode === 'A' ? 148.5 : 105;
+    doc.text("St. Joseph's College (Autonomous), Tiruchirappalli - 620 002", centerOffset, 15, { align: "center" });
+    
+    doc.setFontSize(11);
+    doc.text("Internal Quality Assurance Cell (IQAC)", centerOffset, 21, { align: "center" });
+    
+    let modeText = "Part B Academic Activities";
+    if (mode === 'A') modeText = `Conferences / FDPs / Webinars (${selectedType === 'all' ? 'All' : selectedType})`;
+    if (mode === 'B') modeText = `AAA Proposed Plans (${selectedAaaMonth === 'all' ? 'All' : selectedAaaMonth} Month)`;
+    
+    doc.text(`Tentative Department Plans Report - ${modeText}`, centerOffset, 27, { align: "center" });
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, 31, mode === 'A' ? 282 : 196, 31);
+    
+    let tableHeaders = [];
+    let tableBody = [];
+
+    if (mode === 'A') {
+      tableHeaders = [['Department', 'Shift', 'Coordinator', 'Title / Theme', 'Type', 'Nature', 'Month', 'Faculty Coordinator(s)', 'IKS', 'SDG']];
+      recordsToDisplay.forEach(item => {
+        const c = item.category;
+        const r = item.record;
+        tableBody.push([
+          c.department || '',
+          c.shift || '',
+          c.coordinator || '-',
+          r.col2 || '',
+          r.col3 || '',
+          r.col4 || '',
+          r.col5 || '',
+          r.col6 || '',
+          r.col7 || '',
+          r.col8 || ''
+        ]);
+      });
+    } else if (mode === 'B') {
+      tableHeaders = [['Department', 'Shift', 'Coordinator', 'Planned Activity', 'Month', 'Faculty Assigned']];
+      recordsToDisplay.forEach(item => {
+        const c = item.category;
+        const r = item.record;
+        tableBody.push([
+          c.department || '',
+          c.shift || '',
+          c.coordinator || '-',
+          r.col2 || '',
+          r.col3 || '',
+          r.col4 || ''
+        ]);
+      });
+    } else {
+      tableHeaders = [['Department', 'Shift', 'Month', 'Activity', 'Class / Target Group', 'Faculty Coordinator']];
+      recordsToDisplay.forEach(item => {
+        const c = item.category;
+        const r = item.record;
+        tableBody.push([
+          c.department || '',
+          c.shift || '',
+          r.col3 || '',
+          r.col2 || '',
+          r.col4 || '',
+          r.col5 || ''
+        ]);
+      });
+    }
+
+    if (tableBody.length === 0) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text("No tentative records found matching the criteria.", 14, 40);
+    } else {
+      doc.autoTable({
+        startY: 36,
+        head: tableHeaders,
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [109, 40, 217], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 8.5, cellPadding: 3, textColor: [50, 50, 50] },
+        margin: { left: 14, right: 14 }
+      });
+    }
+    
+    const filename = `tentative_plan_mode_${mode.toLowerCase()}_export.pdf`;
+    doc.save(filename);
+  } catch(err) {
+    console.error("PDF Export failed:", err);
+    alert("Failed to export PDF: " + err.message);
+  }
+}
+
+function openCategoryDetailPage(categoryId) {
   state.activeCategoryId = categoryId;
   state.activeInvolvementSection = 'Part A';
   
@@ -3955,6 +4512,25 @@ function renderUserActionPlanForm() {
     shiftInput.disabled = false;
   }
 
+  // Handle staff/admin redirecting to view/edit a plan
+  if (state.staffViewPlanDept && state.staffViewPlanShift) {
+    const dept = state.staffViewPlanDept;
+    const shift = state.staffViewPlanShift;
+    state.staffViewPlanDept = null;
+    state.staffViewPlanShift = null;
+
+    if (deptInput) {
+      deptInput.value = dept;
+      deptInput.readOnly = false;
+    }
+    if (shiftInput) {
+      shiftInput.value = shift;
+      shiftInput.disabled = false;
+    }
+    loadExistingActionPlan(dept, shift);
+    return;
+  }
+
   // Check if current user is Staff or Director
   const isStaff = (state.currentUser && (state.currentUser.role === 'Staff' || state.currentUser.role === 'Director'));
   const isDefaultMode = !isStaff; // Lock default rows only if NOT staff/director
@@ -4019,11 +4595,7 @@ function renderUserActionPlanForm() {
   const tbodyMentors = document.getElementById('user-plan-mentors-body');
   if (tbodyMentors) {
     tbodyMentors.innerHTML = '';
-    addUserPlanMentorRow('I UG', '');
-    addUserPlanMentorRow('II UG', '');
-    addUserPlanMentorRow('III UG', '');
-    addUserPlanMentorRow('I PG', '');
-    addUserPlanMentorRow('II PG', '');
+    addUserPlanMentorRow('', '');
   }
 
   document.getElementById('user-plan-clubs-body').innerHTML = '';
@@ -4113,11 +4685,7 @@ async function loadExistingActionPlan(department, shift) {
           addUserPlanMentorRow(r.col1, r.col2);
         });
       } else {
-        addUserPlanMentorRow('I UG', '');
-        addUserPlanMentorRow('II UG', '');
-        addUserPlanMentorRow('III UG', '');
-        addUserPlanMentorRow('I PG', '');
-        addUserPlanMentorRow('II PG', '');
+        addUserPlanMentorRow('', '');
       }
     }
     
@@ -4181,11 +4749,7 @@ async function loadExistingActionPlan(department, shift) {
     const tbodyMentors = document.getElementById('user-plan-mentors-body');
     if (tbodyMentors) {
       tbodyMentors.innerHTML = '';
-      addUserPlanMentorRow('I UG', '');
-      addUserPlanMentorRow('II UG', '');
-      addUserPlanMentorRow('III UG', '');
-      addUserPlanMentorRow('I PG', '');
-      addUserPlanMentorRow('II PG', '');
+      addUserPlanMentorRow('', '');
     }
     document.getElementById('user-plan-clubs-body').innerHTML = '';
     document.getElementById('user-plan-conferences-body').innerHTML = '';
@@ -4275,21 +4839,14 @@ function addUserPlanMentorRow(className = '', mentorName = '') {
   tbody.appendChild(tr);
 }
 
-function addUserPlanClubRow(sNo = '', name = '', nature = 'Technical', faculty = '') {
+function addUserPlanClubRow(sNo = '', name = '', nature = '', faculty = '') {
   const tbody = document.getElementById('user-plan-clubs-body');
   const nextSNo = sNo || (tbody.children.length + 1);
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td style="padding: 8px;"><input type="text" class="form-control club-sno" value="${nextSNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
     <td style="padding: 8px;"><input type="text" class="form-control club-name" value="${name}" placeholder="Coder's Club" style="height:32px; padding-left:8px; font-size: 13px;"></td>
-    <td style="padding: 8px;">
-      <select class="form-select club-nature" style="height:32px; padding: 4px 8px; font-size: 13px;">
-        <option value="Technical" ${nature === 'Technical' ? 'selected' : ''}>Technical</option>
-        <option value="Cultural" ${nature === 'Cultural' ? 'selected' : ''}>Cultural</option>
-        <option value="Domain" ${nature === 'Domain' ? 'selected' : ''}>Domain</option>
-        <option value="others" ${nature === 'others' || nature === 'Others' ? 'selected' : ''}>Others</option>
-      </select>
-    </td>
+    <td style="padding: 8px;"><input type="text" class="form-control club-nature" value="${nature}" placeholder="e.g. Technical" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px;"><input type="text" class="form-control club-faculty" value="${faculty}" placeholder="Faculty name(s)" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px; text-align: right;">
       <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); reindexUserPlanTable('user-plan-clubs-body');" style="padding: 4px 8px; font-size:11px;">Remove</button>
@@ -4322,18 +4879,8 @@ function addUserPlanConferenceRow(sNo = '', title = '', type = 'FDP', nature = '
     </td>
     <td style="padding: 8px;"><input type="text" class="form-control conf-month" value="${month}" placeholder="July" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px;"><input type="text" class="form-control conf-coordinator" value="${coord}" placeholder="Faculty Coordinator" style="height:32px; padding-left:8px; font-size: 13px;"></td>
-    <td style="padding: 8px;">
-      <select class="form-select conf-iks" style="height:32px; padding: 4px 8px; font-size: 13px;">
-        <option value="-" ${iks === '-' ? 'selected' : ''}>-</option>
-        <option value="Yes" ${iks === 'Yes' ? 'selected' : ''}>Yes</option>
-      </select>
-    </td>
-    <td style="padding: 8px;">
-      <select class="form-select conf-sdg" style="height:32px; padding: 4px 8px; font-size: 13px;">
-        <option value="-" ${sdg === '-' ? 'selected' : ''}>-</option>
-        <option value="Yes" ${sdg === 'Yes' ? 'selected' : ''}>Yes</option>
-      </select>
-    </td>
+    <td style="padding: 8px;"><input type="text" class="form-control conf-iks" value="${iks}" placeholder="Yes/-" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control conf-sdg" value="${sdg}" placeholder="Yes/-" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px; text-align: right;">
       <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); reindexUserPlanTable('user-plan-conferences-body');" style="padding: 4px 8px; font-size:11px;">Remove</button>
     </td>
