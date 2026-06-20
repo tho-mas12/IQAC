@@ -260,10 +260,96 @@ async function switchSubView(viewId) {
   }
 }
 
+function isDeptInScope(dept, scope) {
+  if (!scope) return false;
+  const scopeItems = scope.split(',').map(s => s.trim().toLowerCase());
+  if (scopeItems.includes(dept.shift.toLowerCase())) return true;
+  if (scopeItems.includes(dept.name.toLowerCase())) return true;
+  if (scopeItems.includes(String(dept.id).toLowerCase())) return true;
+  return false;
+}
+
+function renderEventDepartmentsList(selectedScopeStr = '') {
+  const container = document.getElementById('event-departments-list');
+  if (!container) return;
+  
+  // Sort departments by shift and name
+  const sortedDepts = [...state.departments].sort((a, b) => {
+    if (a.shift !== b.shift) return a.shift.localeCompare(b.shift);
+    return a.name.localeCompare(b.name);
+  });
+  
+  container.innerHTML = sortedDepts.map(dept => {
+    // If selectedScopeStr is empty, check all by default. Otherwise check if in scope.
+    const isChecked = selectedScopeStr ? isDeptInScope(dept, selectedScopeStr) : true;
+    return `
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--text-main); font-weight: 500; margin-bottom: 2px;">
+        <input type="checkbox" class="event-dept-checkbox" value="${dept.name}" data-shift="${dept.shift}" ${isChecked ? 'checked' : ''}>
+        <span title="${dept.name} (${dept.shift})">${dept.name} <small style="color: var(--text-muted); font-size: 10px;">(${dept.shift})</small></span>
+      </label>
+    `;
+  }).join('');
+}
+
+function toggleEventDeptSelection(type) {
+  const checkboxes = document.querySelectorAll('.event-dept-checkbox');
+  checkboxes.forEach(cb => {
+    if (type === 'all') {
+      cb.checked = true;
+    } else if (type === 'none') {
+      cb.checked = false;
+    } else {
+      // type is shift name (e.g. 'Shift 1' or 'Shift 2')
+      const shift = cb.getAttribute('data-shift');
+      if (shift === type) {
+        cb.checked = true;
+      }
+    }
+  });
+}
+
+async function addNewDeptFromEventModal() {
+  const name = prompt("Enter new department name:");
+  if (!name) return;
+  
+  const shift = prompt("Enter shift (Shift 1, Shift 2, or Combined Department):", "Shift 1");
+  if (!shift) return;
+  
+  const validShifts = ["Shift 1", "Shift 2", "Combined Department"];
+  if (!validShifts.includes(shift)) {
+    alert("Invalid shift. Please enter 'Shift 1', 'Shift 2', or 'Combined Department'.");
+    return;
+  }
+  
+  try {
+    const category = prompt("Enter department category (e.g. Science, Arts, Postgraduate):", "Arts");
+    if (!category) return;
+
+    const newDept = await fetchAPI('/departments', {
+      method: 'POST',
+      body: JSON.stringify({ name, category, shift })
+    });
+    
+    // Reload state.departments
+    state.departments = await fetchAPI('/departments');
+    
+    // Re-render the departments checkboxes list, keeping existing checked items checked!
+    const checkedNames = Array.from(document.querySelectorAll('.event-dept-checkbox'))
+      .filter(cb => cb.checked)
+      .map(cb => cb.value);
+    
+    checkedNames.push(newDept.name);
+    
+    renderEventDepartmentsList(checkedNames.join(','));
+  } catch (err) {
+    alert("Failed to add department: " + err.message);
+  }
+}
+
 // 6. Stats & Calculations
 function getEventStats(evt, checklists) {
   const scope = evt.shifts_scope || 'Shift 1,Shift 2,Combined Department';
-  const targetDepts = state.departments.filter(dept => scope.includes(dept.shift));
+  const targetDepts = state.departments.filter(dept => isDeptInScope(dept, scope));
   
   let total = targetDepts.length;
   let received = 0;
@@ -499,10 +585,8 @@ function openCreateEventModal() {
   document.getElementById('event-edit-id').value = '';
   document.getElementById('create-event-form').reset();
   
-  // Check all scopes by default
-  document.getElementById('event-scope-shift1').checked = true;
-  document.getElementById('event-scope-shift2').checked = true;
-  document.getElementById('event-scope-admin').checked = true;
+  // Render departments list with all checked by default
+  renderEventDepartmentsList('');
   
   document.getElementById('create-event-modal').classList.add('open');
   const defaultDate = new Date();
@@ -522,11 +606,8 @@ function openEditEventModal(eventId) {
   document.getElementById('event-title').value = evt.title;
   document.getElementById('event-desc').value = evt.description;
   
-  // Set scopes checkboxes
-  const scope = evt.shifts_scope || 'Shift 1,Shift 2,Combined Department';
-  document.getElementById('event-scope-shift1').checked = scope.includes('Shift 1');
-  document.getElementById('event-scope-shift2').checked = scope.includes('Shift 2');
-  document.getElementById('event-scope-admin').checked = scope.includes('Combined Department');
+  // Render departments list using the event's shifts_scope
+  renderEventDepartmentsList(evt.shifts_scope);
   
   const dateObj = new Date(evt.deadline);
   dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
@@ -548,16 +629,15 @@ document.getElementById('create-event-form').addEventListener('submit', async fu
   const deadline = new Date(document.getElementById('event-deadline').value).toISOString();
   const editId = document.getElementById('event-edit-id').value;
 
-  const selectedShifts = [];
-  if (document.getElementById('event-scope-shift1').checked) selectedShifts.push('Shift 1');
-  if (document.getElementById('event-scope-shift2').checked) selectedShifts.push('Shift 2');
-  if (document.getElementById('event-scope-admin').checked) selectedShifts.push('Combined Department');
+  const checkedDpts = Array.from(document.querySelectorAll('.event-dept-checkbox'))
+    .filter(cb => cb.checked)
+    .map(cb => cb.value);
 
-  if (selectedShifts.length === 0) {
-    alert("Please select at least one target shift / department group.");
+  if (checkedDpts.length === 0) {
+    alert("Please select at least one target department.");
     return;
   }
-  const shifts_scope = selectedShifts.join(',');
+  const shifts_scope = checkedDpts.join(',');
 
   try {
     if (editId) {
@@ -755,7 +835,7 @@ async function renderStaffChecklist() {
   const filteredDepts = state.departments.filter(dept => {
     // Filter by event shifts scope
     const scope = evt.shifts_scope || 'Shift 1,Shift 2,Combined Department';
-    if (!scope.includes(dept.shift)) return false;
+    if (!isDeptInScope(dept, scope)) return false;
 
     // 1. Shift Tab
     if (state.checklistTab !== 'all') {
@@ -1129,7 +1209,7 @@ async function renderDirectorDashboard() {
 
     // Accumulate stats for charts
     const scope = evt.shifts_scope || 'Shift 1,Shift 2,Combined Department';
-    const targetDepts = state.departments.filter(dept => scope.includes(dept.shift));
+    const targetDepts = state.departments.filter(dept => isDeptInScope(dept, scope));
 
     targetDepts.forEach(dept => {
       const chk = checklists[dept.id] || { status: 'pending', receivedTime: null };
@@ -1268,7 +1348,7 @@ async function renderDirectorDetail() {
   let filteredDepts = state.departments.filter(dept => {
     // Filter by event shifts scope
     const scope = evt.shifts_scope || 'Shift 1,Shift 2,Combined Department';
-    if (!scope.includes(dept.shift)) return false;
+    if (!isDeptInScope(dept, scope)) return false;
 
     // tab
     if (state.directorTab !== 'all') {
@@ -1516,7 +1596,7 @@ async function getExportData(selectedShift = 'all') {
     let targetDepts = state.departments.filter(dept => {
       // 0. shifts scope
       const scope = evt.shifts_scope || 'Shift 1,Shift 2,Combined Department';
-      if (!scope.includes(dept.shift)) return false;
+      if (!isDeptInScope(dept, scope)) return false;
 
       // 1. Shift filter (selected in export dialog)
       if (selectedShift !== 'all') {
@@ -3687,7 +3767,7 @@ async function renderPublicEventDetail(eventId) {
     
     const statusFilter = document.getElementById('public-status-filter') ? document.getElementById('public-status-filter').value : 'all';
     
-    let targetDepts = state.departments.filter(dept => scope.includes(dept.shift));
+    let targetDepts = state.departments.filter(dept => isDeptInScope(dept, scope));
     
     targetDepts = targetDepts.filter(dept => {
       const chk = checklists[dept.id] || { status: 'pending' };
@@ -3903,12 +3983,12 @@ function renderUserActionPlanForm() {
       
       if (deptInput) {
         deptInput.value = userDeptName;
-        deptInput.readOnly = true;
+        deptInput.readOnly = false;
       }
       
       if (shiftInput && matchedDept) {
         shiftInput.value = matchedDept.shift;
-        shiftInput.disabled = true;
+        shiftInput.disabled = false;
       }
       
       // Load the existing action plan immediately!
