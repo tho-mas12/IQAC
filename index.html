@@ -85,6 +85,12 @@
             <span>Staff Involvement</span>
           </a>
         </li>
+        <li class="menu-item" id="menu-staff-action-plan">
+          <a onclick="switchSubView('user-action-plan')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <span>Action Plan Form</span>
+          </a>
+        </li>
         <li class="menu-item" id="menu-staff-users">
           <a onclick="switchSubView('director-users')">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -863,28 +869,21 @@
 
               <!-- Class Mentors -->
               <h5 style="margin: 16px 0 8px; font-weight: 600; color: var(--primary);">Class Mentors</h5>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                <div class="form-group">
-                  <label class="form-label" style="font-size:12px; font-weight:600;">I UG Mentor</label>
-                  <input type="text" id="user-mentor-i-ug" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:12px; font-weight:600;">II UG Mentor</label>
-                  <input type="text" id="user-mentor-ii-ug" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:12px; font-weight:600;">III UG Mentor</label>
-                  <input type="text" id="user-mentor-iii-ug" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:12px; font-weight:600;">I PG Mentor</label>
-                  <input type="text" id="user-mentor-i-pg" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" style="font-size:12px; font-weight:600;">II PG Mentor</label>
-                  <input type="text" id="user-mentor-ii-pg" class="form-control" placeholder="Mentor Name" style="height:36px; padding-left: 10px;">
-                </div>
+              <div class="table-responsive" style="margin-bottom: 16px;">
+                <table class="custom-table" id="user-plan-mentors-table" style="width:100%; border: 1px solid var(--card-border);">
+                  <thead>
+                    <tr style="background: #f8fafc;">
+                      <th style="width: 250px; padding: 10px;">Class</th>
+                      <th style="padding: 10px;">Mentor Assigned</th>
+                      <th style="width: 80px; text-align: right; padding: 10px;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-plan-mentors-body">
+                    <!-- Dynamic Mentor Rows -->
+                  </tbody>
+                </table>
               </div>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="addUserPlanMentorRow()">+ Add Mentor Row</button>
             </div>
 
             <!-- Step 4: Part B: Academic & Co-curricular Activities -->

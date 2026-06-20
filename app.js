@@ -251,6 +251,8 @@ async function switchSubView(viewId) {
     document.getElementById('subview-user-action-plan').style.display = 'block';
     const menuEl = document.getElementById('menu-user-action-plan');
     if (menuEl) menuEl.classList.add('active');
+    const menuElStaff = document.getElementById('menu-staff-action-plan');
+    if (menuElStaff) menuElStaff.classList.add('active');
     document.getElementById('header-title').innerText = 'Department Action Plan Form';
     await loadDepartments();
     await loadInvolvementData();
@@ -840,7 +842,7 @@ async function renderStaffChecklist() {
       `;
     } else {
       actionButtons = `
-        <button class="btn btn-secondary btn-sm" onclick="openReceivedTimeModal('${dept.id}')">Set Manual Time</button>
+        <button class="btn btn-secondary btn-sm" onclick="openReceivedTimeModal('${dept.id}')">Make Status</button>
       `;
     }
 
@@ -3861,17 +3863,68 @@ function renderUserActionPlanForm() {
   const deptInput = document.getElementById('user-plan-dept');
   if (deptInput) {
     deptInput.value = '';
+    deptInput.readOnly = false;
   }
   const coordinatorInput = document.getElementById('user-plan-coordinator');
   if (coordinatorInput) {
     coordinatorInput.value = '';
   }
+  const shiftInput = document.getElementById('user-plan-shift');
+  if (shiftInput) {
+    shiftInput.value = 'Shift 1';
+    shiftInput.disabled = false;
+  }
 
+  // Check if current user is Staff or Director
+  const isStaff = (state.currentUser && (state.currentUser.role === 'Staff' || state.currentUser.role === 'Director'));
+  const isDefaultMode = !isStaff; // Lock default rows only if NOT staff/director
+
+  // Bind change/blur listeners once to auto-load action plans
+  if (!state.actionPlanListenersBound) {
+    if (deptInput && shiftInput) {
+      const handler = () => {
+        const dept = deptInput.value.trim();
+        const shift = shiftInput.value;
+        if (dept && shift) {
+          loadExistingActionPlan(dept, shift);
+        }
+      };
+      deptInput.addEventListener('change', handler);
+      shiftInput.addEventListener('change', handler);
+      state.actionPlanListenersBound = true;
+    }
+  }
+
+  // Pre-fill department and shift for department user
+  if (state.currentUser && state.currentUser.role === 'User') {
+    if (state.currentUser.name && state.currentUser.name !== 'Department User') {
+      const userDeptName = state.currentUser.name.trim();
+      const matchedDept = (state.departments || []).find(d => d.name.toLowerCase() === userDeptName.toLowerCase());
+      
+      if (deptInput) {
+        deptInput.value = userDeptName;
+        deptInput.readOnly = true;
+      }
+      
+      if (shiftInput && matchedDept) {
+        shiftInput.value = matchedDept.shift;
+        shiftInput.disabled = true;
+      }
+      
+      // Load the existing action plan immediately!
+      if (userDeptName && matchedDept) {
+        loadExistingActionPlan(userDeptName, matchedDept.shift);
+        return; // loadExistingActionPlan handles rendering
+      }
+    }
+  }
+
+  // Render blank/default form if no automatic load occurred
   const tbodyA = document.getElementById('user-plan-part-a-body');
   if (tbodyA) {
     tbodyA.innerHTML = '';
     partAFields.forEach(f => {
-      addUserPlanPartARow(f.id, f.label, '');
+      addUserPlanPartARow(f.id, f.label, '', isDefaultMode);
     });
   }
 
@@ -3879,8 +3932,18 @@ function renderUserActionPlanForm() {
   if (tbodyB) {
     tbodyB.innerHTML = '';
     partBFields.forEach(f => {
-      addUserPlanPartBRow(f.id, f.label, '', '', '');
+      addUserPlanPartBRow(f.id, f.label, '', '', '', isDefaultMode);
     });
+  }
+
+  const tbodyMentors = document.getElementById('user-plan-mentors-body');
+  if (tbodyMentors) {
+    tbodyMentors.innerHTML = '';
+    addUserPlanMentorRow('I UG', '');
+    addUserPlanMentorRow('II UG', '');
+    addUserPlanMentorRow('III UG', '');
+    addUserPlanMentorRow('I PG', '');
+    addUserPlanMentorRow('II PG', '');
   }
 
   document.getElementById('user-plan-clubs-body').innerHTML = '';
@@ -3892,56 +3955,262 @@ function renderUserActionPlanForm() {
   addUserPlanAaaRow();
 }
 
-function addUserPlanPartARow(sNo = '', label = '', val = '') {
+async function loadExistingActionPlan(department, shift) {
+  if (!state.involvementCategories) {
+    await loadInvolvementData();
+  }
+  const cardName = `${department} (${shift}) Action Plan 2026-2027`;
+  const category = state.involvementCategories.find(c => c.name.toLowerCase() === cardName.toLowerCase());
+  
+  const isStaff = (state.currentUser && (state.currentUser.role === 'Staff' || state.currentUser.role === 'Director'));
+  const isDefaultMode = !isStaff;
+  
+  if (category) {
+    // Populate coordinator
+    const coordinatorInput = document.getElementById('user-plan-coordinator');
+    if (coordinatorInput) {
+      coordinatorInput.value = category.coordinator || '';
+    }
+    
+    // Fetch all records for this category
+    const catRecords = (state.involvementRecords || []).filter(r => r.category_id === category.id);
+    
+    // Clear and populate Part A
+    const tbodyA = document.getElementById('user-plan-part-a-body');
+    if (tbodyA) {
+      tbodyA.innerHTML = '';
+      const partARecords = catRecords.filter(r => r.section_type === 'Part A');
+      
+      // Populate defaults first (preserving their default status)
+      partAFields.forEach(f => {
+        const record = partARecords.find(r => r.col2 === f.label || parseInt(r.col1) === f.id);
+        const val = record ? record.col3 : '';
+        addUserPlanPartARow(f.id, f.label, val, isDefaultMode);
+      });
+      
+      // Populate custom rows
+      const defaultLabels = partAFields.map(f => f.label.toLowerCase());
+      partARecords.forEach(r => {
+        const isDefaultRow = defaultLabels.includes(r.col2.toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 23);
+        if (!isDefaultRow) {
+          addUserPlanPartARow(r.col1, r.col2, r.col3, false);
+        }
+      });
+    }
+    
+    // Clear and populate Part B
+    const tbodyB = document.getElementById('user-plan-part-b-body');
+    if (tbodyB) {
+      tbodyB.innerHTML = '';
+      const partBRecords = catRecords.filter(r => r.section_type === 'Part B');
+      
+      // Populate defaults first
+      partBFields.forEach(f => {
+        const record = partBRecords.find(r => r.col2 === f.label || parseInt(r.col1) === f.id);
+        const month = record ? record.col3 : '';
+        const target = record ? record.col4 : '';
+        const coord = record ? record.col5 : '';
+        addUserPlanPartBRow(f.id, f.label, month, target, coord, isDefaultMode);
+      });
+      
+      // Populate custom rows
+      const defaultLabels = partBFields.map(f => f.label.toLowerCase());
+      partBRecords.forEach(r => {
+        const isDefaultRow = defaultLabels.includes(r.col2.toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 19);
+        if (!isDefaultRow) {
+          addUserPlanPartBRow(r.col1, r.col2, r.col3, r.col4, r.col5, false);
+        }
+      });
+    }
+    
+    // Clear and populate Class Mentors
+    const tbodyMentors = document.getElementById('user-plan-mentors-body');
+    if (tbodyMentors) {
+      tbodyMentors.innerHTML = '';
+      const mentorRecords = catRecords.filter(r => r.section_type === 'Class Mentors');
+      if (mentorRecords.length > 0) {
+        mentorRecords.forEach(r => {
+          addUserPlanMentorRow(r.col1, r.col2);
+        });
+      } else {
+        addUserPlanMentorRow('I UG', '');
+        addUserPlanMentorRow('II UG', '');
+        addUserPlanMentorRow('III UG', '');
+        addUserPlanMentorRow('I PG', '');
+        addUserPlanMentorRow('II PG', '');
+      }
+    }
+    
+    // Clear and populate Clubs
+    const tbodyClubs = document.getElementById('user-plan-clubs-body');
+    if (tbodyClubs) {
+      tbodyClubs.innerHTML = '';
+      const clubRecords = catRecords.filter(r => r.section_type === 'Clubs');
+      if (clubRecords.length > 0) {
+        clubRecords.forEach(r => {
+          addUserPlanClubRow(r.col1, r.col2, r.col3, r.col4);
+        });
+      } else {
+        addUserPlanClubRow();
+      }
+    }
+    
+    // Clear and populate Conferences
+    const tbodyConferences = document.getElementById('user-plan-conferences-body');
+    if (tbodyConferences) {
+      tbodyConferences.innerHTML = '';
+      const confRecords = catRecords.filter(r => r.section_type === 'Conferences');
+      if (confRecords.length > 0) {
+        confRecords.forEach(r => {
+          addUserPlanConferenceRow(r.col1, r.col2, r.col3, r.col4, r.col5, r.col6, r.col7, r.col8);
+        });
+      } else {
+        addUserPlanConferenceRow();
+      }
+    }
+    
+    // Clear and populate AAA Proposed Plan
+    const tbodyAaa = document.getElementById('user-plan-aaa-body');
+    if (tbodyAaa) {
+      tbodyAaa.innerHTML = '';
+      const aaaRecords = catRecords.filter(r => r.section_type === 'AAA Proposed Plan');
+      if (aaaRecords.length > 0) {
+        aaaRecords.forEach(r => {
+          addUserPlanAaaRow(r.col1, r.col2, r.col3, r.col4);
+        });
+      } else {
+        addUserPlanAaaRow();
+      }
+    }
+  } else {
+    // Keep inputs but reset tables
+    const tbodyA = document.getElementById('user-plan-part-a-body');
+    if (tbodyA) {
+      tbodyA.innerHTML = '';
+      partAFields.forEach(f => {
+        addUserPlanPartARow(f.id, f.label, '', isDefaultMode);
+      });
+    }
+    const tbodyB = document.getElementById('user-plan-part-b-body');
+    if (tbodyB) {
+      tbodyB.innerHTML = '';
+      partBFields.forEach(f => {
+        addUserPlanPartBRow(f.id, f.label, '', '', '', isDefaultMode);
+      });
+    }
+    const tbodyMentors = document.getElementById('user-plan-mentors-body');
+    if (tbodyMentors) {
+      tbodyMentors.innerHTML = '';
+      addUserPlanMentorRow('I UG', '');
+      addUserPlanMentorRow('II UG', '');
+      addUserPlanMentorRow('III UG', '');
+      addUserPlanMentorRow('I PG', '');
+      addUserPlanMentorRow('II PG', '');
+    }
+    document.getElementById('user-plan-clubs-body').innerHTML = '';
+    document.getElementById('user-plan-conferences-body').innerHTML = '';
+    document.getElementById('user-plan-aaa-body').innerHTML = '';
+    
+    addUserPlanClubRow();
+    addUserPlanConferenceRow();
+    addUserPlanAaaRow();
+  }
+}
+
+function addUserPlanPartARow(sNo = '', label = '', val = '', isDefault = false) {
   const tbody = document.getElementById('user-plan-part-a-body');
   if (!tbody) return;
   const nextSNo = sNo || (tbody.children.length + 1);
   const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td style="padding: 8px;"><input type="text" class="form-control parta-sno" value="${nextSNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
-    <td style="padding: 8px;"><input type="text" class="form-control parta-label" value="${label}" placeholder="Area of Responsibility" style="height:32px; padding-left:8px;"></td>
-    <td style="padding: 8px;"><input type="text" class="form-control parta-val" value="${val}" placeholder="Faculty name(s) or Details" style="height:32px; padding-left:8px;"></td>
-    <td style="padding: 8px; text-align: right;">
-      <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); reindexUserPlanTable('user-plan-part-a-body');" style="padding: 4px 8px; font-size:11px;">Remove</button>
-    </td>
-  `;
+  
+  if (isDefault) {
+    tr.innerHTML = `
+      <td style="padding: 8px; text-align: center; font-weight: 600;">${nextSNo}</td>
+      <td style="padding: 8px; font-weight: 500; color: var(--text-main);">${label}</td>
+      <td style="padding: 8px;">
+        <textarea class="form-control parta-val" placeholder="Faculty name(s) or Details" style="height:38px; min-height:38px; padding: 6px 8px; resize: vertical; font-size: 13px;">${val}</textarea>
+        <input type="hidden" class="parta-sno" value="${nextSNo}">
+        <input type="hidden" class="parta-label" value="${label}">
+      </td>
+      <td style="padding: 8px; text-align: right;"></td>
+    `;
+  } else {
+    tr.innerHTML = `
+      <td style="padding: 8px; text-align: center; font-weight: 600;"><input type="text" class="form-control parta-sno" value="${nextSNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
+      <td style="padding: 8px;"><input type="text" class="form-control parta-label" value="${label}" placeholder="Area of Responsibility" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+      <td style="padding: 8px;"><textarea class="form-control parta-val" placeholder="Faculty name(s) or Details" style="height:38px; min-height:38px; padding: 6px 8px; resize: vertical; font-size: 13px;">${val}</textarea></td>
+      <td style="padding: 8px; text-align: right;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); reindexUserPlanTable('user-plan-part-a-body');" style="padding: 4px 8px; font-size:11px;">Remove</button>
+      </td>
+    `;
+  }
   tbody.appendChild(tr);
 }
 
-function addUserPlanPartBRow(sNo = '', label = '', month = '', target = '', coord = '') {
+function addUserPlanPartBRow(sNo = '', label = '', month = '', target = '', coord = '', isDefault = false) {
   const tbody = document.getElementById('user-plan-part-b-body');
   if (!tbody) return;
   const nextSNo = sNo || (tbody.children.length + 1);
   const tr = document.createElement('tr');
+  
+  if (isDefault) {
+    tr.innerHTML = `
+      <td style="padding: 8px; text-align: center; font-weight: 600;">${nextSNo}</td>
+      <td style="padding: 8px; font-weight: 500; color: var(--text-main);">${label}</td>
+      <td style="padding: 8px;"><input type="text" class="form-control partb-month" value="${month}" placeholder="Month" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+      <td style="padding: 8px;"><input type="text" class="form-control partb-target" value="${target}" placeholder="Target Group" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+      <td style="padding: 8px;">
+        <textarea class="form-control partb-coordinator" placeholder="Coordinator(s)" style="height:38px; min-height:38px; padding: 6px 8px; resize: vertical; font-size: 13px;">${coord}</textarea>
+        <input type="hidden" class="partb-sno" value="${nextSNo}">
+        <input type="hidden" class="partb-label" value="${label}">
+      </td>
+      <td style="padding: 8px; text-align: right;"></td>
+    `;
+  } else {
+    tr.innerHTML = `
+      <td style="padding: 8px; text-align: center; font-weight: 600;"><input type="text" class="form-control partb-sno" value="${nextSNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
+      <td style="padding: 8px;"><input type="text" class="form-control partb-label" value="${label}" placeholder="Activity Description" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+      <td style="padding: 8px;"><input type="text" class="form-control partb-month" value="${month}" placeholder="Month" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+      <td style="padding: 8px;"><input type="text" class="form-control partb-target" value="${target}" placeholder="Target Group" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+      <td style="padding: 8px;"><textarea class="form-control partb-coordinator" placeholder="Coordinator(s)" style="height:38px; min-height:38px; padding: 6px 8px; resize: vertical; font-size: 13px;">${coord}</textarea></td>
+      <td style="padding: 8px; text-align: right;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); reindexUserPlanTable('user-plan-part-b-body');" style="padding: 4px 8px; font-size:11px;">Remove</button>
+      </td>
+    `;
+  }
+  tbody.appendChild(tr);
+}
+
+function addUserPlanMentorRow(className = '', mentorName = '') {
+  const tbody = document.getElementById('user-plan-mentors-body');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td style="padding: 8px;"><input type="text" class="form-control partb-sno" value="${nextSNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
-    <td style="padding: 8px;"><input type="text" class="form-control partb-label" value="${label}" placeholder="Activity Description" style="height:32px; padding-left:8px;"></td>
-    <td style="padding: 8px;"><input type="text" class="form-control partb-month" value="${month}" placeholder="Month" style="height:32px; padding-left:8px;"></td>
-    <td style="padding: 8px;"><input type="text" class="form-control partb-target" value="${target}" placeholder="Target Group" style="height:32px; padding-left:8px;"></td>
-    <td style="padding: 8px;"><input type="text" class="form-control partb-coordinator" value="${coord}" placeholder="Coordinator(s)" style="height:32px; padding-left:8px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control mentor-class" value="${className}" placeholder="e.g. I UG A" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control mentor-name" value="${mentorName}" placeholder="e.g. Dr. A. Raj" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px; text-align: right;">
-      <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); reindexUserPlanTable('user-plan-part-b-body');" style="padding: 4px 8px; font-size:11px;">Remove</button>
+      <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove();" style="padding: 4px 8px; font-size:11px;">Remove</button>
     </td>
   `;
   tbody.appendChild(tr);
 }
 
-function addUserPlanClubRow() {
+function addUserPlanClubRow(sNo = '', name = '', nature = 'Technical', faculty = '') {
   const tbody = document.getElementById('user-plan-clubs-body');
-  const sNo = tbody.children.length + 1;
+  const nextSNo = sNo || (tbody.children.length + 1);
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td style="padding: 8px;"><input type="text" class="form-control club-sno" value="${sNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
-    <td style="padding: 8px;"><input type="text" class="form-control club-name" placeholder="Coder's Club" style="height:32px; padding-left:8px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control club-sno" value="${nextSNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
+    <td style="padding: 8px;"><input type="text" class="form-control club-name" value="${name}" placeholder="Coder's Club" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px;">
-      <select class="form-select club-nature" style="height:32px; padding: 4px 8px;">
-        <option value="Technical">Technical</option>
-        <option value="Cultural">Cultural</option>
-        <option value="Domain">Domain</option>
-        <option value="others">Others</option>
+      <select class="form-select club-nature" style="height:32px; padding: 4px 8px; font-size: 13px;">
+        <option value="Technical" ${nature === 'Technical' ? 'selected' : ''}>Technical</option>
+        <option value="Cultural" ${nature === 'Cultural' ? 'selected' : ''}>Cultural</option>
+        <option value="Domain" ${nature === 'Domain' ? 'selected' : ''}>Domain</option>
+        <option value="others" ${nature === 'others' || nature === 'Others' ? 'selected' : ''}>Others</option>
       </select>
     </td>
-    <td style="padding: 8px;"><input type="text" class="form-control club-faculty" placeholder="Faculty name(s)" style="height:32px; padding-left:8px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control club-faculty" value="${faculty}" placeholder="Faculty name(s)" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px; text-align: right;">
       <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); reindexUserPlanTable('user-plan-clubs-body');" style="padding: 4px 8px; font-size:11px;">Remove</button>
     </td>
@@ -3949,40 +4218,40 @@ function addUserPlanClubRow() {
   tbody.appendChild(tr);
 }
 
-function addUserPlanConferenceRow() {
+function addUserPlanConferenceRow(sNo = '', title = '', type = 'FDP', nature = 'N', month = '', coord = '', iks = '-', sdg = '-') {
   const tbody = document.getElementById('user-plan-conferences-body');
-  const sNo = tbody.children.length + 1;
+  const nextSNo = sNo || (tbody.children.length + 1);
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td style="padding: 8px;"><input type="text" class="form-control conf-sno" value="${sNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
-    <td style="padding: 8px;"><input type="text" class="form-control conf-title" placeholder="Teaching Pedagogy" style="height:32px; padding-left:8px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control conf-sno" value="${nextSNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
+    <td style="padding: 8px;"><input type="text" class="form-control conf-title" value="${title}" placeholder="Teaching Pedagogy" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px;">
-      <select class="form-select conf-type" style="height:32px; padding: 4px 8px;">
-        <option value="FDP">FDP</option>
-        <option value="Conference">Conference</option>
-        <option value="Seminar">Seminar</option>
-        <option value="Workshop">Workshop</option>
-        <option value="Webinar">Webinar</option>
+      <select class="form-select conf-type" style="height:32px; padding: 4px 8px; font-size: 13px;">
+        <option value="FDP" ${type === 'FDP' ? 'selected' : ''}>FDP</option>
+        <option value="Conference" ${type === 'Conference' ? 'selected' : ''}>Conference</option>
+        <option value="Seminar" ${type === 'Seminar' ? 'selected' : ''}>Seminar</option>
+        <option value="Workshop" ${type === 'Workshop' ? 'selected' : ''}>Workshop</option>
+        <option value="Webinar" ${type === 'Webinar' ? 'selected' : ''}>Webinar</option>
       </select>
     </td>
     <td style="padding: 8px;">
-      <select class="form-select conf-nature" style="height:32px; padding: 4px 8px;">
-        <option value="N">National (N)</option>
-        <option value="IN">International (IN)</option>
+      <select class="form-select conf-nature" style="height:32px; padding: 4px 8px; font-size: 13px;">
+        <option value="N" ${nature === 'N' ? 'selected' : ''}>National (N)</option>
+        <option value="IN" ${nature === 'IN' ? 'selected' : ''}>International (IN)</option>
       </select>
     </td>
-    <td style="padding: 8px;"><input type="text" class="form-control conf-month" placeholder="July" style="height:32px; padding-left:8px;"></td>
-    <td style="padding: 8px;"><input type="text" class="form-control conf-coordinator" placeholder="Faculty Coordinator" style="height:32px; padding-left:8px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control conf-month" value="${month}" placeholder="July" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control conf-coordinator" value="${coord}" placeholder="Faculty Coordinator" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px;">
-      <select class="form-select conf-iks" style="height:32px; padding: 4px 8px;">
-        <option value="-">-</option>
-        <option value="Yes">Yes</option>
+      <select class="form-select conf-iks" style="height:32px; padding: 4px 8px; font-size: 13px;">
+        <option value="-" ${iks === '-' ? 'selected' : ''}>-</option>
+        <option value="Yes" ${iks === 'Yes' ? 'selected' : ''}>Yes</option>
       </select>
     </td>
     <td style="padding: 8px;">
-      <select class="form-select conf-sdg" style="height:32px; padding: 4px 8px;">
-        <option value="-">-</option>
-        <option value="Yes">Yes</option>
+      <select class="form-select conf-sdg" style="height:32px; padding: 4px 8px; font-size: 13px;">
+        <option value="-" ${sdg === '-' ? 'selected' : ''}>-</option>
+        <option value="Yes" ${sdg === 'Yes' ? 'selected' : ''}>Yes</option>
       </select>
     </td>
     <td style="padding: 8px; text-align: right;">
@@ -3992,15 +4261,15 @@ function addUserPlanConferenceRow() {
   tbody.appendChild(tr);
 }
 
-function addUserPlanAaaRow() {
+function addUserPlanAaaRow(sNo = '', act = '', month = '', faculty = '') {
   const tbody = document.getElementById('user-plan-aaa-body');
-  const sNo = tbody.children.length + 1;
+  const nextSNo = sNo || (tbody.children.length + 1);
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td style="padding: 8px;"><input type="text" class="form-control aaa-sno" value="${sNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
-    <td style="padding: 8px;"><input type="text" class="form-control aaa-activity" placeholder="Provide certificate courses" style="height:32px; padding-left:8px;"></td>
-    <td style="padding: 8px;"><input type="text" class="form-control aaa-month" placeholder="July" style="height:32px; padding-left:8px;"></td>
-    <td style="padding: 8px;"><input type="text" class="form-control aaa-faculty" placeholder="Faculty Assigned" style="height:32px; padding-left:8px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control aaa-sno" value="${nextSNo}" style="height:32px; padding-left:6px; text-align:center;" readonly></td>
+    <td style="padding: 8px;"><input type="text" class="form-control aaa-activity" value="${act}" placeholder="Provide certificate courses" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control aaa-month" value="${month}" placeholder="July" style="height:32px; padding-left:8px; font-size: 13px;"></td>
+    <td style="padding: 8px;"><input type="text" class="form-control aaa-faculty" value="${faculty}" placeholder="Faculty Assigned" style="height:32px; padding-left:8px; font-size: 13px;"></td>
     <td style="padding: 8px; text-align: right;">
       <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove(); reindexUserPlanTable('user-plan-aaa-body');" style="padding: 4px 8px; font-size:11px;">Remove</button>
     </td>
@@ -4107,20 +4376,16 @@ async function submitUserActionPlan(event) {
       }
     });
     
-    const mentors = [
-      { class: "I UG", el: "user-mentor-i-ug" },
-      { class: "II UG", el: "user-mentor-ii-ug" },
-      { class: "III UG", el: "user-mentor-iii-ug" },
-      { class: "I PG", el: "user-mentor-i-pg" },
-      { class: "II PG", el: "user-mentor-ii-pg" }
-    ];
-    mentors.forEach(m => {
-      const val = document.getElementById(m.el).value.trim();
-      if (val) {
+    const mentorRows = document.getElementById('user-plan-mentors-body').children;
+    Array.from(mentorRows).forEach(row => {
+      const className = row.querySelector('.mentor-class').value.trim();
+      const mentorName = row.querySelector('.mentor-name').value.trim();
+      
+      if (className) {
         records.push({
           section_type: "Class Mentors",
-          col1: m.class,
-          col2: val
+          col1: className,
+          col2: mentorName || '-'
         });
       }
     });
