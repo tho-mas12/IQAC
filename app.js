@@ -4742,7 +4742,6 @@ function renderUserActionPlanForm() {
   }
 
   // Check if current user is Staff or Director
-  const isStaff = (state.currentUser && (state.currentUser.role === 'Staff' || state.currentUser.role === 'Director'));
   const isDefaultMode = !isStaff; // Lock default rows only if NOT staff/director
 
   // Bind change/blur listeners once to auto-load action plans
