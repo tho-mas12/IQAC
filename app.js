@@ -2096,10 +2096,15 @@ function renderStaffInvolvementRestructured() {
     const shift = info.shift;
     const coordinator = category.coordinator || '-';
     const viewButtonHtml = `
-      <td style="padding: 12px 16px; text-align: center;">
-        <button class="btn btn-primary btn-xs" onclick="viewActionPlanFromStaff('${category.id}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">
-          View Data
-        </button>
+      <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
+        <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+          <button class="btn btn-primary btn-xs" onclick="viewActionPlanFromStaff('${category.id}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">
+            View Data
+          </button>
+          <button class="btn btn-danger btn-xs" onclick="confirmDeleteActionPlan('${category.id}', \`${escapeHtml(deptName).replace(/'/g, "\\'")}\`, '${shift}')" style="padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="Delete Action Plan">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+        </div>
       </td>
     `;
 
@@ -2139,6 +2144,46 @@ function renderStaffInvolvementRestructured() {
 function viewActionPlanFromStaff(categoryId) {
   state.staffViewPlanId = categoryId;
   switchSubView('user-action-plan');
+}
+
+function confirmDeleteActionPlan(categoryId, deptName, shift) {
+  const modal = document.getElementById('confirm-delete-modal');
+  const textEl = document.getElementById('confirm-delete-text');
+  const confirmBtn = document.getElementById('confirm-delete-submit-btn');
+  
+  if (!modal || !textEl || !confirmBtn) return;
+  
+  textEl.innerHTML = `Are you sure you want to delete the Action Plan for <strong>${escapeHtml(deptName)} (${escapeHtml(shift)})</strong>? This action cannot be undone and will delete all associated records.`;
+  
+  confirmBtn.onclick = async function() {
+    try {
+      confirmBtn.disabled = true;
+      confirmBtn.innerText = 'Deleting...';
+      
+      await fetchAPI(`/involvement/categories/${categoryId}`, {
+        method: 'DELETE'
+      });
+      
+      closeConfirmDeleteModal();
+      await loadInvolvementData();
+      renderStaffInvolvementRestructured();
+    } catch (err) {
+      console.error("Failed to delete action plan:", err);
+      alert("Failed to delete action plan: " + err.message);
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.innerText = 'Yes, Delete';
+    }
+  };
+  
+  modal.classList.add('open');
+}
+
+function closeConfirmDeleteModal() {
+  const modal = document.getElementById('confirm-delete-modal');
+  if (modal) {
+    modal.classList.remove('open');
+  }
 }
 
 async function exportRestructuredInvolvementsExcel() {
@@ -4642,6 +4687,12 @@ const partBFields = [
 ];
 
 function renderUserActionPlanForm() {
+  const isStaff = (state.currentUser && (state.currentUser.role === 'Staff' || state.currentUser.role === 'Director'));
+  const backBtn = document.getElementById('user-plan-back-btn');
+  if (backBtn) {
+    backBtn.style.display = isStaff ? 'block' : 'none';
+  }
+
   const deptInput = document.getElementById('user-plan-dept');
   if (deptInput) {
     const uniqueDepts = [...new Set((state.departments || []).map(d => d.name))].filter(Boolean).sort();
