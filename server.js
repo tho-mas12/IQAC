@@ -324,20 +324,26 @@ function initializeDatabase() {
                                             }
                                           });
                                           
-                                          // 1. Seed users
-                                          db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
-                                            if (row && (row.count === 0 || row.count === '0')) {
-                                              db.run("INSERT INTO users (username, password, name, role) VALUES ('staff', 'staff123', 'IQAC Coordinator', 'Staff')", [], () => {
-                                                db.run("INSERT INTO users (username, password, name, role) VALUES ('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director')", [], () => {
-                                                  db.run("INSERT INTO users (username, password, name, role) VALUES ('user', 'user123', 'Department User', 'User')", [], () => {
-                                                    console.log('Default users seeded.');
-                                                    seedDepartments();
-                                                  });
+                                          // 1. Seed users individually if missing
+                                          const seedUser = (username, password, name, role, callback) => {
+                                            db.get("SELECT COUNT(*) as count FROM users WHERE username = ?", [username], (err, row) => {
+                                              if (row && (row.count === 0 || row.count === '0' || row.count === 0)) {
+                                                db.run("INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)", [username, password, name, role], () => {
+                                                  if (callback) callback();
                                                 });
+                                              } else {
+                                                if (callback) callback();
+                                              }
+                                            });
+                                          };
+                                          
+                                          seedUser('staff', 'staff123', 'IQAC Coordinator', 'Staff', () => {
+                                            seedUser('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director', () => {
+                                              seedUser('user', 'user123', 'Department User', 'User', () => {
+                                                console.log('Default users checked and seeded if missing.');
+                                                seedDepartments();
                                               });
-                                            } else {
-                                              seedDepartments();
-                                            }
+                                            });
                                           });
                                         });
                                       });
