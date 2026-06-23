@@ -2,6 +2,167 @@
 
 const API_BASE = '/api';
 
+// ================= CUSTOM NOTIFICATION & DIALOG SYSTEM =================
+let toastContainer = null;
+function getToastContainer() {
+  if (!toastContainer) {
+    toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+      toastContainer = document.createElement('div');
+      toastContainer.id = 'toast-container';
+      document.body.appendChild(toastContainer);
+    }
+  }
+  return toastContainer;
+}
+
+function showToast(message, type = 'info', duration = 4000) {
+  const container = getToastContainer();
+  const toast = document.createElement('div');
+  toast.className = `toast-item toast-${type}`;
+  
+  let iconSvg = '';
+  if (type === 'success') {
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  } else if (type === 'error') {
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+  } else if (type === 'warning') {
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+  } else {
+    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+  }
+
+  const escapedMessage = String(message)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  toast.innerHTML = `
+    <div class="toast-icon">${iconSvg}</div>
+    <div class="toast-message">${escapedMessage}</div>
+    <button class="toast-close" aria-label="Close notification">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  `;
+
+  toast.querySelector('.toast-close').onclick = () => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  };
+
+  container.appendChild(toast);
+  setTimeout(() => toast.classList.add('show'), 10);
+
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 400);
+    }
+  }, duration);
+}
+
+function showCustomDialog({ title, message, type = 'info', confirmText = 'OK', cancelText = 'Cancel', showCancel = false }) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('custom-dialog-modal');
+    const iconWrapper = document.getElementById('custom-dialog-icon-wrapper');
+    const titleEl = document.getElementById('custom-dialog-title');
+    const messageEl = document.getElementById('custom-dialog-message');
+    const confirmBtn = document.getElementById('custom-dialog-confirm-btn');
+    const cancelBtn = document.getElementById('custom-dialog-cancel-btn');
+
+    if (!modal || !iconWrapper || !titleEl || !messageEl || !confirmBtn || !cancelBtn) {
+      resolve(confirm(message));
+      return;
+    }
+
+    titleEl.innerText = title;
+    messageEl.innerText = message;
+    confirmBtn.innerText = confirmText;
+    cancelBtn.innerText = cancelText;
+    cancelBtn.style.display = showCancel ? 'block' : 'none';
+
+    let iconSvg = '';
+    let iconBg = '';
+    let iconColor = '';
+    confirmBtn.className = 'btn';
+
+    if (type === 'success') {
+      iconBg = 'rgba(16, 185, 129, 0.1)';
+      iconColor = 'var(--success)';
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+      confirmBtn.classList.add('btn-primary');
+    } else if (type === 'error' || type === 'danger') {
+      iconBg = '#fee2e2';
+      iconColor = 'var(--danger)';
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+      confirmBtn.classList.add(type === 'danger' ? 'btn-danger' : 'btn-primary');
+    } else if (type === 'warning') {
+      iconBg = 'var(--warning-bg)';
+      iconColor = 'var(--warning)';
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+      confirmBtn.classList.add('btn-primary');
+    } else {
+      iconBg = 'rgba(37, 99, 235, 0.1)';
+      iconColor = 'var(--accent)';
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+      confirmBtn.classList.add('btn-primary');
+    }
+
+    iconWrapper.style.backgroundColor = iconBg;
+    iconWrapper.style.color = iconColor;
+    iconWrapper.innerHTML = iconSvg;
+
+    function closeModal() {
+      modal.classList.remove('open');
+    }
+
+    confirmBtn.onclick = () => {
+      closeModal();
+      resolve(true);
+    };
+
+    cancelBtn.onclick = () => {
+      closeModal();
+      resolve(false);
+    };
+
+    modal.classList.add('open');
+  });
+}
+
+function showCustomConfirm(message, title = "Confirm Action", type = "warning", confirmText = "Yes, Continue", cancelText = "Cancel") {
+  return showCustomDialog({
+    title,
+    message,
+    type,
+    confirmText,
+    cancelText,
+    showCancel: true
+  });
+}
+
+// Override native alert with custom toast/dialog
+window.alert = function(msg) {
+  if (!msg) return;
+  const isSuccess = /success|import|completed|saved|submitted/i.test(msg);
+  const isError = /fail|error|could not|invalid|unsupported/i.test(msg);
+  const type = isSuccess ? 'success' : (isError ? 'error' : 'info');
+  
+  if (isSuccess || (msg.length < 60 && !isError)) {
+    showToast(msg, type);
+  } else {
+    showCustomDialog({
+      title: isError ? "Error" : "Notification",
+      message: msg,
+      type: type,
+      showCancel: false,
+      confirmText: "Close"
+    });
+  }
+};
+
 // Core State
 let state = {
   currentUser: null,
@@ -672,7 +833,7 @@ document.getElementById('create-event-form').addEventListener('submit', async fu
 });
 
 async function deleteEvent(eventId) {
-  if (confirm("Are you sure you want to delete this event? All checklist records will be deleted!")) {
+  if (await showCustomConfirm("Are you sure you want to delete this event? All checklist records will be deleted!", "Delete Event", "danger", "Yes, Delete")) {
     try {
       await fetchAPI(`/events/${eventId}`, { method: 'DELETE' });
       await loadEvents();
@@ -787,7 +948,7 @@ document.getElementById('dept-form').addEventListener('submit', async function(e
 });
 
 async function deleteDepartment(deptId) {
-  if (confirm("Are you sure you want to delete this department? This will delete all its submission records across all checklists!")) {
+  if (await showCustomConfirm("Are you sure you want to delete this department? This will delete all its submission records across all checklists!", "Delete Department", "danger", "Yes, Delete")) {
     try {
       await fetchAPI(`/departments/${deptId}`, { method: 'DELETE' });
       await loadDepartments();
@@ -1567,7 +1728,7 @@ document.getElementById('user-form').addEventListener('submit', async function(e
 });
 
 async function deleteUser(userId) {
-  if (confirm("Are you sure you want to delete this user? They will lose access immediately.")) {
+  if (await showCustomConfirm("Are you sure you want to delete this user? They will lose access immediately.", "Delete User", "danger", "Yes, Delete")) {
     try {
       await fetchAPI(`/users/${userId}`, { method: 'DELETE' });
       await loadUsers();
@@ -3373,7 +3534,7 @@ function renderCategoryDetailPage() {
 }
 
 async function deleteInvolvementCategory(categoryId) {
-  if (!confirm("Are you sure you want to delete this Category Card and all its records? This action is irreversible.")) return;
+  if (!(await showCustomConfirm("Are you sure you want to delete this Category Card and all its records? This action is irreversible.", "Delete Category Card", "danger", "Yes, Delete"))) return;
   try {
     await fetchAPI(`/involvement/categories/${categoryId}`, { method: 'DELETE' });
     await loadInvolvementData();
@@ -3384,7 +3545,7 @@ async function deleteInvolvementCategory(categoryId) {
 }
 
 async function deleteInvolvementRecord(recordId) {
-  if (!confirm("Are you sure you want to delete this record?")) return;
+  if (!(await showCustomConfirm("Are you sure you want to delete this record?", "Delete Record", "danger", "Yes, Delete"))) return;
   try {
     await fetchAPI(`/involvement/records/${recordId}`, { method: 'DELETE' });
     await loadInvolvementData();
@@ -5154,8 +5315,8 @@ function reindexUserPlanTable(tbodyId) {
   });
 }
 
-function resetUserActionPlanForm() {
-  if (confirm("Are you sure you want to clear the form and start over?")) {
+async function resetUserActionPlanForm() {
+  if (await showCustomConfirm("Are you sure you want to clear the form and start over?", "Reset Form", "warning", "Yes, Clear Form")) {
     document.getElementById('user-plan-form').reset();
     renderUserActionPlanForm();
   }
