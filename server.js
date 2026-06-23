@@ -174,7 +174,7 @@ function createTables(dbRunExecutor, callback) {
     description TEXT NOT NULL,
     created_at VARCHAR(255) NOT NULL,
     deadline VARCHAR(255) NOT NULL,
-    shifts_scope VARCHAR(255) DEFAULT 'Shift 1,Shift 2,Combined Department',
+    shifts_scope TEXT DEFAULT 'Shift 1,Shift 2,Combined Department',
     is_visible_public INTEGER DEFAULT 1
   )`;
 
@@ -266,12 +266,17 @@ function initializeDatabase() {
   };
 
   createTables(db.run, () => {
+    if (usePostgres) {
+      db.run("ALTER TABLE events ALTER COLUMN shifts_scope TYPE TEXT", [], (err) => {
+        if (err) console.error("Error migrating shifts_scope to TEXT:", err.message);
+      });
+    }
     // Migration: Update existing data from 'Administrative Units' to 'Combined Department'
     db.run("UPDATE departments SET shift = 'Combined Department' WHERE shift = 'Administrative Units'", [], () => {
       db.run("UPDATE departments SET category = 'Combined Department' WHERE category = 'Administrative Units'", [], () => {
         db.run("UPDATE events SET shifts_scope = REPLACE(shifts_scope, 'Administrative Units', 'Combined Department')", [], () => {
           // Migration: Add columns to tables
-          db.run(addCol('events', 'shifts_scope', 'VARCHAR(255)', "'Shift 1,Shift 2,Combined Department'"), [], (err) => {
+          db.run(addCol('events', 'shifts_scope', 'TEXT', "'Shift 1,Shift 2,Combined Department'"), [], (err) => {
             db.run(addCol('events', 'is_visible_public', 'INTEGER', 1), [], (err2) => {
               db.run(addCol('staff_involvement_categories', 'department', 'VARCHAR(255)'), [], () => {
                 db.run(addCol('staff_involvement_categories', 'coordinator', 'VARCHAR(255)'), [], () => {
