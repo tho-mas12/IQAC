@@ -270,6 +270,25 @@ function initializeDatabase() {
       db.run("ALTER TABLE events ALTER COLUMN shifts_scope TYPE TEXT", [], (err) => {
         if (err) console.error("Error migrating shifts_scope to TEXT:", err.message);
       });
+
+      // Enable Row-Level Security (RLS) on all tables to prevent public REST API exposure
+      const secureTables = [
+        'users',
+        'departments',
+        'events',
+        'submissions',
+        'staff_involvement_categories',
+        'staff_involvement_records'
+      ];
+      secureTables.forEach(table => {
+        db.run(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`, [], (err) => {
+          if (err) {
+            console.error(`Error enabling RLS on ${table}:`, err.message);
+          } else {
+            console.log(`Row-Level Security automatically enabled on: ${table}`);
+          }
+        });
+      });
     }
     // Migration: Update existing data from 'Administrative Units' to 'Combined Department'
     db.run("UPDATE departments SET shift = 'Combined Department' WHERE shift = 'Administrative Units'", [], () => {
