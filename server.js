@@ -84,8 +84,11 @@ function dbRun(sql, params = [], callback = () => {}) {
     callback = params;
     params = [];
   }
-  const querySql = convertSqlParams(sql);
+  let querySql = convertSqlParams(sql);
   if (usePostgres) {
+    if (querySql.trim().toUpperCase().startsWith('INSERT ')) {
+      querySql += ' RETURNING id';
+    }
     pgClient.query(querySql, params, (err, res) => {
       if (err) return callback(err);
       const ctx = {
@@ -240,13 +243,61 @@ function createTables(dbRunExecutor, callback) {
         FOREIGN KEY (category_id) REFERENCES staff_involvement_categories (id) ON DELETE CASCADE
       )`;
 
+  const ewylStudentsSql = usePostgres
+    ? `CREATE TABLE IF NOT EXISTS ewyl_students (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        reg_no VARCHAR(255) UNIQUE NOT NULL,
+        dept_name VARCHAR(255) NOT NULL,
+        bank_name VARCHAR(255) NOT NULL,
+        account_no VARCHAR(255) NOT NULL,
+        ifsc_code VARCHAR(255) NOT NULL,
+        branch_name VARCHAR(255) NOT NULL
+      )`
+    : `CREATE TABLE IF NOT EXISTS ewyl_students (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        reg_no TEXT UNIQUE NOT NULL,
+        dept_name TEXT NOT NULL,
+        bank_name TEXT NOT NULL,
+        account_no TEXT NOT NULL,
+        ifsc_code TEXT NOT NULL,
+        branch_name TEXT NOT NULL
+      )`;
+
+  const ewylHoursSql = usePostgres
+    ? `CREATE TABLE IF NOT EXISTS ewyl_hours (
+        id SERIAL PRIMARY KEY,
+        student_id INTEGER NOT NULL,
+        date VARCHAR(50) NOT NULL,
+        in_time VARCHAR(50) NOT NULL,
+        out_time VARCHAR(50) NOT NULL,
+        total_hours NUMERIC(5,2) NOT NULL,
+        month_active VARCHAR(50) NOT NULL,
+        FOREIGN KEY (student_id) REFERENCES ewyl_students (id) ON DELETE CASCADE
+      )`
+    : `CREATE TABLE IF NOT EXISTS ewyl_hours (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        in_time TEXT NOT NULL,
+        out_time TEXT NOT NULL,
+        total_hours REAL NOT NULL,
+        month_active TEXT NOT NULL,
+        FOREIGN KEY (student_id) REFERENCES ewyl_students (id) ON DELETE CASCADE
+      )`;
+
   dbRunExecutor(usersSql, [], () => {
     dbRunExecutor(deptsSql, [], () => {
       dbRunExecutor(eventsSql, [], () => {
         dbRunExecutor(submissionsSql, [], () => {
           dbRunExecutor(invCategoriesSql, [], () => {
             dbRunExecutor(invRecordsSql, [], () => {
-              callback();
+              dbRunExecutor(ewylStudentsSql, [], () => {
+                dbRunExecutor(ewylHoursSql, [], () => {
+                  callback();
+                });
+              });
             });
           });
         });
@@ -278,7 +329,9 @@ function initializeDatabase() {
         'events',
         'submissions',
         'staff_involvement_categories',
-        'staff_involvement_records'
+        'staff_involvement_records',
+        'ewyl_students',
+        'ewyl_hours'
       ];
       secureTables.forEach(table => {
         db.run(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`, [], (err) => {
@@ -1002,6 +1055,149 @@ app.put('/api/involvement/records/:id/status', (req, res) => {
       res.json({ success: true, id: req.params.id, status, remark });
     }
   );
+});
+
+// ================= EARN WHILE YOU LEARN (EWYL) ENDPOINTS =================
+
+// 1. Get all EWYL students
+app.get('/api/ewyl/students', (req, res) => {
+  db.all("SELECT * FROM ewyl_students ORDER BY name ASC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// 2. Add an EWYL student
+app.post('/api/ewyl/students', (req, res) => {
+  const { name, reg_no, dept_name, bank_name, account_no, ifsc_code, branch_name } = req.body;
+  if (!name || !reg_no || !dept_name || !bank_name || !account_no || !ifsc_code || !branch_name) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+  db.run(
+    "INSERT INTO ewyl_students (name, reg_no, dept_name, bank_name, account_no, ifsc_code, branch_name) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [name, reg_no, dept_name, bank_name, account_no, ifsc_code, branch_name],
+    function(err) {
+      if (err) {
+        if (err.message && err.message.includes('UNIQUE')) {
+          return res.status(400).json({ error: 'Registration Number already exists' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ id: this.lastID, name, reg_no, dept_name, bank_name, account_no, ifsc_code, branch_name });
+    }
+  );
+});
+
+// 3. Edit EWYL student
+app.put('/api/ewyl/students/:id', (req, res) => {
+  const { name, reg_no, dept_name, bank_name, account_no, ifsc_code, branch_name } = req.body;
+  if (!name || !reg_no || !dept_name || !bank_name || !account_no || !ifsc_code || !branch_name) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+  db.run(
+    "UPDATE ewyl_students SET name = ?, reg_no = ?, dept_name = ?, bank_name = ?, account_no = ?, ifsc_code = ?, branch_name = ? WHERE id = ?",
+    [name, reg_no, dept_name, bank_name, account_no, ifsc_code, branch_name, req.params.id],
+    function(err) {
+      if (err) {
+        if (err.message && err.message.includes('UNIQUE')) {
+          return res.status(400).json({ error: 'Registration Number already exists' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ id: req.params.id, name, reg_no, dept_name, bank_name, account_no, ifsc_code, branch_name });
+    }
+  );
+});
+
+// 4. Delete EWYL student
+app.delete('/api/ewyl/students/:id', (req, res) => {
+  db.run("DELETE FROM ewyl_students WHERE id = ?", [req.params.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Student and associated logs deleted successfully' });
+  });
+});
+
+// 5. Get hours for a student in a month
+app.get('/api/ewyl/hours', (req, res) => {
+  const { student_id, month } = req.query;
+  if (!student_id || !month) {
+    return res.status(400).json({ error: 'Missing student_id or month' });
+  }
+  db.all(
+    "SELECT * FROM ewyl_hours WHERE student_id = ? AND month_active = ? ORDER BY date ASC, in_time ASC",
+    [student_id, month],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// 6. Log working hours
+app.post('/api/ewyl/hours', (req, res) => {
+  const { student_id, date, in_time, out_time, month_active } = req.body;
+  if (!student_id || !date || !in_time || !out_time || !month_active) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  // Calculate hours
+  const [inH, inM] = in_time.split(':').map(Number);
+  const [outH, outM] = out_time.split(':').map(Number);
+  const inMinutes = inH * 60 + inM;
+  const outMinutes = outH * 60 + outM;
+
+  if (outMinutes <= inMinutes) {
+    return res.status(400).json({ error: 'OUT time must be after IN time' });
+  }
+
+  const total_hours = Number(((outMinutes - inMinutes) / 60).toFixed(2));
+
+  db.run(
+    "INSERT INTO ewyl_hours (student_id, date, in_time, out_time, total_hours, month_active) VALUES (?, ?, ?, ?, ?, ?)",
+    [student_id, date, in_time, out_time, total_hours, month_active],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID, student_id, date, in_time, out_time, total_hours, month_active });
+    }
+  );
+});
+
+// 7. Delete an hour log entry
+app.delete('/api/ewyl/hours/:id', (req, res) => {
+  db.run("DELETE FROM ewyl_hours WHERE id = ?", [req.params.id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Hours log entry deleted successfully' });
+  });
+});
+
+// 8. Get monthly summary report of all students
+app.get('/api/ewyl/summary', (req, res) => {
+  const { month } = req.query;
+  if (!month) {
+    return res.status(400).json({ error: 'Missing month parameter' });
+  }
+
+  const sql = `
+    SELECT 
+      s.id, s.name, s.reg_no, s.dept_name, s.bank_name, s.account_no, s.ifsc_code, s.branch_name,
+      COALESCE(SUM(h.total_hours), 0) AS total_hours
+    FROM ewyl_students s
+    LEFT JOIN ewyl_hours h ON s.id = h.student_id AND h.month_active = ?
+    GROUP BY s.id, s.name, s.reg_no, s.dept_name, s.bank_name, s.account_no, s.ifsc_code, s.branch_name
+    ORDER BY s.name ASC
+  `;
+
+  db.all(sql, [month], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const formatted = rows.map(r => ({
+      ...r,
+      total_hours: Number(Number(r.total_hours).toFixed(2)),
+      remuneration: Number((Number(r.total_hours) * 40).toFixed(2))
+    }));
+    
+    res.json(formatted);
+  });
 });
 
 // Serve frontend SPA for any fallback routing (SPA support)

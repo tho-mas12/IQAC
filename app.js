@@ -429,6 +429,19 @@ async function switchSubView(viewId) {
     await loadDepartments();
     await loadInvolvementData();
     renderUserActionPlanForm();
+  } else if (viewId === 'staff-ewyl') {
+    document.getElementById('subview-staff-ewyl').style.display = 'block';
+    const menuEl = document.getElementById('menu-staff-ewyl');
+    if (menuEl) menuEl.classList.add('active');
+    document.getElementById('header-title').innerText = 'Earn While You Learn (EWYL)';
+    await loadEwylDashboard();
+  } else if (viewId === 'staff-ewyl-hours') {
+    document.getElementById('subview-staff-ewyl-hours').style.display = 'block';
+    document.getElementById('header-title').innerText = 'Student Working Hours Log';
+    await renderEwylHoursLogPage();
+  } else if (viewId === 'staff-ewyl-letter') {
+    document.getElementById('subview-staff-ewyl-letter').style.display = 'block';
+    document.getElementById('header-title').innerText = 'Remuneration Claim Letter';
   }
 }
 
@@ -5496,3 +5509,1046 @@ async function submitUserActionPlan(event) {
     alert("Failed to submit Action Plan: " + err.message);
   }
 }
+
+// =========================================================================
+// 21. EARN WHILE YOU LEARN (EWYL) SCHEME CONTROLLER
+// =========================================================================
+
+// Initialize state variables for EWYL
+state.ewylStudents = [];
+state.ewylActiveMonth = localStorage.getItem('ewylActiveMonth') || getCurrentYearMonth();
+state.ewylSelectedStudentId = null;
+state.ewylHours = [];
+state.ewylLetterData = null;
+
+// Helper: Get current Year-Month string
+function getCurrentYearMonth() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+// Helper: Convert YYYY-MM to Month Name Year
+function getMonthNameInWords(yearMonth) {
+  if (!yearMonth) return '';
+  const [year, month] = yearMonth.split('-');
+  const date = new Date(year, parseInt(month) - 1, 1);
+  return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+// Populate the month selectors dynamically
+function populateEwylMonthDropdowns() {
+  const filterSelect = document.getElementById('ewyl-month-filter');
+  const setupSelect = document.getElementById('ewyl-setup-month');
+  
+  if (!filterSelect || !setupSelect) return;
+  
+  // Generate a list from 12 months in the past to 12 months in the future
+  const now = new Date();
+  const options = [];
+  
+  for (let i = -12; i <= 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const text = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    options.push({ val, text });
+  }
+  
+  const generateOptionsHtml = () => {
+    return options.map(o => `<option value="${o.val}" ${o.val === state.ewylActiveMonth ? 'selected' : ''}>${o.text}</option>`).join('');
+  };
+  
+  filterSelect.innerHTML = generateOptionsHtml();
+  setupSelect.innerHTML = generateOptionsHtml();
+}
+
+// Switch selected month
+async function changeEwylMonth(value) {
+  state.ewylActiveMonth = value;
+  localStorage.setItem('ewylActiveMonth', value);
+  
+  // Refresh summary badge in the UI
+  const setupSelect = document.getElementById('ewyl-setup-month');
+  if (setupSelect) setupSelect.value = value;
+  
+  await loadEwylDashboard();
+}
+
+// Load main EWYL Dashboard
+async function loadEwylDashboard() {
+  try {
+    populateEwylMonthDropdowns();
+    
+    // Fetch summary for the active month
+    const summary = await fetchAPI(`/ewyl/summary?month=${state.ewylActiveMonth}`);
+    state.ewylStudents = summary || [];
+    
+    renderEwylDashboardTable();
+  } catch (err) {
+    console.error("Failed to load EWYL summary:", err);
+    alert("Error loading Earn While You Learn summary: " + err.message);
+  }
+}
+
+// Render EWYL dashboard table
+function renderEwylDashboardTable() {
+  const tbody = document.getElementById('ewyl-students-tbody');
+  const emptyState = document.getElementById('ewyl-empty-state');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  
+  if (state.ewylStudents.length === 0) {
+    emptyState.style.display = 'block';
+    return;
+  }
+  
+  emptyState.style.display = 'none';
+  
+  state.ewylStudents.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main); font-size: 13.5px;">${escapeHtml(s.reg_no)}</td>
+      <td style="padding: 12px 16px; color: var(--text-main); font-size: 13.5px; font-weight: 500;">${escapeHtml(s.name)}</td>
+      <td style="padding: 12px 16px; color: var(--text-muted); font-size: 13px;">${escapeHtml(s.dept_name)}</td>
+      <td style="padding: 12px 16px; text-align: center; color: var(--text-main); font-size: 13.5px; font-weight: 600;">${Number(s.total_hours).toFixed(2)} hrs</td>
+      <td style="padding: 12px 16px; text-align: right; color: var(--primary); font-size: 13.5px; font-weight: bold;">Rs. ${Number(s.remuneration).toLocaleString()}</td>
+      <td style="padding: 12px 16px; text-align: center;">
+        <div style="display: flex; gap: 8px; justify-content: center;">
+          <button class="btn btn-primary btn-xs" onclick="goToAddHours(${s.id})" style="padding: 6px 10px; display: flex; align-items: center; gap: 4px; border-radius: 6px;" title="Add working hours">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Hours
+          </button>
+          <button class="btn btn-secondary btn-xs" onclick="viewEwylStudentData(${s.id})" style="padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="View Student profile">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          </button>
+          <button class="btn btn-secondary btn-xs" onclick="openEditStudentModal(${s.id})" style="padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="Edit Student profile">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+          <button class="btn btn-danger btn-xs" onclick="deleteEwylStudent(${s.id})" style="padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="Delete Student profile">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Open register student modal
+function openAddStudentModal() {
+  document.getElementById('ewyl-student-modal-title').innerText = 'Register Student';
+  document.getElementById('ewyl-student-submit-btn').innerText = 'Register Student';
+  document.getElementById('ewyl-student-edit-id').value = '';
+  document.getElementById('ewyl-student-form').reset();
+  document.getElementById('ewyl-student-modal').classList.add('open');
+}
+
+// Close register student modal
+function closeEwylStudentModal() {
+  document.getElementById('ewyl-student-modal').classList.remove('open');
+}
+
+// Open edit student modal
+function openEditStudentModal(id) {
+  const student = state.ewylStudents.find(s => s.id === id);
+  if (!student) return;
+  
+  document.getElementById('ewyl-student-modal-title').innerText = 'Edit Student Profile';
+  document.getElementById('ewyl-student-submit-btn').innerText = 'Save Changes';
+  document.getElementById('ewyl-student-edit-id').value = student.id;
+  
+  document.getElementById('ewyl-student-name').value = student.name;
+  document.getElementById('ewyl-student-reg').value = student.reg_no;
+  document.getElementById('ewyl-student-dept').value = student.dept_name;
+  document.getElementById('ewyl-student-bank').value = student.bank_name;
+  document.getElementById('ewyl-student-account').value = student.account_no;
+  document.getElementById('ewyl-student-ifsc').value = student.ifsc_code;
+  document.getElementById('ewyl-student-branch').value = student.branch_name;
+  
+  document.getElementById('ewyl-student-modal').classList.add('open');
+}
+
+// Save student profile (insert or update)
+async function saveEwylStudent(e) {
+  e.preventDefault();
+  
+  const id = document.getElementById('ewyl-student-edit-id').value;
+  const payload = {
+    name: document.getElementById('ewyl-student-name').value.trim(),
+    reg_no: document.getElementById('ewyl-student-reg').value.trim().toUpperCase(),
+    dept_name: document.getElementById('ewyl-student-dept').value.trim(),
+    bank_name: document.getElementById('ewyl-student-bank').value.trim(),
+    account_no: document.getElementById('ewyl-student-account').value.trim(),
+    ifsc_code: document.getElementById('ewyl-student-ifsc').value.trim().toUpperCase(),
+    branch_name: document.getElementById('ewyl-student-branch').value.trim()
+  };
+  
+  try {
+    const isEdit = !!id;
+    const url = isEdit ? `/ewyl/students/${id}` : '/ewyl/students';
+    const method = isEdit ? 'PUT' : 'POST';
+    
+    await fetchAPI(url, {
+      method,
+      body: JSON.stringify(payload)
+    });
+    
+    closeEwylStudentModal();
+    alert(isEdit ? "Student profile updated successfully!" : "Student registered successfully!");
+    await loadEwylDashboard();
+  } catch (err) {
+    console.error("Failed to save student details:", err);
+    alert(err.message);
+  }
+}
+
+// View student bank details
+function viewEwylStudentData(id) {
+  const student = state.ewylStudents.find(s => s.id === id);
+  if (!student) return;
+  
+  const message = `Student Registration No: ${student.reg_no}
+Full Name: ${student.name}
+Department: ${student.dept_name}
+
+-- BANK DETAILS --
+Bank Name: ${student.bank_name}
+Account Number: ${student.account_no}
+IFSC Code: ${student.ifsc_code}
+Branch Name: ${student.branch_name}`;
+  
+  showCustomDialog({
+    title: "Student Profile Details",
+    message: message,
+    type: "info",
+    confirmText: "Close"
+  });
+}
+
+// Delete student profile
+async function deleteEwylStudent(id) {
+  const student = state.ewylStudents.find(s => s.id === id);
+  if (!student) return;
+  
+  if (await showCustomConfirm(
+    `Are you sure you want to delete the student ${student.name} (${student.reg_no})? All their recorded working hours for all months will be permanently deleted!`,
+    "Delete Student Profile",
+    "danger",
+    "Yes, Delete"
+  )) {
+    try {
+      await fetchAPI(`/ewyl/students/${id}`, { method: 'DELETE' });
+      alert("Student profile deleted successfully.");
+      await loadEwylDashboard();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete student profile: " + err.message);
+    }
+  }
+}
+
+// --- HOURS LOG LOGIC ---
+
+// Go to Add Hours Page
+async function goToAddHours(studentId) {
+  state.ewylSelectedStudentId = studentId;
+  switchSubView('staff-ewyl-hours');
+}
+
+// Handles time input mode switching
+function toggleEwylHoursTimeMode() {
+  const mode = document.querySelector('input[name="ewyl-time-mode"]:checked').value;
+  const dateInput = document.getElementById('ewyl-log-date');
+  const inInput = document.getElementById('ewyl-log-in');
+  const outInput = document.getElementById('ewyl-log-out');
+  
+  if (!dateInput || !inInput || !outInput) return;
+  
+  if (mode === 'current') {
+    const now = new Date();
+    
+    // YYYY-MM-DD
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    dateInput.value = `${y}-${m}-${d}`;
+    
+    // Set IN and OUT
+    inInput.value = "09:00";
+    outInput.value = "17:00";
+    
+    dateInput.readOnly = true;
+    inInput.readOnly = true;
+    outInput.readOnly = true;
+  } else {
+    // Manual mode
+    dateInput.readOnly = false;
+    inInput.readOnly = false;
+    outInput.readOnly = false;
+    
+    dateInput.value = '';
+    inInput.value = '09:00';
+    outInput.value = '17:00';
+  }
+}
+
+// Load hours log page for active student
+async function renderEwylHoursLogPage() {
+  const student = state.ewylStudents.find(s => s.id === state.ewylSelectedStudentId);
+  if (!student) {
+    switchSubView('staff-ewyl');
+    return;
+  }
+  
+  // Set student banner texts
+  document.getElementById('ewyl-hours-student-name').innerText = `${student.name} (${student.reg_no})`;
+  document.getElementById('ewyl-hours-student-dept').innerText = student.dept_name;
+  
+  const monthWords = getMonthNameInWords(state.ewylActiveMonth);
+  document.getElementById('ewyl-hours-active-month-badge').innerText = `Active Month: ${monthWords}`;
+  
+  // Reset form time inputs
+  document.getElementById('ewyl-hours-form').reset();
+  toggleEwylHoursTimeMode();
+  
+  try {
+    // Fetch hours
+    const hours = await fetchAPI(`/ewyl/hours?student_id=${student.id}&month=${state.ewylActiveMonth}`);
+    state.ewylHours = hours || [];
+    
+    renderEwylHoursLogTable();
+  } catch (err) {
+    console.error("Failed to load hours logs:", err);
+    alert("Error loading hours logs: " + err.message);
+  }
+}
+
+// Render hours log table
+function renderEwylHoursLogTable() {
+  const tbody = document.getElementById('ewyl-hours-tbody');
+  const empty = document.getElementById('ewyl-hours-empty');
+  const totalSumEl = document.getElementById('ewyl-hours-total-sum');
+  
+  const statsHoursEl = document.getElementById('ewyl-stats-hours');
+  const statsMoneyEl = document.getElementById('ewyl-stats-money');
+  
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  
+  let totalSum = 0;
+  
+  if (state.ewylHours.length === 0) {
+    empty.style.display = 'block';
+    totalSumEl.innerText = '0.00 hrs';
+    statsHoursEl.innerText = '0.00 hrs';
+    statsMoneyEl.innerText = 'Rs. 0.00';
+    return;
+  }
+  
+  empty.style.display = 'none';
+  
+  state.ewylHours.forEach(h => {
+    totalSum += Number(h.total_hours);
+    const tr = document.createElement('tr');
+    
+    let formattedDate = h.date;
+    try {
+      const parts = h.date.split('-');
+      if (parts.length === 3) {
+        formattedDate = `${parts[2]}.${parts[1]}.${parts[0]}`;
+      }
+    } catch(e) {}
+    
+    tr.innerHTML = `
+      <td style="padding: 10px 16px; font-weight: 500; color: var(--text-main);">${formattedDate}</td>
+      <td style="padding: 10px 16px; text-align: center; color: var(--text-main);">${h.in_time}</td>
+      <td style="padding: 10px 16px; text-align: center; color: var(--text-main);">${h.out_time}</td>
+      <td style="padding: 10px 16px; text-align: center; font-weight: 600; color: var(--primary);">${Number(h.total_hours).toFixed(2)} hrs</td>
+      <td style="padding: 10px 16px; text-align: center;">
+        <button class="btn btn-danger btn-xs" onclick="deleteEwylHoursLog(${h.id})" style="padding: 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;" title="Delete log entry">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  totalSumEl.innerText = `${totalSum.toFixed(2)} hrs`;
+  statsHoursEl.innerText = `${totalSum.toFixed(2)} hrs`;
+  statsMoneyEl.innerText = `Rs. ${(totalSum * 40).toLocaleString()}`;
+}
+
+// Save working hours log
+async function saveEwylHoursLog(e) {
+  e.preventDefault();
+  
+  const student = state.ewylStudents.find(s => s.id === state.ewylSelectedStudentId);
+  if (!student) return;
+  
+  const dateVal = document.getElementById('ewyl-log-date').value;
+  const inVal = document.getElementById('ewyl-log-in').value;
+  const outVal = document.getElementById('ewyl-log-out').value;
+  
+  if (!dateVal || !inVal || !outVal) {
+    alert("Please enter date, IN and OUT times.");
+    return;
+  }
+  
+  // Make sure the log date matches the active month year
+  const logMonth = dateVal.substring(0, 7); // "YYYY-MM"
+  if (logMonth !== state.ewylActiveMonth) {
+    alert(`The selected date falls under ${getMonthNameInWords(logMonth)}. Please record work done only for the active month: ${getMonthNameInWords(state.ewylActiveMonth)}.`);
+    return;
+  }
+  
+  const payload = {
+    student_id: student.id,
+    date: dateVal,
+    in_time: inVal,
+    out_time: outVal,
+    month_active: state.ewylActiveMonth
+  };
+  
+  try {
+    await fetchAPI('/ewyl/hours', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    
+    alert("Hours log recorded successfully.");
+    await renderEwylHoursLogPage();
+  } catch (err) {
+    console.error("Failed to log hours:", err);
+    alert(err.message || "Failed to save entry. Check IN and OUT time coherence.");
+  }
+}
+
+// Delete hours log entry
+async function deleteEwylHoursLog(id) {
+  if (await showCustomConfirm("Are you sure you want to delete this working hours entry?", "Delete Hours Entry", "danger", "Yes, Delete")) {
+    try {
+      await fetchAPI(`/ewyl/hours/${id}`, { method: 'DELETE' });
+      alert("Entry deleted successfully.");
+      await renderEwylHoursLogPage();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete log entry: " + err.message);
+    }
+  }
+}
+
+// --- CLAIM LETTER SETUP & RENDER ---
+
+// Open claim letter selection dialog modal
+async function openClaimLetterSetupModal() {
+  const monthSelect = document.getElementById('ewyl-setup-month');
+  if (monthSelect) monthSelect.value = state.ewylActiveMonth;
+  
+  await loadClaimSetupStudents(state.ewylActiveMonth);
+  document.getElementById('ewyl-claim-setup-modal').classList.add('open');
+}
+
+// Close modal
+function closeClaimLetterSetupModal() {
+  document.getElementById('ewyl-claim-setup-modal').classList.remove('open');
+}
+
+// Select all/none checkboxes
+function toggleSetupStudentSelection(checked) {
+  document.querySelectorAll('#ewyl-setup-students-list input[type="checkbox"]').forEach(cb => {
+    cb.checked = checked;
+  });
+}
+
+// Load students checklist list based on selected month
+async function loadClaimSetupStudents(month) {
+  const container = document.getElementById('ewyl-setup-students-list');
+  if (!container) return;
+  
+  container.innerHTML = 'Loading students summary...';
+  
+  try {
+    const summary = await fetchAPI(`/ewyl/summary?month=${month}`);
+    container.innerHTML = '';
+    
+    if (!summary || summary.length === 0) {
+      container.innerHTML = '<span style="color: var(--text-muted); font-size:12px;">No registered students.</span>';
+      return;
+    }
+    
+    summary.forEach(s => {
+      const isDisabled = Number(s.total_hours) === 0;
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      label.style.gap = '8px';
+      label.style.fontSize = '13.5px';
+      label.style.cursor = isDisabled ? 'not-allowed' : 'pointer';
+      label.style.color = isDisabled ? 'var(--text-muted)' : 'var(--text-main)';
+      
+      label.innerHTML = `
+        <input type="checkbox" value="${s.id}" data-hours="${s.total_hours}" ${isDisabled ? 'disabled' : 'checked'}>
+        <div>
+          <strong>${escapeHtml(s.name)}</strong> (${escapeHtml(s.reg_no)})
+          <span style="font-size: 11.5px; color: ${isDisabled ? 'var(--text-muted)' : 'var(--primary)'}; font-weight: 500;">
+            - ${Number(s.total_hours).toFixed(2)} hours logged (Rs. ${s.remuneration})
+          </span>
+        </div>
+      `;
+      container.appendChild(label);
+    });
+  } catch (err) {
+    container.innerHTML = `<span style="color: var(--danger); font-size:12px;">Failed to load: ${err.message}</span>`;
+  }
+}
+
+// Generate the claim letterpad view
+async function generateClaimLetter(e) {
+  e.preventDefault();
+  
+  const monthVal = document.getElementById('ewyl-setup-month').value;
+  const checkedBoxes = Array.from(document.querySelectorAll('#ewyl-setup-students-list input[type="checkbox"]:checked'));
+  
+  if (checkedBoxes.length === 0) {
+    alert("Please select at least one student with logged hours to include in the claim letter.");
+    return;
+  }
+  
+  const selectedIds = checkedBoxes.map(cb => parseInt(cb.value));
+  
+  try {
+    const summary = await fetchAPI(`/ewyl/summary?month=${monthVal}`);
+    const selectedStudents = summary.filter(s => selectedIds.includes(s.id));
+    
+    closeClaimLetterSetupModal();
+    
+    // Set up active letter data
+    state.ewylLetterData = {
+      month: monthVal,
+      students: selectedStudents
+    };
+    
+    // Populate Editable Letterpad Template Fields
+    const now = new Date();
+    const d = String(now.getDate()).padStart(2, '0');
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const y = now.getFullYear();
+    document.getElementById('letter-date').innerText = `${d}.${m}.${y}`;
+    
+    document.getElementById('letter-to-address').innerHTML = `Rev. Fr. Principal<br>St. Joseph's College (Autonomous)<br>Tiruchirappalli-2`;
+    document.getElementById('letter-subject').innerHTML = `Sub: Remuneration for IQAC work – <strong>Earn while you Learn Scheme</strong> - Reg.`;
+    
+    const [yearNum, monthNum] = monthVal.split('-').map(Number);
+    const startYear = monthNum >= 6 ? yearNum : yearNum - 1;
+    const endYear = startYear + 1;
+    document.getElementById('letter-body-text').innerText = `Kindly sanction remuneration for the work done by the following Students for preparation of Newsletter for the year ${startYear}-${endYear}.`;
+    
+    // Populate table
+    const tableBody = document.getElementById('letter-table-tbody');
+    tableBody.innerHTML = '';
+    
+    let grandTotal = 0;
+    
+    selectedStudents.forEach((s, idx) => {
+      grandTotal += s.remuneration;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align: center;">${idx + 1}</td>
+        <td>${escapeHtml(s.name)}<br>(${escapeHtml(s.reg_no)})</td>
+        <td>${escapeHtml(s.dept_name)}</td>
+        <td style="text-align: center;">40</td>
+        <td style="text-align: center;">${Number(s.total_hours).toFixed(0)}</td>
+        <td style="text-align: right; font-weight: bold;">${s.remuneration.toLocaleString()}</td>
+        <td style="font-size: 11px; max-width: 200px;">
+          Account Number: ${escapeHtml(s.account_no)}<br>
+          Bank Name: ${escapeHtml(s.bank_name)}<br>
+          IFSC: ${escapeHtml(s.ifsc_code)} &nbsp; Branch: ${escapeHtml(s.branch_name)}
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+    
+    // Add Total row
+    const totalTr = document.createElement('tr');
+    totalTr.style.fontWeight = 'bold';
+    totalTr.style.background = '#f8fafc';
+    totalTr.innerHTML = `
+      <td colspan="5" style="text-align: right; font-size:14px;">Total</td>
+      <td style="text-align: right; font-size:14px; color: var(--primary);">${grandTotal.toLocaleString()}</td>
+      <td></td>
+    `;
+    tableBody.appendChild(totalTr);
+    
+    // Convert total to words
+    const amountInWords = numberToRupeesInWords(grandTotal);
+    document.getElementById('letter-amount-words').innerText = `Rupees ${amountInWords} Only.`;
+    
+    // Switch to letter view
+    switchSubView('staff-ewyl-letter');
+  } catch (err) {
+    console.error("Failed to generate letter:", err);
+    alert("Error generating claim letter: " + err.message);
+  }
+}
+
+// Convert Number to Rupees in Words Helper
+function numberToRupeesInWords(num) {
+  if (num === 0) return 'Zero';
+  
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 
+                'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  
+  function convertLessThanOneThousand(n) {
+    if (n === 0) return '';
+    let temp = '';
+    
+    if (n >= 100) {
+      temp += ones[Math.floor(n / 100)] + ' Hundred ';
+      n %= 100;
+    }
+    
+    if (n >= 20) {
+      temp += tens[Math.floor(n / 10)] + ' ';
+      n %= 10;
+    }
+    
+    if (n > 0) {
+      temp += ones[n] + ' ';
+    }
+    
+    return temp.trim();
+  }
+  
+  let result = '';
+  
+  if (num >= 100000) {
+    result += convertLessThanOneThousand(Math.floor(num / 100000)) + ' Lakh ';
+    num %= 100000;
+  }
+  
+  if (num >= 1000) {
+    result += convertLessThanOneThousand(Math.floor(num / 1000)) + ' Thousand ';
+    num %= 1000;
+  }
+  
+  if (num > 0) {
+    result += convertLessThanOneThousand(num);
+  }
+  
+  return result.replace(/\s+/g, ' ').trim();
+}
+
+// --- CLAIM LETTER EXPORTS (Word / PDF) ---
+
+// Word (.doc) Export
+function exportClaimLetterWord() {
+  const container = document.getElementById('claim-letter-document');
+  if (!container) return;
+  
+  const date = document.getElementById('letter-date').innerText.trim();
+  const address = document.getElementById('letter-to-address').innerHTML.trim();
+  const salutation = document.getElementById('letter-salutation').innerText.trim();
+  const subject = document.getElementById('letter-subject').innerHTML.trim();
+  const bodyText = document.getElementById('letter-body-text').innerText.trim();
+  const tableHtml = document.querySelector('.letter-table').outerHTML;
+  const amountWords = document.getElementById('letter-amount-words').innerText.trim();
+  const closing = document.getElementById('letter-closing').innerText.trim();
+  const sigLeft = document.getElementById('letter-sig-left').innerHTML.trim();
+  const sigRight = document.getElementById('letter-sig-right').innerHTML.trim();
+  
+  let logoBase64 = "";
+  const logoImg = document.querySelector('.letter-header-logo');
+  if (logoImg) {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = logoImg.naturalWidth || logoImg.width;
+      canvas.height = logoImg.naturalHeight || logoImg.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(logoImg, 0, 0);
+      logoBase64 = canvas.toDataURL('image/png');
+    } catch(e) {
+      console.warn("Could not base64 encode logo for Word doc:", e);
+    }
+  }
+
+  const docHtml = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <title>Claim Letter</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
+      <style>
+        body {
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 11pt;
+          line-height: 1.5;
+          margin: 1in;
+          color: #000000;
+        }
+        .header-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 5px;
+        }
+        .header-table td {
+          border: none !important;
+          padding: 0 !important;
+        }
+        .logo-img {
+          width: 80px;
+          height: auto;
+        }
+        .header-text {
+          text-align: center;
+          line-height: 1.3;
+        }
+        .header-text h2 {
+          font-size: 11pt;
+          margin: 0;
+          font-weight: normal;
+        }
+        .header-text h1 {
+          font-size: 14pt;
+          margin: 2px 0 3px 0;
+          font-weight: bold;
+        }
+        .header-text p {
+          font-size: 9pt;
+          margin: 1px 0;
+        }
+        .header-divider {
+          border-top: 1.5px solid #000000;
+          border-bottom: 4.5px double #000000;
+          height: 3px;
+          margin: 6px 0 25px 0;
+        }
+        .letter-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+        .letter-table th, .letter-table td {
+          border: 1px solid #000000;
+          padding: 6px 8px;
+          font-size: 9.5pt;
+        }
+        .letter-table th {
+          font-weight: bold;
+          text-align: center;
+          background-color: #f2f2f2;
+        }
+        .signatures-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 50px;
+        }
+        .signatures-table td {
+          border: none !important;
+          width: 50%;
+          text-align: center;
+          font-weight: bold;
+          font-size: 10.5pt;
+        }
+      </style>
+    </head>
+    <body>
+      <table class="header-table">
+        <tr>
+          <td style="width: 85px; vertical-align: top;">
+            ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" alt="Logo">` : '[Logo]'}
+          </td>
+          <td style="vertical-align: top;">
+            <div class="header-text">
+              <h2>INTERNAL QUALITY ASSURANCE CELL</h2>
+              <h1>ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
+              <p>Accredited at A++ Grade (Cycle IV) by NAAC &nbsp;|&nbsp; Special Heritage College Status awarded by UGC</p>
+              <p>College with Potential for Excellence by UGC &nbsp;|&nbsp; DBT-STAR &amp; DST-FIST Sponsored College</p>
+              <p style="font-weight: bold;">TIRUCHIRAPPALLI - 620 002</p>
+              <p style="font-size: 8.5pt;">Email: iqaccoor@mail.sjctni.edu &nbsp;|&nbsp; website: www.sjctni.edu</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+      <div class="header-divider"></div>
+
+      <div style="text-align: right; margin-bottom: 25px;">${date}</div>
+
+      <div style="margin-bottom: 25px;">
+        To<br>
+        <div style="margin-left: 20px;">${address}</div>
+      </div>
+
+      <div style="margin-bottom: 18px;">${salutation}</div>
+
+      <div style="margin-bottom: 20px; font-weight: bold; padding-left: 30px; text-indent: -30px;">
+        ${subject}
+      </div>
+
+      <div style="margin-bottom: 20px; text-indent: 30px; text-align: justify;">
+        ${bodyText}
+      </div>
+
+      ${tableHtml}
+
+      <div style="margin-bottom: 30px; font-weight: bold;">
+        Rupees in Words: ${amountWords}
+      </div>
+
+      <div style="margin-bottom: 40px;">
+        ${closing}
+      </div>
+
+      <table class="signatures-table">
+        <tr>
+          <td style="text-align: left; padding-left: 20px;">
+            ${sigLeft}
+          </td>
+          <td style="text-align: right; padding-right: 20px;">
+            ${sigRight}
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob(['\ufeff' + docHtml], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  
+  const monthName = state.ewylLetterData ? state.ewylLetterData.month : 'summary';
+  link.setAttribute("href", url);
+  link.setAttribute("download", `ewyl_claim_letter_${monthName}.doc`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// PDF Export using jsPDF and AutoTable
+async function exportClaimLetterPDF() {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    const marginX = 15;
+    let currentY = 15;
+    
+    // 1. Draw Crest Logo
+    const logoImg = document.querySelector('.letter-header-logo');
+    if (logoImg) {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = logoImg.naturalWidth || logoImg.width;
+        canvas.height = logoImg.naturalHeight || logoImg.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(logoImg, 0, 0);
+        const logoData = canvas.toDataURL('image/png');
+        doc.addImage(logoData, 'PNG', marginX, currentY, 20, 20);
+      } catch(e) {
+        console.warn("Could not embed logo in PDF:", e);
+      }
+    }
+    
+    // 2. Draw Header Text
+    doc.setFont("Times", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text("INTERNAL QUALITY ASSURANCE CELL", 105, currentY + 3, { align: "center" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(14);
+    doc.text("ST. JOSEPH'S COLLEGE (AUTONOMOUS)", 105, currentY + 8, { align: "center" });
+    
+    doc.setFont("Times", "normal");
+    doc.setFontSize(8.5);
+    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC  |  Special Heritage College Status awarded by UGC", 105, currentY + 12, { align: "center" });
+    doc.text("College with Potential for Excellence by UGC  |  DBT-STAR & DST-FIST Sponsored College", 105, currentY + 15, { align: "center" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(10);
+    doc.text("TIRUCHIRAPPALLI - 620 002", 105, currentY + 19, { align: "center" });
+    
+    doc.setFont("Times", "normal");
+    doc.setFontSize(8);
+    doc.text("Email: iqaccoor@mail.sjctni.edu  |  website: www.sjctni.edu", 105, currentY + 22, { align: "center" });
+    
+    currentY += 25;
+    
+    // 3. Double Line Divider
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.4);
+    doc.line(marginX, currentY, 210 - marginX, currentY);
+    doc.setLineWidth(1.0);
+    doc.line(marginX, currentY + 0.8, 210 - marginX, currentY + 0.8);
+    
+    currentY += 8;
+    
+    // 4. Date
+    const dateText = document.getElementById('letter-date').innerText.trim();
+    doc.setFont("Times", "normal");
+    doc.setFontSize(11);
+    doc.text(dateText, 210 - marginX, currentY, { align: "right" });
+    
+    currentY += 8;
+    
+    // 5. To Recipient
+    const addressText = document.getElementById('letter-to-address').innerText.trim();
+    doc.text("To", marginX, currentY);
+    currentY += 5;
+    
+    const addressLines = addressText.split('\n');
+    addressLines.forEach(line => {
+      doc.text(line.trim(), marginX + 6, currentY);
+      currentY += 5;
+    });
+    
+    currentY += 4;
+    
+    // 6. Salutation
+    const salutationText = document.getElementById('letter-salutation').innerText.trim();
+    doc.text(salutationText, marginX, currentY);
+    
+    currentY += 8;
+    
+    // 7. Subject
+    const subjectText = document.getElementById('letter-subject').innerText.trim();
+    const wrappedSubject = doc.splitTextToSize(subjectText, 210 - (marginX * 2) - 10);
+    doc.setFont("Times", "bold");
+    
+    wrappedSubject.forEach((line, index) => {
+      doc.text(line, marginX + (index === 0 ? 0 : 10), currentY);
+      currentY += 5.5;
+    });
+    
+    currentY += 3;
+    
+    // 8. Body Text
+    const bodyText = document.getElementById('letter-body-text').innerText.trim();
+    const wrappedBody = doc.splitTextToSize(bodyText, 210 - (marginX * 2));
+    doc.setFont("Times", "normal");
+    
+    wrappedBody.forEach(line => {
+      doc.text(line, marginX, currentY);
+      currentY += 6;
+    });
+    
+    currentY += 4;
+    
+    // 9. Table of Students Remuneration
+    const tableHeaders = [['S. No', 'Name of the Student & Reg. No', 'Department', 'Amount\n/Hour', 'No. of\nHours', 'Amount\n(Rs)', 'Bank Details']];
+    const tableRows = [];
+    
+    const tableElRows = Array.from(document.querySelectorAll('.letter-table tbody tr'));
+    const studentRows = tableElRows.slice(0, -1);
+    const totalRow = tableElRows[tableElRows.length - 1];
+    
+    studentRows.forEach(row => {
+      const tds = Array.from(row.querySelectorAll('td'));
+      tableRows.push([
+        tds[0].innerText.trim(),
+        tds[1].innerText.trim(),
+        tds[2].innerText.trim(),
+        tds[3].innerText.trim(),
+        tds[4].innerText.trim(),
+        tds[5].innerText.trim(),
+        tds[6].innerText.trim()
+      ]);
+    });
+    
+    const totalTds = Array.from(totalRow.querySelectorAll('td'));
+    const totalAmount = totalTds[1].innerText.trim();
+    
+    doc.autoTable({
+      startY: currentY,
+      margin: { left: marginX, right: marginX },
+      head: tableHeaders,
+      body: tableRows,
+      theme: 'grid',
+      styles: {
+        font: 'Times',
+        fontSize: 8.5,
+        textColor: [0, 0, 0],
+        lineColor: [0, 0, 0],
+        lineWidth: 0.15
+      },
+      headStyles: {
+        fillColor: [245, 245, 245],
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { halign: 'center', width: 10 },
+        3: { halign: 'center', width: 15 },
+        4: { halign: 'center', width: 15 },
+        5: { halign: 'right', fontStyle: 'bold', width: 20 }
+      },
+      didDrawPage: function(data) {
+        currentY = data.cursor.y;
+      }
+    });
+    
+    currentY += 3;
+    
+    // Draw Custom Total Row
+    doc.setLineWidth(0.15);
+    doc.line(marginX, currentY, 210 - marginX, currentY);
+    
+    doc.setFont("Times", "bold");
+    doc.text("Total", 100, currentY + 5);
+    doc.text(totalAmount, 120, currentY + 5, { align: "right" });
+    
+    doc.line(marginX, currentY + 7, 210 - marginX, currentY + 7);
+    
+    currentY += 15;
+    
+    // 10. Amount in words
+    const amountWordsText = document.getElementById('letter-amount-words').innerText.trim();
+    doc.setFont("Times", "bold");
+    doc.text(amountWordsText, marginX, currentY);
+    
+    currentY += 10;
+    
+    // 11. Closing
+    const closingText = document.getElementById('letter-closing').innerText.trim();
+    doc.setFont("Times", "normal");
+    doc.text(closingText, marginX, currentY);
+    
+    currentY += 25;
+    
+    // 12. Signatures
+    const sigLeftText = document.getElementById('letter-sig-left').innerText.trim();
+    const sigRightText = document.getElementById('letter-sig-right').innerText.trim();
+    
+    doc.setFont("Times", "bold");
+    
+    const leftSigLines = sigLeftText.split('\n');
+    let leftSigY = currentY;
+    leftSigLines.forEach(line => {
+      doc.text(line.trim(), marginX + 5, leftSigY);
+      leftSigY += 5;
+    });
+    
+    const rightSigLines = sigRightText.split('\n');
+    let rightSigY = currentY;
+    rightSigLines.forEach(line => {
+      doc.text(line.trim(), 210 - marginX - 5, rightSigY, { align: "right" });
+      rightSigY += 5;
+    });
+    
+    const monthName = state.ewylLetterData ? state.ewylLetterData.month : 'summary';
+    doc.save(`ewyl_claim_letter_${monthName}.pdf`);
+  } catch(err) {
+    console.error("PDF generation failed:", err);
+    alert("Failed to generate PDF: " + err.message);
+  }
+}
+
