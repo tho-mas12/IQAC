@@ -5541,6 +5541,7 @@ function getMonthNameInWords(yearMonth) {
 function populateEwylMonthDropdowns() {
   const filterSelect = document.getElementById('ewyl-month-filter');
   const setupSelect = document.getElementById('ewyl-setup-month');
+  const downloadSelect = document.getElementById('ewyl-summary-download-month');
   
   if (!filterSelect || !setupSelect) return;
   
@@ -5559,8 +5560,10 @@ function populateEwylMonthDropdowns() {
     return options.map(o => `<option value="${o.val}" ${o.val === state.ewylActiveMonth ? 'selected' : ''}>${o.text}</option>`).join('');
   };
   
-  filterSelect.innerHTML = generateOptionsHtml();
-  setupSelect.innerHTML = generateOptionsHtml();
+  const optionsHtml = generateOptionsHtml();
+  filterSelect.innerHTML = optionsHtml;
+  setupSelect.innerHTML = optionsHtml;
+  if (downloadSelect) downloadSelect.innerHTML = optionsHtml;
 }
 
 // Switch selected month
@@ -5811,7 +5814,21 @@ async function renderEwylHoursLogPage() {
   
   // Reset form time inputs
   document.getElementById('ewyl-hours-form').reset();
+  if (document.getElementById('ewyl-log-work-done')) {
+    document.getElementById('ewyl-log-work-done').value = '';
+  }
   toggleEwylHoursTimeMode();
+  
+  // Setup listeners for live duration calculation
+  const inTimeInput = document.getElementById('ewyl-log-in');
+  const outTimeInput = document.getElementById('ewyl-log-out');
+  if (inTimeInput && outTimeInput) {
+    inTimeInput.onchange = calculateLiveEwylDuration;
+    outTimeInput.onchange = calculateLiveEwylDuration;
+    inTimeInput.oninput = calculateLiveEwylDuration;
+    outTimeInput.oninput = calculateLiveEwylDuration;
+  }
+  calculateLiveEwylDuration();
   
   try {
     // Fetch hours
@@ -5866,6 +5883,7 @@ function renderEwylHoursLogTable() {
       <td style="padding: 10px 16px; text-align: center; color: var(--text-main);">${h.in_time}</td>
       <td style="padding: 10px 16px; text-align: center; color: var(--text-main);">${h.out_time}</td>
       <td style="padding: 10px 16px; text-align: center; font-weight: 600; color: var(--primary);">${Number(h.total_hours).toFixed(2)} hrs</td>
+      <td style="padding: 10px 16px; color: var(--text-muted); font-size: 12.5px;">${escapeHtml(h.work_done || '-')}</td>
       <td style="padding: 10px 16px; text-align: center;">
         <button class="btn btn-danger btn-xs" onclick="deleteEwylHoursLog(${h.id})" style="padding: 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;" title="Delete log entry">
           <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
@@ -5890,6 +5908,7 @@ async function saveEwylHoursLog(e) {
   const dateVal = document.getElementById('ewyl-log-date').value;
   const inVal = document.getElementById('ewyl-log-in').value;
   const outVal = document.getElementById('ewyl-log-out').value;
+  const workDoneVal = document.getElementById('ewyl-log-work-done') ? document.getElementById('ewyl-log-work-done').value.trim() : '';
   
   if (!dateVal || !inVal || !outVal) {
     alert("Please enter date, IN and OUT times.");
@@ -5908,7 +5927,8 @@ async function saveEwylHoursLog(e) {
     date: dateVal,
     in_time: inVal,
     out_time: outVal,
-    month_active: state.ewylActiveMonth
+    month_active: state.ewylActiveMonth,
+    work_done: workDoneVal
   };
   
   try {
@@ -5916,6 +5936,10 @@ async function saveEwylHoursLog(e) {
       method: 'POST',
       body: JSON.stringify(payload)
     });
+    
+    if (document.getElementById('ewyl-log-work-done')) {
+      document.getElementById('ewyl-log-work-done').value = '';
+    }
     
     alert("Hours log recorded successfully.");
     await renderEwylHoursLogPage();
@@ -6204,7 +6228,7 @@ function exportClaimLetterWord() {
           padding: 0 !important;
         }
         .logo-img {
-          width: 80px;
+          width: 90px;
           height: auto;
         }
         .header-text {
@@ -6214,11 +6238,11 @@ function exportClaimLetterWord() {
         .header-text h2 {
           font-size: 11pt;
           margin: 0;
-          font-weight: normal;
+          font-weight: bold;
         }
         .header-text h1 {
-          font-size: 14pt;
-          margin: 2px 0 3px 0;
+          font-size: 16pt;
+          margin: 2px 0 5px 0;
           font-weight: bold;
         }
         .header-text p {
@@ -6226,8 +6250,8 @@ function exportClaimLetterWord() {
           margin: 1px 0;
         }
         .header-divider {
-          border-top: 1.5px solid #000000;
-          border-bottom: 4.5px double #000000;
+          border-top: 1px solid #000000;
+          border-bottom: 3.5px solid #000000;
           height: 3px;
           margin: 6px 0 25px 0;
         }
@@ -6263,17 +6287,27 @@ function exportClaimLetterWord() {
     <body>
       <table class="header-table">
         <tr>
-          <td style="width: 85px; vertical-align: top;">
+          <td style="width: 95px; vertical-align: top;">
             ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" alt="Logo">` : '[Logo]'}
           </td>
           <td style="vertical-align: top;">
             <div class="header-text">
               <h2>INTERNAL QUALITY ASSURANCE CELL</h2>
               <h1>ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
-              <p>Accredited at A++ Grade (Cycle IV) by NAAC &nbsp;|&nbsp; Special Heritage College Status awarded by UGC</p>
-              <p>College with Potential for Excellence by UGC &nbsp;|&nbsp; DBT-STAR &amp; DST-FIST Sponsored College</p>
-              <p style="font-weight: bold;">TIRUCHIRAPPALLI - 620 002</p>
-              <p style="font-size: 8.5pt;">Email: iqaccoor@mail.sjctni.edu &nbsp;|&nbsp; website: www.sjctni.edu</p>
+              <table style="width: 100%; border-collapse: collapse; border: none !important; margin: 1px 0;">
+                <tr>
+                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: left; font-weight: bold; font-family: 'Times New Roman', Times, serif;">Accredited at A++ Grade (Cycle IV) by NAAC</td>
+                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: right; font-weight: bold; font-family: 'Times New Roman', Times, serif;">Special Heritage College Status awarded by UGC</td>
+                </tr>
+              </table>
+              <table style="width: 100%; border-collapse: collapse; border: none !important; margin: 1px 0;">
+                <tr>
+                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: left; font-weight: bold; font-family: 'Times New Roman', Times, serif;">College with Potential for Excellence by UGC</td>
+                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: right; font-weight: bold; font-family: 'Times New Roman', Times, serif;">DBT-STAR &amp; DST-FIST Sponsored College</td>
+                </tr>
+              </table>
+              <p style="font-size: 10pt; font-weight: bold; margin: 3px 0 1px 0;">TIRUCHIRAPPALLI - 620 002</p>
+              <p style="font-size: 8.5pt; margin: 1px 0;">Email: iqaccoor@mail.sjctni.edu &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; website: www.sjctni.edu</p>
             </div>
           </td>
         </tr>
@@ -6352,43 +6386,46 @@ async function exportClaimLetterPDF() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(logoImg, 0, 0);
         const logoData = canvas.toDataURL('image/png');
-        doc.addImage(logoData, 'PNG', marginX, currentY, 20, 20);
+        doc.addImage(logoData, 'PNG', marginX, currentY - 2, 22, 25);
       } catch(e) {
         console.warn("Could not embed logo in PDF:", e);
       }
     }
     
     // 2. Draw Header Text
-    doc.setFont("Times", "normal");
+    doc.setFont("Times", "bold");
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
-    doc.text("INTERNAL QUALITY ASSURANCE CELL", 105, currentY + 3, { align: "center" });
+    doc.text("INTERNAL QUALITY ASSURANCE CELL", 116, currentY + 3, { align: "center" });
     
     doc.setFont("Times", "bold");
-    doc.setFontSize(14);
-    doc.text("ST. JOSEPH'S COLLEGE (AUTONOMOUS)", 105, currentY + 8, { align: "center" });
+    doc.setFontSize(15);
+    doc.text("ST. JOSEPH'S COLLEGE (AUTONOMOUS)", 116, currentY + 8, { align: "center" });
     
-    doc.setFont("Times", "normal");
+    doc.setFont("Times", "bold");
     doc.setFontSize(8.5);
-    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC  |  Special Heritage College Status awarded by UGC", 105, currentY + 12, { align: "center" });
-    doc.text("College with Potential for Excellence by UGC  |  DBT-STAR & DST-FIST Sponsored College", 105, currentY + 15, { align: "center" });
+    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC", marginX + 25, currentY + 12);
+    doc.text("Special Heritage College Status awarded by UGC", 210 - marginX, currentY + 12, { align: "right" });
+    
+    doc.text("College with Potential for Excellence by UGC", marginX + 25, currentY + 15);
+    doc.text("DBT-STAR & DST-FIST Sponsored College", 210 - marginX, currentY + 15, { align: "right" });
     
     doc.setFont("Times", "bold");
-    doc.setFontSize(10);
-    doc.text("TIRUCHIRAPPALLI - 620 002", 105, currentY + 19, { align: "center" });
+    doc.setFontSize(10.5);
+    doc.text("TIRUCHIRAPPALLI - 620 002", 116, currentY + 19, { align: "center" });
     
-    doc.setFont("Times", "normal");
-    doc.setFontSize(8);
-    doc.text("Email: iqaccoor@mail.sjctni.edu  |  website: www.sjctni.edu", 105, currentY + 22, { align: "center" });
+    doc.setFont("Times", "bold");
+    doc.setFontSize(8.5);
+    doc.text("Email: iqaccoor@mail.sjctni.edu               website: www.sjctni.edu", 116, currentY + 22.5, { align: "center" });
     
     currentY += 25;
     
     // 3. Double Line Divider
     doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.4);
+    doc.setLineWidth(0.3);
     doc.line(marginX, currentY, 210 - marginX, currentY);
-    doc.setLineWidth(1.0);
-    doc.line(marginX, currentY + 0.8, 210 - marginX, currentY + 0.8);
+    doc.setLineWidth(1.1);
+    doc.line(marginX, currentY + 0.9, 210 - marginX, currentY + 0.9);
     
     currentY += 8;
     
@@ -6548,6 +6585,466 @@ async function exportClaimLetterPDF() {
     doc.save(`ewyl_claim_letter_${monthName}.pdf`);
   } catch(err) {
     console.error("PDF generation failed:", err);
+    alert("Failed to generate PDF: " + err.message);
+  }
+}
+
+// ================= MONTH SUMMARY REPORT DOWNLOADS =================
+
+function openMonthSummaryModal() {
+  const downloadSelect = document.getElementById('ewyl-summary-download-month');
+  if (downloadSelect) downloadSelect.value = state.ewylActiveMonth;
+  document.getElementById('ewyl-month-summary-modal').classList.add('open');
+}
+
+function closeMonthSummaryModal() {
+  document.getElementById('ewyl-month-summary-modal').classList.remove('open');
+}
+
+async function downloadMonthSummary(format) {
+  const monthVal = document.getElementById('ewyl-summary-download-month').value;
+  if (!monthVal) {
+    alert("Please select a target month.");
+    return;
+  }
+  
+  try {
+    const summary = await fetchAPI(`/ewyl/summary?month=${monthVal}`);
+    if (!summary || summary.length === 0) {
+      alert("No student hours data recorded for the selected month.");
+      return;
+    }
+    
+    closeMonthSummaryModal();
+    
+    if (format === 'word') {
+      await downloadMonthSummaryWord(monthVal, summary);
+    } else {
+      await downloadMonthSummaryPDF(monthVal, summary);
+    }
+  } catch (err) {
+    console.error("Failed to download month summary:", err);
+    alert("Error downloading month summary report: " + err.message);
+  }
+}
+
+// Punch time function
+function punchEwylTime(type) {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const timeStr = `${h}:${m}`;
+  
+  const dateInput = document.getElementById('ewyl-log-date');
+  const inInput = document.getElementById('ewyl-log-in');
+  const outInput = document.getElementById('ewyl-log-out');
+  
+  if (dateInput && !dateInput.value) {
+    const y = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    dateInput.value = `${y}-${mo}-${d}`;
+  }
+  
+  if (type === 'in' && inInput) {
+    inInput.value = timeStr;
+  } else if (type === 'out' && outInput) {
+    outInput.value = timeStr;
+  }
+  
+  calculateLiveEwylDuration();
+}
+
+// Live calculation
+function calculateLiveEwylDuration() {
+  const inVal = document.getElementById('ewyl-log-in').value;
+  const outVal = document.getElementById('ewyl-log-out').value;
+  const previewEl = document.getElementById('ewyl-duration-calc-preview');
+  
+  if (!previewEl) return;
+  
+  if (!inVal || !outVal) {
+    previewEl.innerText = '';
+    return;
+  }
+  
+  const [inH, inM] = inVal.split(':').map(Number);
+  const [outH, outM] = outVal.split(':').map(Number);
+  
+  const inMins = inH * 60 + inM;
+  const outMins = outH * 60 + outM;
+  
+  if (outMins <= inMins) {
+    previewEl.innerHTML = `<span style="color: var(--danger);">Error: OUT time must be after IN time</span>`;
+    return;
+  }
+  
+  const diffMins = outMins - inMins;
+  const diffHrs = diffMins / 60;
+  const hours = Math.floor(diffHrs);
+  const mins = diffMins % 60;
+  
+  previewEl.innerHTML = `Live Calculator: <strong>${hours}h ${mins}m</strong> (${diffHrs.toFixed(2)} hrs)`;
+}
+
+// Word Export for Month Summary
+async function downloadMonthSummaryWord(monthVal, summary) {
+  const monthName = getMonthNameInWords(monthVal);
+  let grandTotal = 0;
+  
+  const tableRowsHtml = summary.map((s, idx) => {
+    grandTotal += s.remuneration;
+    return `
+      <tr>
+        <td style="text-align: center; border: 1px solid #000000; padding: 6px;">${idx + 1}</td>
+        <td style="border: 1px solid #000000; padding: 6px;">${escapeHtml(s.name)}<br>(${escapeHtml(s.reg_no)})</td>
+        <td style="border: 1px solid #000000; padding: 6px;">${escapeHtml(s.dept_name)}</td>
+        <td style="text-align: center; border: 1px solid #000000; padding: 6px;">40</td>
+        <td style="text-align: center; border: 1px solid #000000; padding: 6px;">${Number(s.total_hours).toFixed(1)}</td>
+        <td style="text-align: right; border: 1px solid #000000; padding: 6px; font-weight: bold;">${s.remuneration.toLocaleString()}</td>
+        <td style="font-size: 9pt; border: 1px solid #000000; padding: 6px;">
+          Account Number: ${escapeHtml(s.account_no)}<br>
+          Bank Name: ${escapeHtml(s.bank_name)}<br>
+          IFSC: ${escapeHtml(s.ifsc_code)} &nbsp; Branch: ${escapeHtml(s.branch_name)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+  
+  const totalRowHtml = `
+    <tr style="font-weight: bold; background-color: #f2f2f2;">
+      <td colspan="5" style="text-align: right; border: 1px solid #000000; padding: 6px;">Total</td>
+      <td style="text-align: right; border: 1px solid #000000; padding: 6px; color: #2563eb;">${grandTotal.toLocaleString()}</td>
+      <td style="border: 1px solid #000000; padding: 6px;"></td>
+    </tr>
+  `;
+  
+  const amountWords = numberToRupeesInWords(grandTotal);
+  
+  let logoBase64 = "";
+  const logoImg = document.querySelector('.letter-header-logo');
+  if (logoImg) {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = logoImg.naturalWidth || logoImg.width;
+      canvas.height = logoImg.naturalHeight || logoImg.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(logoImg, 0, 0);
+      logoBase64 = canvas.toDataURL('image/png');
+    } catch(e) {
+      console.warn("Could not base64 encode logo for summary Word doc:", e);
+    }
+  }
+
+  const docHtml = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head>
+      <title>EWYL Monthly Summary Report - ${monthName}</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
+      <style>
+        body {
+          font-family: 'Times New Roman', Times, serif;
+          font-size: 11pt;
+          line-height: 1.5;
+          margin: 1in;
+          color: #000000;
+        }
+        .header-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 5px;
+        }
+        .header-table td {
+          border: none !important;
+          padding: 0 !important;
+        }
+        .logo-img {
+          width: 90px;
+          height: auto;
+        }
+        .header-text {
+          text-align: center;
+          line-height: 1.3;
+        }
+        .header-text h2 {
+          font-size: 11pt;
+          margin: 0;
+          font-weight: bold;
+        }
+        .header-text h1 {
+          font-size: 16pt;
+          margin: 2px 0 5px 0;
+          font-weight: bold;
+        }
+        .header-divider {
+          border-top: 1px solid #000000;
+          border-bottom: 3.5px solid #000000;
+          height: 3px;
+          margin: 6px 0 25px 0;
+        }
+        .letter-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+        .letter-table th, .letter-table td {
+          border: 1px solid #000000;
+          padding: 6px 8px;
+          font-size: 9.5pt;
+        }
+        .letter-table th {
+          font-weight: bold;
+          text-align: center;
+          background-color: #f2f2f2;
+        }
+        .signatures-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 50px;
+        }
+        .signatures-table td {
+          border: none !important;
+          width: 50%;
+          text-align: center;
+          font-weight: bold;
+          font-size: 10.5pt;
+        }
+      </style>
+    </head>
+    <body>
+      <table class="header-table">
+        <tr>
+          <td style="width: 95px; vertical-align: top;">
+            ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" alt="Logo">` : '[Logo]'}
+          </td>
+          <td style="vertical-align: top;">
+            <div class="header-text">
+              <h2>INTERNAL QUALITY ASSURANCE CELL</h2>
+              <h1>ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
+              <table style="width: 100%; border-collapse: collapse; border: none !important; margin: 1px 0;">
+                <tr>
+                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: left; font-weight: bold; font-family: 'Times New Roman', Times, serif;">Accredited at A++ Grade (Cycle IV) by NAAC</td>
+                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: right; font-weight: bold; font-family: 'Times New Roman', Times, serif;">Special Heritage College Status awarded by UGC</td>
+                </tr>
+              </table>
+              <table style="width: 100%; border-collapse: collapse; border: none !important; margin: 1px 0;">
+                <tr>
+                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: left; font-weight: bold; font-family: 'Times New Roman', Times, serif;">College with Potential for Excellence by UGC</td>
+                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: right; font-weight: bold; font-family: 'Times New Roman', Times, serif;">DBT-STAR &amp; DST-FIST Sponsored College</td>
+                </tr>
+              </table>
+              <p style="font-size: 10pt; font-weight: bold; margin: 3px 0 1px 0;">TIRUCHIRAPPALLI - 620 002</p>
+              <p style="font-size: 8.5pt; margin: 1px 0;">Email: iqaccoor@mail.sjctni.edu &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; website: www.sjctni.edu</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+      <div class="header-divider"></div>
+
+      <div style="text-align: center; margin-bottom: 25px; font-weight: bold; font-size: 13pt; text-decoration: underline;">
+        EARN WHILE YOU LEARN SCHEME - MONTH SUMMARY REPORT (${monthName.toUpperCase()})
+      </div>
+
+      <table class="letter-table">
+        <thead>
+          <tr>
+            <th>S. No</th>
+            <th>Name of the Student & Reg. No</th>
+            <th>Department</th>
+            <th>Amount/Hour (Rs)</th>
+            <th>No. of Hours</th>
+            <th>Total Amount (Rs)</th>
+            <th>Bank & Account Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRowsHtml}
+          ${totalRowHtml}
+        </tbody>
+      </table>
+
+      <div style="margin-bottom: 30px; font-weight: bold;">
+        Rupees in Words: Rupees ${amountWords} Only.
+      </div>
+
+      <table class="signatures-table">
+        <tr>
+          <td style="text-align: left; padding-left: 20px;">
+            IQAC Coordinator<br><br><br><br>
+            IQAC COORDINATOR
+          </td>
+          <td style="text-align: right; padding-right: 20px;">
+            Rev. Fr. Principal<br><br><br><br>
+            PRINCIPAL
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob(['\ufeff' + docHtml], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  
+  link.setAttribute("href", url);
+  link.setAttribute("download", `ewyl_month_summary_${monthVal}.doc`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// PDF Export for Month Summary
+async function downloadMonthSummaryPDF(monthVal, summary) {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    const marginX = 15;
+    let currentY = 15;
+    
+    // 1. Logo
+    const logoImg = document.querySelector('.letter-header-logo');
+    if (logoImg) {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = logoImg.naturalWidth || logoImg.width;
+        canvas.height = logoImg.naturalHeight || logoImg.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(logoImg, 0, 0);
+        const logoData = canvas.toDataURL('image/png');
+        doc.addImage(logoData, 'PNG', marginX, currentY - 2, 22, 25);
+      } catch(e) {
+        console.warn("Could not embed logo in summary PDF:", e);
+      }
+    }
+    
+    // 2. Draw Header Text
+    doc.setFont("Times", "bold");
+    doc.setFontSize(11);
+    doc.text("INTERNAL QUALITY ASSURANCE CELL", 116, currentY + 3, { align: "center" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(15);
+    doc.text("ST. JOSEPH'S COLLEGE (AUTONOMOUS)", 116, currentY + 8, { align: "center" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(8.5);
+    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC", marginX + 25, currentY + 12);
+    doc.text("Special Heritage College Status awarded by UGC", 210 - marginX, currentY + 12, { align: "right" });
+    
+    doc.text("College with Potential for Excellence by UGC", marginX + 25, currentY + 15);
+    doc.text("DBT-STAR & DST-FIST Sponsored College", 210 - marginX, currentY + 15, { align: "right" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(10.5);
+    doc.text("TIRUCHIRAPPALLI - 620 002", 116, currentY + 19, { align: "center" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(8.5);
+    doc.text("Email: iqaccoor@mail.sjctni.edu               website: www.sjctni.edu", 116, currentY + 22.5, { align: "center" });
+    
+    currentY += 25;
+    
+    // 3. Double Line Divider
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.line(marginX, currentY, 210 - marginX, currentY);
+    doc.setLineWidth(1.1);
+    doc.line(marginX, currentY + 0.9, 210 - marginX, currentY + 0.9);
+    
+    currentY += 12;
+    
+    // 4. Report Title
+    const monthName = getMonthNameInWords(monthVal);
+    doc.setFont("Times", "bold");
+    doc.setFontSize(12);
+    doc.text(`EARN WHILE YOU LEARN SCHEME - MONTH SUMMARY REPORT (${monthName.toUpperCase()})`, 105, currentY, { align: "center" });
+    
+    currentY += 8;
+    
+    // 5. Table of Students
+    const tableHeaders = [['S. No', 'Name of the Student & Reg. No', 'Department', 'Amount\n/Hour', 'No. of\nHours', 'Amount\n(Rs)', 'Bank & Account Details']];
+    const tableRows = [];
+    let grandTotal = 0;
+    
+    summary.forEach((s, idx) => {
+      grandTotal += s.remuneration;
+      tableRows.push([
+        String(idx + 1),
+        `${s.name}\n(${s.reg_no})`,
+        s.dept_name,
+        "40",
+        Number(s.total_hours).toFixed(1),
+        s.remuneration.toLocaleString(),
+        `Account No: ${s.account_no}\nBank Name: ${s.bank_name}\nIFSC: ${s.ifsc_code}  Branch: ${s.branch_name}`
+      ]);
+    });
+    
+    doc.autoTable({
+      startY: currentY,
+      margin: { left: marginX, right: marginX },
+      head: tableHeaders,
+      body: tableRows,
+      theme: 'grid',
+      styles: {
+        font: 'Times',
+        fontSize: 8.5,
+        textColor: [0, 0, 0],
+        lineColor: [0, 0, 0],
+        lineWidth: 0.15
+      },
+      headStyles: {
+        fillColor: [245, 245, 245],
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { halign: 'center', width: 10 },
+        3: { halign: 'center', width: 15 },
+        4: { halign: 'center', width: 15 },
+        5: { halign: 'right', fontStyle: 'bold', width: 20 }
+      },
+      didDrawPage: function(data) {
+        currentY = data.cursor.y;
+      }
+    });
+    
+    currentY += 3;
+    
+    // Draw Custom Total Row
+    doc.setLineWidth(0.15);
+    doc.line(marginX, currentY, 210 - marginX, currentY);
+    
+    doc.setFont("Times", "bold");
+    doc.text("Total", 100, currentY + 5);
+    doc.text(grandTotal.toLocaleString(), 120, currentY + 5, { align: "right" });
+    
+    doc.line(marginX, currentY + 7, 210 - marginX, currentY + 7);
+    
+    currentY += 15;
+    
+    // 6. Amount in words
+    const amountWords = numberToRupeesInWords(grandTotal);
+    doc.setFont("Times", "bold");
+    doc.text(`Rupees in Words: Rupees ${amountWords} Only.`, marginX, currentY);
+    
+    currentY += 30;
+    
+    // 7. Signatures
+    doc.text("IQAC Coordinator", marginX + 10, currentY);
+    doc.text("Rev. Fr. Principal", 210 - marginX - 10, currentY, { align: "right" });
+    
+    doc.save(`ewyl_month_summary_${monthVal}.pdf`);
+  } catch(err) {
+    console.error("Month Summary PDF generation failed:", err);
     alert("Failed to generate PDF: " + err.message);
   }
 }

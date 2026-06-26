@@ -274,6 +274,7 @@ function createTables(dbRunExecutor, callback) {
         out_time VARCHAR(50) NOT NULL,
         total_hours NUMERIC(5,2) NOT NULL,
         month_active VARCHAR(50) NOT NULL,
+        work_done VARCHAR(255),
         FOREIGN KEY (student_id) REFERENCES ewyl_students (id) ON DELETE CASCADE
       )`
     : `CREATE TABLE IF NOT EXISTS ewyl_hours (
@@ -284,6 +285,7 @@ function createTables(dbRunExecutor, callback) {
         out_time TEXT NOT NULL,
         total_hours REAL NOT NULL,
         month_active TEXT NOT NULL,
+        work_done TEXT,
         FOREIGN KEY (student_id) REFERENCES ewyl_students (id) ON DELETE CASCADE
       )`;
 
@@ -364,61 +366,63 @@ function initializeDatabase() {
                                     db.run(addCol('staff_involvement_records', 'col8', 'TEXT'), [], () => {
                                       db.run(addCol('staff_involvement_records', 'status', "VARCHAR(50)", "'Pending'"), [], () => {
                                         db.run(addCol('staff_involvement_records', 'remark', "TEXT", "''"), [], () => {
-                                          // Clean up null/empty department & shift values from category names, and standardize shift values
-                                          db.all("SELECT id, name, department, shift FROM staff_involvement_categories", [], (err, rows) => {
-                                            if (rows) {
-                                              rows.forEach(row => {
-                                                let updateNeeded = false;
-                                                let dept = row.department;
-                                                let shift = row.shift;
-                                                
-                                                // Standardize existing shift values in DB
-                                                if (shift === 'Shift I' || shift === 'Shift II') {
-                                                  shift = (shift === 'Shift I') ? 'Shift 1' : 'Shift 2';
-                                                  updateNeeded = true;
-                                                }
-                                                
-                                                if (!dept || !shift) {
-                                                  const match = row.name.match(/^(.*?)\s*\((Shift 1|Shift 2|Combined Department|Shift I|Shift II)\)/i);
-                                                  if (match) {
-                                                    if (!dept) {
-                                                      dept = match[1].trim();
-                                                      updateNeeded = true;
-                                                    }
-                                                    if (!shift) {
-                                                      let shiftVal = match[2].trim();
-                                                      if (shiftVal === 'Shift I') shift = 'Shift 1';
-                                                      else if (shiftVal === 'Shift II') shift = 'Shift 2';
-                                                      else shift = shiftVal;
-                                                      updateNeeded = true;
+                                          db.run(addCol('ewyl_hours', 'work_done', "TEXT", "''"), [], () => {
+                                            // Clean up null/empty department & shift values from category names, and standardize shift values
+                                            db.all("SELECT id, name, department, shift FROM staff_involvement_categories", [], (err, rows) => {
+                                              if (rows) {
+                                                rows.forEach(row => {
+                                                  let updateNeeded = false;
+                                                  let dept = row.department;
+                                                  let shift = row.shift;
+                                                  
+                                                  // Standardize existing shift values in DB
+                                                  if (shift === 'Shift I' || shift === 'Shift II') {
+                                                    shift = (shift === 'Shift I') ? 'Shift 1' : 'Shift 2';
+                                                    updateNeeded = true;
+                                                  }
+                                                  
+                                                  if (!dept || !shift) {
+                                                    const match = row.name.match(/^(.*?)\s*\((Shift 1|Shift 2|Combined Department|Shift I|Shift II)\)/i);
+                                                    if (match) {
+                                                      if (!dept) {
+                                                        dept = match[1].trim();
+                                                        updateNeeded = true;
+                                                      }
+                                                      if (!shift) {
+                                                        let shiftVal = match[2].trim();
+                                                        if (shiftVal === 'Shift I') shift = 'Shift 1';
+                                                        else if (shiftVal === 'Shift II') shift = 'Shift 2';
+                                                        else shift = shiftVal;
+                                                        updateNeeded = true;
+                                                      }
                                                     }
                                                   }
-                                                }
-                                                if (updateNeeded) {
-                                                  db.run("UPDATE staff_involvement_categories SET department = ?, shift = ? WHERE id = ?", [dept, shift, row.id]);
-                                                }
-                                              });
-                                            }
-                                          });
-                                          
-                                          // 1. Seed users individually if missing
-                                          const seedUser = (username, password, name, role, callback) => {
-                                            db.get("SELECT COUNT(*) as count FROM users WHERE username = ?", [username], (err, row) => {
-                                              if (row && (row.count === 0 || row.count === '0' || row.count === 0)) {
-                                                db.run("INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)", [username, password, name, role], () => {
-                                                  if (callback) callback();
+                                                  if (updateNeeded) {
+                                                    db.run("UPDATE staff_involvement_categories SET department = ?, shift = ? WHERE id = ?", [dept, shift, row.id]);
+                                                  }
                                                 });
-                                              } else {
-                                                if (callback) callback();
                                               }
                                             });
-                                          };
-                                          
-                                          seedUser('staff', 'staff123', 'IQAC Coordinator', 'Staff', () => {
-                                            seedUser('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director', () => {
-                                              seedUser('user', 'user123', 'Department User', 'User', () => {
-                                                console.log('Default users checked and seeded if missing.');
-                                                seedDepartments();
+                                            
+                                            // 1. Seed users individually if missing
+                                            const seedUser = (username, password, name, role, callback) => {
+                                              db.get("SELECT COUNT(*) as count FROM users WHERE username = ?", [username], (err, row) => {
+                                                if (row && (row.count === 0 || row.count === '0' || row.count === 0)) {
+                                                  db.run("INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)", [username, password, name, role], () => {
+                                                    if (callback) callback();
+                                                  });
+                                                } else {
+                                                  if (callback) callback();
+                                                }
+                                              });
+                                            };
+                                            
+                                            seedUser('staff', 'staff123', 'IQAC Coordinator', 'Staff', () => {
+                                              seedUser('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director', () => {
+                                                seedUser('user', 'user123', 'Department User', 'User', () => {
+                                                  console.log('Default users checked and seeded if missing.');
+                                                  seedDepartments();
+                                                });
                                               });
                                             });
                                           });
@@ -1135,7 +1139,7 @@ app.get('/api/ewyl/hours', (req, res) => {
 
 // 6. Log working hours
 app.post('/api/ewyl/hours', (req, res) => {
-  const { student_id, date, in_time, out_time, month_active } = req.body;
+  const { student_id, date, in_time, out_time, month_active, work_done } = req.body;
   if (!student_id || !date || !in_time || !out_time || !month_active) {
     return res.status(400).json({ error: 'All fields are required' });
   }
@@ -1153,11 +1157,11 @@ app.post('/api/ewyl/hours', (req, res) => {
   const total_hours = Number(((outMinutes - inMinutes) / 60).toFixed(2));
 
   db.run(
-    "INSERT INTO ewyl_hours (student_id, date, in_time, out_time, total_hours, month_active) VALUES (?, ?, ?, ?, ?, ?)",
-    [student_id, date, in_time, out_time, total_hours, month_active],
+    "INSERT INTO ewyl_hours (student_id, date, in_time, out_time, total_hours, month_active, work_done) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [student_id, date, in_time, out_time, total_hours, month_active, work_done || ''],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ id: this.lastID, student_id, date, in_time, out_time, total_hours, month_active });
+      res.status(201).json({ id: this.lastID, student_id, date, in_time, out_time, total_hours, month_active, work_done: work_done || '' });
     }
   );
 });

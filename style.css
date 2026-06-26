@@ -1528,10 +1528,10 @@ input:checked + .slider:before {
 }
 
 .letter-header-divider {
-  border-top: 1.5px solid #000000;
-  border-bottom: 4.5px double #000000;
-  height: 4px;
-  margin: 8px 0 20px 0;
+  border-top: 1px solid #000000;
+  border-bottom: 3.5px solid #000000;
+  height: 3px;
+  margin: 10px 0 24px 0;
 }
 
 /* Editable content blocks inside the letter */

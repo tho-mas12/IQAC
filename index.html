@@ -1149,6 +1149,10 @@
               </select>
             </div>
             <div style="display: flex; gap: 12px; align-items: center;">
+              <button class="btn btn-secondary" onclick="openMonthSummaryModal()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 10px; padding: 10px 18px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Month Summary
+              </button>
               <button class="btn btn-secondary" onclick="openClaimLetterSetupModal()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 10px; padding: 10px 18px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="9" y2="9"/><line x1="8" y1="9" x2="8" y2="9"/></svg>
                 Claim Letter
@@ -1211,7 +1215,7 @@
               <form id="ewyl-hours-form" onsubmit="saveEwylHoursLog(event)">
                 <div class="form-group" style="margin-bottom: 16px;">
                   <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">Recording Mode</label>
-                  <div style="display: flex; gap: 16px;">
+                  <div style="display: flex; gap: 16px; margin-bottom: 12px;">
                     <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px; font-weight: 500;">
                       <input type="radio" name="ewyl-time-mode" value="current" checked onchange="toggleEwylHoursTimeMode()">
                       Current Date & Time
@@ -1221,6 +1225,17 @@
                       Manual Entry
                     </label>
                   </div>
+                  <!-- Punch Buttons -->
+                  <div id="ewyl-punch-buttons-container" style="display: flex; gap: 12px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="punchEwylTime('in')" style="flex: 1; padding: 6px 12px; font-weight: 600; background: #22c55e; border-color: #22c55e; color: #fff; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      Punch IN
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="punchEwylTime('out')" style="flex: 1; padding: 6px 12px; font-weight: 600; background: #ef4444; border-color: #ef4444; color: #fff; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      Punch OUT
+                    </button>
+                  </div>
                 </div>
 
                 <div class="form-group">
@@ -1229,14 +1244,21 @@
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                   <div class="form-group">
-                    <label class="form-label" for="ewyl-log-in">IN Time (Office Arrival)</label>
+                    <label class="form-label" for="ewyl-log-in">IN Time (Arrival)</label>
                     <input type="time" id="ewyl-log-in" class="form-control" style="height: 38px; padding-left: 10px;" required>
                   </div>
                   <div class="form-group">
-                    <label class="form-label" for="ewyl-log-out">OUT Time (Office Departure)</label>
+                    <label class="form-label" for="ewyl-log-out">OUT Time (Departure)</label>
                     <input type="time" id="ewyl-log-out" class="form-control" style="height: 38px; padding-left: 10px;" required>
                   </div>
                 </div>
+
+                <div class="form-group" style="margin-top: 16px;">
+                  <label class="form-label" for="ewyl-log-work-done">Work Done (Optional)</label>
+                  <input type="text" id="ewyl-log-work-done" class="form-control" style="height: 38px; padding-left: 10px;" placeholder="e.g. Newsletter layout formatting">
+                </div>
+
+                <div id="ewyl-duration-calc-preview" style="margin: 12px 0 8px 0; font-size: 13.5px; font-weight: 600; color: var(--primary); text-align: center;"></div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px; font-weight: 600; height: 40px;">
                   Record Hours Entry
@@ -1284,6 +1306,7 @@
                     <th style="padding: 10px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px;">Arrival (IN)</th>
                     <th style="padding: 10px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px;">Departure (OUT)</th>
                     <th style="padding: 10px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px;">Total Hours (Day)</th>
+                    <th style="padding: 10px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Work Done</th>
                     <th style="padding: 10px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 100px;">Actions</th>
                   </tr>
                 </thead>
@@ -1292,7 +1315,7 @@
                 </tbody>
                 <tfoot>
                   <tr style="background: #f8fafc; font-weight: bold; border-top: 2px solid var(--card-border);">
-                    <td colspan="3" style="padding: 12px 16px; text-align: right; font-size: 14px;">Total Monthly Hours:</td>
+                    <td colspan="4" style="padding: 12px 16px; text-align: right; font-size: 14px;">Total Monthly Hours:</td>
                     <td id="ewyl-hours-total-sum" style="padding: 12px 16px; text-align: center; font-size: 15px; color: var(--primary);">0.00 hrs</td>
                     <td></td>
                   </tr>
@@ -1333,17 +1356,23 @@
               <!-- College Letterhead -->
               <table class="letter-header-table">
                 <tr>
-                  <td style="width: 80px; vertical-align: top;">
-                    <img src="logo.png" class="letter-header-logo" alt="College Crest">
+                  <td style="width: 95px; vertical-align: top; padding: 0 !important; background: transparent !important;">
+                    <img src="logo.png" class="letter-header-logo" alt="College Crest" style="width: 90px; height: auto;">
                   </td>
-                  <td style="vertical-align: top;">
+                  <td style="vertical-align: top; padding: 0 !important; background: transparent !important;">
                     <div class="letter-header-text">
-                      <h2>INTERNAL QUALITY ASSURANCE CELL</h2>
-                      <h1>ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
-                      <p style="font-weight: 500;">Accredited at A<sup>++</sup> Grade (Cycle IV) by NAAC &nbsp;|&nbsp; Special Heritage College Status awarded by UGC</p>
-                      <p>College with Potential for Excellence by UGC &nbsp;|&nbsp; DBT-STAR &amp; DST-FIST Sponsored College</p>
-                      <p style="font-weight: bold; letter-spacing: 0.5px;">TIRUCHIRAPPALLI - 620 002</p>
-                      <p style="font-size: 10px;">Email: iqaccoor@mail.sjctni.edu &nbsp;|&nbsp; website: www.sjctni.edu</p>
+                      <h2 style="font-size: 14.5px; font-weight: bold; margin: 0; color: #000; font-family: 'Times New Roman', Times, serif;">INTERNAL QUALITY ASSURANCE CELL</h2>
+                      <h1 style="font-size: 21px; font-weight: bold; margin: 3px 0 5px 0; color: #000; font-family: 'Times New Roman', Times, serif;">ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
+                      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; margin: 2px 0; color: #000; width: 100%; font-family: 'Times New Roman', Times, serif;">
+                        <span>Accredited at A<sup>++</sup> Grade (Cycle IV) by NAAC</span>
+                        <span>Special Heritage College Status awarded by UGC</span>
+                      </div>
+                      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; margin: 2px 0; color: #000; width: 100%; font-family: 'Times New Roman', Times, serif;">
+                        <span>College with Potential for Excellence by UGC</span>
+                        <span>DBT-STAR &amp; DST-FIST Sponsored College</span>
+                      </div>
+                      <h3 style="font-size: 13px; font-weight: bold; margin: 4px 0 2px 0; text-align: center; color: #000; font-family: 'Times New Roman', Times, serif;">TIRUCHIRAPPALLI - 620 002</h3>
+                       <p style="font-size: 10px; margin: 2px 0; text-align: center; color: #000; font-weight: 500; font-family: 'Times New Roman', Times, serif;">Email: iqaccoor@mail.sjctni.edu &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; website: www.sjctni.edu</p>
                     </div>
                   </td>
                 </tr>
@@ -1538,6 +1567,33 @@
           <button type="submit" class="btn btn-primary">Generate LetterPad</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: EWYL MONTH SUMMARY DOWNLOAD ================= -->
+  <div id="ewyl-month-summary-modal" class="modal-overlay">
+    <div class="modal-container glass-panel" style="padding-top: 40px; max-width: 500px;">
+      <button class="modal-close" onclick="closeMonthSummaryModal()" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="background: rgba(14, 165, 233, 0.1); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: var(--accent);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <h3 style="font-weight: 700; font-size: 20px; color: var(--text-main); margin-bottom: 4px;">Month Summary Report</h3>
+        <p style="font-size: 13px; color: var(--text-muted);">Select the month to download the Earn While You Learn summary report</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="ewyl-summary-download-month">Select Target Month</label>
+        <select id="ewyl-summary-download-month" class="form-select" style="height: 38px; padding: 0 10px;">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+      <div class="modal-footer" style="padding: 0; margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeMonthSummaryModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="downloadMonthSummary('word')" style="background: #2b579a; border-color: #2b579a;">Download Word</button>
+        <button type="button" class="btn btn-primary" onclick="downloadMonthSummary('pdf')" style="background: #e21c21; border-color: #e21c21;">Download PDF</button>
+      </div>
     </div>
   </div>
     </main>
