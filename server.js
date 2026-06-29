@@ -1121,20 +1121,35 @@ app.delete('/api/ewyl/students/:id', (req, res) => {
   });
 });
 
-// 5. Get hours for a student in a month
+// 5. Get hours for a student in a month (student_id optional to fetch all logs)
 app.get('/api/ewyl/hours', (req, res) => {
   const { student_id, month } = req.query;
-  if (!student_id || !month) {
-    return res.status(400).json({ error: 'Missing student_id or month' });
+  if (!month) {
+    return res.status(400).json({ error: 'Missing month parameter' });
   }
-  db.all(
-    "SELECT * FROM ewyl_hours WHERE student_id = ? AND month_active = ? ORDER BY date ASC, in_time ASC",
-    [student_id, month],
-    (err, rows) => {
+  
+  if (student_id) {
+    db.all(
+      "SELECT * FROM ewyl_hours WHERE student_id = ? AND month_active = ? ORDER BY date ASC, in_time ASC",
+      [student_id, month],
+      (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+      }
+    );
+  } else {
+    const sql = `
+      SELECT h.*, s.name, s.reg_no, s.dept_name, s.bank_name, s.account_no, s.ifsc_code, s.branch_name
+      FROM ewyl_hours h
+      JOIN ewyl_students s ON h.student_id = s.id
+      WHERE h.month_active = ?
+      ORDER BY s.name ASC, h.date ASC, h.in_time ASC
+    `;
+    db.all(sql, [month], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows);
-    }
-  );
+    });
+  }
 });
 
 // 6. Log working hours

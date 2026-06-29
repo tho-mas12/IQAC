@@ -1494,7 +1494,7 @@ input:checked + .slider:before {
 }
 
 .letter-header-logo {
-  width: 75px;
+  width: 100px;
   height: auto;
   display: block;
 }

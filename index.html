@@ -700,9 +700,11 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
               <!-- 1. Responsibility Filter -->
               <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Responsibility (Part A Only)</label>
+                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Filter Responsibility / Assignment</label>
                 <select id="involvement-filter-responsibility" class="form-select" onchange="renderStaffInvolvementRestructured()" style="font-size: 13px; height: 36px; padding: 0 10px;">
                   <option value="all">Select Responsibility (Show All)</option>
+                  <option value="Clubs">Clubs</option>
+                  <option value="Class Mentors">Class Mentors</option>
                   <option value="PhD Programme">PhD Programme</option>
                   <option value="PG Programme">PG Programme</option>
                   <option value="UG Programme">UG Programme</option>
@@ -1356,8 +1358,8 @@
               <!-- College Letterhead -->
               <table class="letter-header-table">
                 <tr>
-                  <td style="width: 95px; vertical-align: top; padding: 0 !important; background: transparent !important;">
-                    <img src="logo.png" class="letter-header-logo" alt="College Crest" style="width: 90px; height: auto;">
+                  <td style="width: 115px; vertical-align: top; padding: 0 !important; background: transparent !important;">
+                    <img src="logo.png" class="letter-header-logo" alt="College Crest" style="width: 105px; height: auto;">
                   </td>
                   <td style="vertical-align: top; padding: 0 !important; background: transparent !important;">
                     <div class="letter-header-text">

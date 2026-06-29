@@ -2290,15 +2290,29 @@ function renderStaffInvolvementRestructured() {
         ${viewButtonHtml}
       `;
     } else {
-      const matchingRecords = (state.involvementRecords || []).filter(r => 
-        r.category_id === category.id &&
-        r.section_type === 'Part A' &&
-        r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
-      );
+      let matchingRecords = [];
+      if (selectedResp === 'Clubs' || selectedResp === 'Class Mentors') {
+        matchingRecords = (state.involvementRecords || []).filter(r => 
+          r.category_id === category.id &&
+          r.section_type === selectedResp
+        );
+      } else {
+        matchingRecords = (state.involvementRecords || []).filter(r => 
+          r.category_id === category.id &&
+          r.section_type === 'Part A' &&
+          r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
+        );
+      }
 
       let dataText = '';
       if (matchingRecords.length > 0) {
-        dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+        if (selectedResp === 'Clubs') {
+          dataText = matchingRecords.map(r => `<strong>${escapeHtml(r.col2)}</strong> (${escapeHtml(r.col4 || '-')})`).join('<br>');
+        } else if (selectedResp === 'Class Mentors') {
+          dataText = matchingRecords.map(r => `<strong>${escapeHtml(r.col1)}</strong>: ${escapeHtml(r.col2 || '-')}`).join('<br>');
+        } else {
+          dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+        }
       } else {
         dataText = '<span style="color: var(--text-muted); font-style: italic;">Not Assigned</span>';
       }
@@ -2307,7 +2321,7 @@ function renderStaffInvolvementRestructured() {
         <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main); font-size: 13px;">${escapeHtml(deptName)}</td>
         <td style="padding: 12px 16px; font-size: 13px;"><span class="badge ${shift === 'Shift 1' ? 'badge-primary' : (shift === 'Shift 2' ? 'badge-secondary' : 'badge-success')}">${escapeHtml(shift)}</span></td>
         <td style="padding: 12px 16px; color: var(--text-main); font-size: 13px;">${escapeHtml(coordinator)}</td>
-        <td style="padding: 12px 16px; font-size: 13px; color: var(--primary); font-weight: 500;">${dataText}</td>
+        <td style="padding: 12px 16px; font-size: 13px; color: var(--primary); font-weight: 500; line-height: 1.4;">${dataText}</td>
         ${viewButtonHtml}
       `;
     }
@@ -2416,16 +2430,29 @@ async function exportRestructuredInvolvementsExcel() {
         escapeCsv(`Data (${selectedResp})`)
       ]);
 
-      filteredCats.forEach(c => {
-        const matchingRecords = (state.involvementRecords || []).filter(r => 
-          r.category_id === c.id &&
-          r.section_type === 'Part A' &&
-          r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
-        );
+        let matchingRecords = [];
+        if (selectedResp === 'Clubs' || selectedResp === 'Class Mentors') {
+          matchingRecords = (state.involvementRecords || []).filter(r => 
+            r.category_id === c.id &&
+            r.section_type === selectedResp
+          );
+        } else {
+          matchingRecords = (state.involvementRecords || []).filter(r => 
+            r.category_id === c.id &&
+            r.section_type === 'Part A' &&
+            r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
+          );
+        }
 
         let dataText = '';
         if (matchingRecords.length > 0) {
-          dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+          if (selectedResp === 'Clubs') {
+            dataText = matchingRecords.map(r => `${r.col2 || '-'} (${r.col4 || '-'})`).join('; ');
+          } else if (selectedResp === 'Class Mentors') {
+            dataText = matchingRecords.map(r => `${r.col1 || '-'}: ${r.col2 || '-'}`).join('; ');
+          } else {
+            dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+          }
         } else {
           dataText = 'Not Assigned';
         }
@@ -2491,15 +2518,29 @@ async function exportRestructuredInvolvementsPDF() {
     } else {
       tableHeaders = [['Department Name', 'Shift', 'Head / Coordinator', `Data (${selectedResp})`]];
       filteredCats.forEach(c => {
-        const matchingRecords = (state.involvementRecords || []).filter(r => 
-          r.category_id === c.id &&
-          r.section_type === 'Part A' &&
-          r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
-        );
+        let matchingRecords = [];
+        if (selectedResp === 'Clubs' || selectedResp === 'Class Mentors') {
+          matchingRecords = (state.involvementRecords || []).filter(r => 
+            r.category_id === c.id &&
+            r.section_type === selectedResp
+          );
+        } else {
+          matchingRecords = (state.involvementRecords || []).filter(r => 
+            r.category_id === c.id &&
+            r.section_type === 'Part A' &&
+            r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
+          );
+        }
 
         let dataText = '';
         if (matchingRecords.length > 0) {
-          dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+          if (selectedResp === 'Clubs') {
+            dataText = matchingRecords.map(r => `${r.col2 || '-'} (${r.col4 || '-'})`).join('\n');
+          } else if (selectedResp === 'Class Mentors') {
+            dataText = matchingRecords.map(r => `${r.col1 || '-'}: ${r.col2 || '-'}`).join('\n');
+          } else {
+            dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+          }
         } else {
           dataText = 'Not Assigned';
         }
@@ -6228,7 +6269,7 @@ function exportClaimLetterWord() {
           padding: 0 !important;
         }
         .logo-img {
-          width: 90px;
+          width: 105px;
           height: auto;
         }
         .header-text {
@@ -6287,7 +6328,7 @@ function exportClaimLetterWord() {
     <body>
       <table class="header-table">
         <tr>
-          <td style="width: 95px; vertical-align: top;">
+          <td style="width: 115px; vertical-align: top;">
             ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" alt="Logo">` : '[Logo]'}
           </td>
           <td style="vertical-align: top;">
@@ -6386,7 +6427,7 @@ async function exportClaimLetterPDF() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(logoImg, 0, 0);
         const logoData = canvas.toDataURL('image/png');
-        doc.addImage(logoData, 'PNG', marginX, currentY - 2, 22, 25);
+        doc.addImage(logoData, 'PNG', marginX, currentY - 3, 25, 29);
       } catch(e) {
         console.warn("Could not embed logo in PDF:", e);
       }
@@ -6615,12 +6656,15 @@ async function downloadMonthSummary(format) {
       return;
     }
     
+    // Fetch detailed daily logs for person-by-person compilation
+    const dailyLogs = await fetchAPI(`/ewyl/hours?month=${monthVal}`);
+    
     closeMonthSummaryModal();
     
     if (format === 'word') {
-      await downloadMonthSummaryWord(monthVal, summary);
+      await downloadMonthSummaryWord(monthVal, summary, dailyLogs);
     } else {
-      await downloadMonthSummaryPDF(monthVal, summary);
+      await downloadMonthSummaryPDF(monthVal, summary, dailyLogs);
     }
   } catch (err) {
     console.error("Failed to download month summary:", err);
@@ -6688,38 +6732,79 @@ function calculateLiveEwylDuration() {
 }
 
 // Word Export for Month Summary
-async function downloadMonthSummaryWord(monthVal, summary) {
+async function downloadMonthSummaryWord(monthVal, summary, dailyLogs) {
   const monthName = getMonthNameInWords(monthVal);
-  let grandTotal = 0;
+  const activeStudents = (summary || []).filter(s => s.total_hours > 0);
   
-  const tableRowsHtml = summary.map((s, idx) => {
-    grandTotal += s.remuneration;
+  let grandTotalHours = 0;
+  let grandTotalRemuneration = 0;
+  
+  const studentsContentHtml = activeStudents.map((s, idx) => {
+    grandTotalHours += s.total_hours;
+    grandTotalRemuneration += s.remuneration;
+    
+    const studentLogs = (dailyLogs || []).filter(l => l.student_id === s.id);
+    const logRowsHtml = studentLogs.map((log, lIdx) => {
+      let dateStr = log.date || '';
+      if (dateStr.includes('-')) {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      return `
+        <tr>
+          <td style="text-align: center; border: 1px solid #000000; padding: 4px; font-size: 9pt;">${lIdx + 1}</td>
+          <td style="text-align: center; border: 1px solid #000000; padding: 4px; font-size: 9pt;">${escapeHtml(dateStr)}</td>
+          <td style="text-align: center; border: 1px solid #000000; padding: 4px; font-size: 9pt;">${escapeHtml(log.in_time)}</td>
+          <td style="text-align: center; border: 1px solid #000000; padding: 4px; font-size: 9pt;">${escapeHtml(log.out_time)}</td>
+          <td style="text-align: center; border: 1px solid #000000; padding: 4px; font-size: 9pt;">${Number(log.total_hours).toFixed(2)}</td>
+          <td style="border: 1px solid #000000; padding: 4px; font-size: 9pt;">${escapeHtml(log.work_done || '-')}</td>
+        </tr>
+      `;
+    }).join('');
+
     return `
-      <tr>
-        <td style="text-align: center; border: 1px solid #000000; padding: 6px;">${idx + 1}</td>
-        <td style="border: 1px solid #000000; padding: 6px;">${escapeHtml(s.name)}<br>(${escapeHtml(s.reg_no)})</td>
-        <td style="border: 1px solid #000000; padding: 6px;">${escapeHtml(s.dept_name)}</td>
-        <td style="text-align: center; border: 1px solid #000000; padding: 6px;">40</td>
-        <td style="text-align: center; border: 1px solid #000000; padding: 6px;">${Number(s.total_hours).toFixed(1)}</td>
-        <td style="text-align: right; border: 1px solid #000000; padding: 6px; font-weight: bold;">${s.remuneration.toLocaleString()}</td>
-        <td style="font-size: 9pt; border: 1px solid #000000; padding: 6px;">
-          Account Number: ${escapeHtml(s.account_no)}<br>
-          Bank Name: ${escapeHtml(s.bank_name)}<br>
-          IFSC: ${escapeHtml(s.ifsc_code)} &nbsp; Branch: ${escapeHtml(s.branch_name)}
-        </td>
-      </tr>
+      <div style="margin-bottom: 25px; page-break-inside: avoid;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
+          <tr>
+            <td style="font-weight: bold; font-size: 10.5pt; width: 60%; border: none !important;">
+              ${idx + 1}. Student Name: <span style="text-decoration: underline;">${escapeHtml(s.name)}</span> (${escapeHtml(s.reg_no)})
+            </td>
+            <td style="font-weight: bold; font-size: 10.5pt; text-align: right; border: none !important;">
+              Dept: ${escapeHtml(s.dept_name)}
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="font-size: 9.5pt; color: #333333; padding-top: 2px; border: none !important;">
+              <strong>Bank Details:</strong> A/C: ${escapeHtml(s.account_no)} | Bank: ${escapeHtml(s.bank_name)} | IFSC: ${escapeHtml(s.ifsc_code)} | Branch: ${escapeHtml(s.branch_name)}
+            </td>
+          </tr>
+        </table>
+        
+        <table class="letter-table" style="margin-top: 5px; margin-bottom: 5px; width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background-color: #f2f2f2;">
+              <th style="width: 8%; font-size: 9pt; padding: 4px; border: 1px solid #000000; font-weight: bold; text-align: center;">S.No</th>
+              <th style="width: 15%; font-size: 9pt; padding: 4px; border: 1px solid #000000; font-weight: bold; text-align: center;">Date</th>
+              <th style="width: 12%; font-size: 9pt; padding: 4px; border: 1px solid #000000; font-weight: bold; text-align: center;">IN Time</th>
+              <th style="width: 12%; font-size: 9pt; padding: 4px; border: 1px solid #000000; font-weight: bold; text-align: center;">OUT Time</th>
+              <th style="width: 15%; font-size: 9pt; padding: 4px; border: 1px solid #000000; font-weight: bold; text-align: center;">Hours</th>
+              <th style="font-size: 9pt; padding: 4px; border: 1px solid #000000; font-weight: bold; text-align: center;">Work Done</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${logRowsHtml || '<tr><td colspan="6" style="text-align: center; border: 1px solid #000000; padding: 6px;">No daily logs recorded.</td></tr>'}
+            <tr style="font-weight: bold; background-color: #f2f2f2;">
+              <td colspan="4" style="text-align: right; border: 1px solid #000000; padding: 4px; font-size: 9pt;">Total for ${escapeHtml(s.name)}:</td>
+              <td style="text-align: center; border: 1px solid #000000; padding: 4px; font-size: 9pt;">${Number(s.total_hours).toFixed(2)} hrs</td>
+              <td style="text-align: right; border: 1px solid #000000; padding: 4px; font-size: 9pt; font-weight: bold; color: #1e3a8a;">Remuneration: Rs. ${s.remuneration.toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     `;
   }).join('');
-  
-  const totalRowHtml = `
-    <tr style="font-weight: bold; background-color: #f2f2f2;">
-      <td colspan="5" style="text-align: right; border: 1px solid #000000; padding: 6px;">Total</td>
-      <td style="text-align: right; border: 1px solid #000000; padding: 6px; color: #2563eb;">${grandTotal.toLocaleString()}</td>
-      <td style="border: 1px solid #000000; padding: 6px;"></td>
-    </tr>
-  `;
-  
-  const amountWords = numberToRupeesInWords(grandTotal);
+
+  const amountWords = numberToRupeesInWords(grandTotalRemuneration);
   
   let logoBase64 = "";
   const logoImg = document.querySelector('.letter-header-logo');
@@ -6739,7 +6824,7 @@ async function downloadMonthSummaryWord(monthVal, summary) {
   const docHtml = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head>
-      <title>EWYL Monthly Summary Report - ${monthName}</title>
+      <title>EWYL Monthly Logs Report - ${monthName}</title>
       <!--[if gte mso 9]>
       <xml>
         <w:WordDocument>
@@ -6766,7 +6851,7 @@ async function downloadMonthSummaryWord(monthVal, summary) {
           padding: 0 !important;
         }
         .logo-img {
-          width: 90px;
+          width: 105px;
           height: auto;
         }
         .header-text {
@@ -6789,25 +6874,10 @@ async function downloadMonthSummaryWord(monthVal, summary) {
           height: 3px;
           margin: 6px 0 25px 0;
         }
-        .letter-table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 20px 0;
-        }
-        .letter-table th, .letter-table td {
-          border: 1px solid #000000;
-          padding: 6px 8px;
-          font-size: 9.5pt;
-        }
-        .letter-table th {
-          font-weight: bold;
-          text-align: center;
-          background-color: #f2f2f2;
-        }
         .signatures-table {
           width: 100%;
           border-collapse: collapse;
-          margin-top: 50px;
+          margin-top: 40px;
         }
         .signatures-table td {
           border: none !important;
@@ -6821,7 +6891,7 @@ async function downloadMonthSummaryWord(monthVal, summary) {
     <body>
       <table class="header-table">
         <tr>
-          <td style="width: 95px; vertical-align: top;">
+          <td style="width: 115px; vertical-align: top;">
             ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" alt="Logo">` : '[Logo]'}
           </td>
           <td style="vertical-align: top;">
@@ -6849,29 +6919,25 @@ async function downloadMonthSummaryWord(monthVal, summary) {
       <div class="header-divider"></div>
 
       <div style="text-align: center; margin-bottom: 25px; font-weight: bold; font-size: 13pt; text-decoration: underline;">
-        EARN WHILE YOU LEARN SCHEME - MONTH SUMMARY REPORT (${monthName.toUpperCase()})
+        EARN WHILE YOU LEARN SCHEME - MONTHLY DAILY LOGS REPORT (${monthName.toUpperCase()})
       </div>
 
-      <table class="letter-table">
-        <thead>
-          <tr>
-            <th>S. No</th>
-            <th>Name of the Student & Reg. No</th>
-            <th>Department</th>
-            <th>Amount/Hour (Rs)</th>
-            <th>No. of Hours</th>
-            <th>Total Amount (Rs)</th>
-            <th>Bank & Account Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tableRowsHtml}
-          ${totalRowHtml}
-        </tbody>
-      </table>
+      ${studentsContentHtml || '<p style="text-align:center;">No students record found.</p>'}
 
-      <div style="margin-bottom: 30px; font-weight: bold;">
-        Rupees in Words: Rupees ${amountWords} Only.
+      <div style="margin-top: 30px; border-top: 2px solid #000000; padding-top: 10px; page-break-inside: avoid;">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+          <tr style="font-weight: bold; font-size: 11pt;">
+            <td style="width: 70%; border: none !important;">GRAND TOTAL HOURS:</td>
+            <td style="text-align: right; border: none !important;">${Number(grandTotalHours).toFixed(2)} hrs</td>
+          </tr>
+          <tr style="font-weight: bold; font-size: 11pt; color: #1e3a8a;">
+            <td style="border: none !important;">GRAND TOTAL REMUNERATION:</td>
+            <td style="text-align: right; border: none !important;">Rs. ${grandTotalRemuneration.toLocaleString()}</td>
+          </tr>
+        </table>
+        <div style="font-weight: bold; margin-bottom: 25px;">
+          Rupees in Words: <span style="text-decoration: underline;">Rupees ${amountWords} Only.</span>
+        </div>
       </div>
 
       <table class="signatures-table">
@@ -6901,8 +6967,7 @@ async function downloadMonthSummaryWord(monthVal, summary) {
   document.body.removeChild(link);
 }
 
-// PDF Export for Month Summary
-async function downloadMonthSummaryPDF(monthVal, summary) {
+async function downloadMonthSummaryPDF(monthVal, summary, dailyLogs) {
   try {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
@@ -6920,7 +6985,7 @@ async function downloadMonthSummaryPDF(monthVal, summary) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(logoImg, 0, 0);
         const logoData = canvas.toDataURL('image/png');
-        doc.addImage(logoData, 'PNG', marginX, currentY - 2, 22, 25);
+        doc.addImage(logoData, 'PNG', marginX, currentY - 3, 25, 29);
       } catch(e) {
         console.warn("Could not embed logo in summary PDF:", e);
       }
@@ -6937,10 +7002,10 @@ async function downloadMonthSummaryPDF(monthVal, summary) {
     
     doc.setFont("Times", "bold");
     doc.setFontSize(8.5);
-    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC", marginX + 25, currentY + 12);
+    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC", marginX + 26, currentY + 12);
     doc.text("Special Heritage College Status awarded by UGC", 210 - marginX, currentY + 12, { align: "right" });
     
-    doc.text("College with Potential for Excellence by UGC", marginX + 25, currentY + 15);
+    doc.text("College with Potential for Excellence by UGC", marginX + 26, currentY + 15);
     doc.text("DBT-STAR & DST-FIST Sponsored College", 210 - marginX, currentY + 15, { align: "right" });
     
     doc.setFont("Times", "bold");
@@ -6966,79 +7031,121 @@ async function downloadMonthSummaryPDF(monthVal, summary) {
     const monthName = getMonthNameInWords(monthVal);
     doc.setFont("Times", "bold");
     doc.setFontSize(12);
-    doc.text(`EARN WHILE YOU LEARN SCHEME - MONTH SUMMARY REPORT (${monthName.toUpperCase()})`, 105, currentY, { align: "center" });
+    doc.text(`EARN WHILE YOU LEARN SCHEME - MONTHLY DAILY LOGS REPORT (${monthName.toUpperCase()})`, 105, currentY, { align: "center" });
+    
+    currentY += 10;
+    
+    const activeStudents = (summary || []).filter(s => s.total_hours > 0);
+    let grandTotalHours = 0;
+    let grandTotalRemuneration = 0;
+    
+    activeStudents.forEach((s, idx) => {
+      grandTotalHours += s.total_hours;
+      grandTotalRemuneration += s.remuneration;
+      
+      // Page break check
+      if (currentY > 240) {
+        doc.addPage();
+        currentY = 20;
+      }
+      
+      doc.setFont("Times", "bold");
+      doc.setFontSize(10);
+      doc.text(`${idx + 1}. Student Name: ${s.name} (${s.reg_no})`, marginX, currentY);
+      doc.text(`Dept: ${s.dept_name}`, 210 - marginX, currentY, { align: "right" });
+      currentY += 4.5;
+      
+      doc.setFont("Times", "normal");
+      doc.setFontSize(8.5);
+      doc.text(`Bank Details: A/C: ${s.account_no} | Bank: ${s.bank_name} | IFSC: ${s.ifsc_code} | Branch: ${s.branch_name}`, marginX, currentY);
+      currentY += 4;
+      
+      const studentLogs = (dailyLogs || []).filter(l => l.student_id === s.id);
+      const tableRows = [];
+      studentLogs.forEach((log, lIdx) => {
+        let dateStr = log.date || '';
+        if (dateStr.includes('-')) {
+          const parts = dateStr.split('-');
+          if (parts.length === 3) dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        tableRows.push([
+          String(lIdx + 1),
+          dateStr,
+          log.in_time,
+          log.out_time,
+          Number(log.total_hours).toFixed(2),
+          log.work_done || '-'
+        ]);
+      });
+      
+      tableRows.push([
+        { content: `Total for ${s.name}:`, colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: `${Number(s.total_hours).toFixed(2)} hrs`, styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: `Remuneration: Rs. ${s.remuneration.toLocaleString()}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [30, 58, 138] } }
+      ]);
+      
+      doc.autoTable({
+        startY: currentY,
+        margin: { left: marginX, right: marginX },
+        head: [['S.No', 'Date', 'IN Time', 'OUT Time', 'Hours', 'Work Done']],
+        body: tableRows,
+        theme: 'grid',
+        styles: {
+          font: 'Times',
+          fontSize: 8.5,
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0],
+          lineWidth: 0.15
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { halign: 'center', width: 12 },
+          1: { halign: 'center', width: 22 },
+          2: { halign: 'center', width: 18 },
+          3: { halign: 'center', width: 18 },
+          4: { halign: 'center', width: 22 }
+        },
+        didDrawPage: function(data) {
+          currentY = data.cursor.y;
+        }
+      });
+      
+      currentY += 8;
+    });
+    
+    if (currentY > 220) {
+      doc.addPage();
+      currentY = 20;
+    }
+    
+    doc.setLineWidth(0.3);
+    doc.line(marginX, currentY, 210 - marginX, currentY);
+    currentY += 5;
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(10.5);
+    doc.text("GRAND TOTAL HOURS:", marginX, currentY);
+    doc.text(`${Number(grandTotalHours).toFixed(2)} hrs`, 210 - marginX, currentY, { align: "right" });
+    
+    currentY += 5;
+    doc.text("GRAND TOTAL REMUNERATION:", marginX, currentY);
+    doc.text(`Rs. ${grandTotalRemuneration.toLocaleString()}`, 210 - marginX, currentY, { align: "right" });
+    
+    currentY += 2;
+    doc.line(marginX, currentY, 210 - marginX, currentY);
     
     currentY += 8;
     
-    // 5. Table of Students
-    const tableHeaders = [['S. No', 'Name of the Student & Reg. No', 'Department', 'Amount\n/Hour', 'No. of\nHours', 'Amount\n(Rs)', 'Bank & Account Details']];
-    const tableRows = [];
-    let grandTotal = 0;
-    
-    summary.forEach((s, idx) => {
-      grandTotal += s.remuneration;
-      tableRows.push([
-        String(idx + 1),
-        `${s.name}\n(${s.reg_no})`,
-        s.dept_name,
-        "40",
-        Number(s.total_hours).toFixed(1),
-        s.remuneration.toLocaleString(),
-        `Account No: ${s.account_no}\nBank Name: ${s.bank_name}\nIFSC: ${s.ifsc_code}  Branch: ${s.branch_name}`
-      ]);
-    });
-    
-    doc.autoTable({
-      startY: currentY,
-      margin: { left: marginX, right: marginX },
-      head: tableHeaders,
-      body: tableRows,
-      theme: 'grid',
-      styles: {
-        font: 'Times',
-        fontSize: 8.5,
-        textColor: [0, 0, 0],
-        lineColor: [0, 0, 0],
-        lineWidth: 0.15
-      },
-      headStyles: {
-        fillColor: [245, 245, 245],
-        fontStyle: 'bold',
-        halign: 'center'
-      },
-      columnStyles: {
-        0: { halign: 'center', width: 10 },
-        3: { halign: 'center', width: 15 },
-        4: { halign: 'center', width: 15 },
-        5: { halign: 'right', fontStyle: 'bold', width: 20 }
-      },
-      didDrawPage: function(data) {
-        currentY = data.cursor.y;
-      }
-    });
-    
-    currentY += 3;
-    
-    // Draw Custom Total Row
-    doc.setLineWidth(0.15);
-    doc.line(marginX, currentY, 210 - marginX, currentY);
-    
-    doc.setFont("Times", "bold");
-    doc.text("Total", 100, currentY + 5);
-    doc.text(grandTotal.toLocaleString(), 120, currentY + 5, { align: "right" });
-    
-    doc.line(marginX, currentY + 7, 210 - marginX, currentY + 7);
-    
-    currentY += 15;
-    
-    // 6. Amount in words
-    const amountWords = numberToRupeesInWords(grandTotal);
+    const amountWords = numberToRupeesInWords(grandTotalRemuneration);
     doc.setFont("Times", "bold");
     doc.text(`Rupees in Words: Rupees ${amountWords} Only.`, marginX, currentY);
     
-    currentY += 30;
+    currentY += 25;
     
-    // 7. Signatures
     doc.text("IQAC Coordinator", marginX + 10, currentY);
     doc.text("Rev. Fr. Principal", 210 - marginX - 10, currentY, { align: "right" });
     
