@@ -2430,6 +2430,7 @@ async function exportRestructuredInvolvementsExcel() {
         escapeCsv(`Data (${selectedResp})`)
       ]);
 
+      filteredCats.forEach(c => {
         let matchingRecords = [];
         if (selectedResp === 'Clubs' || selectedResp === 'Class Mentors') {
           matchingRecords = (state.involvementRecords || []).filter(r => 
