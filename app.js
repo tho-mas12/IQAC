@@ -359,7 +359,7 @@ async function switchSubView(viewId) {
   } else if (viewId === 'staff-events') {
     document.getElementById('subview-staff-events').style.display = 'block';
     document.getElementById('menu-staff-events').classList.add('active');
-    document.getElementById('header-title').innerText = 'Manage Events';
+    document.getElementById('header-title').innerText = 'Manage Checklist';
     await loadEvents();
     renderManageEvents();
   } else if (viewId === 'staff-departments') {
@@ -442,6 +442,13 @@ async function switchSubView(viewId) {
   } else if (viewId === 'staff-ewyl-letter') {
     document.getElementById('subview-staff-ewyl-letter').style.display = 'block';
     document.getElementById('header-title').innerText = 'Remuneration Claim Letter';
+  } else if (viewId === 'staff-college-events') {
+    document.getElementById('subview-staff-college-events').style.display = 'block';
+    const menuEl = document.getElementById('menu-staff-college-events');
+    if (menuEl) menuEl.classList.add('active');
+    document.getElementById('header-title').innerText = 'College Events';
+    await loadCollegePrograms();
+    renderCollegePrograms();
   }
 }
 
@@ -678,7 +685,7 @@ async function renderStaffDashboard() {
         <td colspan="7" class="empty-state">
           <div class="empty-state-icon">!</div>
           <h4>No Events Found</h4>
-          <p>Go to "Manage Events" to add your first reporting schedule.</p>
+          <p>Go to "Manage Checklist" to add your first reporting schedule.</p>
         </td>
       </tr>
     `;
@@ -6270,8 +6277,8 @@ function exportClaimLetterWord() {
           padding: 0 !important;
         }
         .logo-img {
-          width: 105px;
-          height: auto;
+          width: 300px;
+          height: 200px;
         }
         .header-text {
           text-align: center;
@@ -7156,4 +7163,476 @@ async function downloadMonthSummaryPDF(monthVal, summary, dailyLogs) {
     alert("Failed to generate PDF: " + err.message);
   }
 }
+
+// ================= COLLEGE EVENTS / PROGRAMS MODULE =================
+
+async function loadCollegePrograms() {
+  state.collegePrograms = await fetchAPI('/college-programs');
+}
+
+function renderCollegePrograms() {
+  const tbody = document.getElementById('college-programs-table-body');
+  if (!tbody) return;
+
+  const programs = state.collegePrograms || [];
+
+  // 1. Dynamic Dropdown Filters
+  // Department filter (populated dynamically from entered data only)
+  const deptFilter = document.getElementById('program-filter-dept');
+  const currentDeptVal = deptFilter ? deptFilter.value : 'all';
+  const uniqueDepts = [...new Set(programs.map(p => p.department).filter(Boolean))].sort();
+  if (deptFilter) {
+    deptFilter.innerHTML = '<option value="all">Select Department (All)</option>' +
+      uniqueDepts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+    // Restore selected filter value if still valid
+    if (uniqueDepts.includes(currentDeptVal)) {
+      deptFilter.value = currentDeptVal;
+    } else {
+      deptFilter.value = 'all';
+    }
+  }
+
+  // Shift filter (populated dynamically from entered data only)
+  const shiftFilter = document.getElementById('program-filter-shift');
+  const currentShiftVal = shiftFilter ? shiftFilter.value : 'all';
+  const uniqueShifts = [...new Set(programs.map(p => p.shift).filter(Boolean))].sort();
+  if (shiftFilter) {
+    shiftFilter.innerHTML = '<option value="all">Select Shift (All)</option>' +
+      uniqueShifts.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (uniqueShifts.includes(currentShiftVal)) {
+      shiftFilter.value = currentShiftVal;
+    } else {
+      shiftFilter.value = 'all';
+    }
+  }
+
+  // Category filter (populated dynamically from entered data only)
+  const catFilter = document.getElementById('program-filter-category');
+  const currentCatVal = catFilter ? catFilter.value : 'all';
+  const uniqueCats = [...new Set(programs.map(p => p.category).filter(Boolean))].sort();
+  if (catFilter) {
+    catFilter.innerHTML = '<option value="all">Select Category (All)</option>' +
+      uniqueCats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if (uniqueCats.includes(currentCatVal)) {
+      catFilter.value = currentCatVal;
+    } else {
+      catFilter.value = 'all';
+    }
+  }
+
+  // 2. Filter Application
+  const selectedDept = deptFilter ? deptFilter.value : 'all';
+  const selectedShift = shiftFilter ? shiftFilter.value : 'all';
+  const selectedCat = catFilter ? catFilter.value : 'all';
+  
+  const dateFilterInput = document.getElementById('table-filter-date');
+  const selectedDate = dateFilterInput ? dateFilterInput.value : '';
+  
+  const sortDateOrder = document.getElementById('program-sort-date') ? document.getElementById('program-sort-date').value : 'desc';
+
+  let filtered = programs.filter(p => {
+    if (selectedDept !== 'all' && p.department !== selectedDept) return false;
+    if (selectedShift !== 'all' && p.shift !== selectedShift) return false;
+    if (selectedCat !== 'all' && p.category !== selectedCat) return false;
+    if (selectedDate && p.date !== selectedDate) return false;
+    return true;
+  });
+
+  // 3. Sort Datewise
+  filtered.sort((a, b) => {
+    const dateA = new Date(a.date || 0);
+    const dateB = new Date(b.date || 0);
+    return sortDateOrder === 'desc' ? dateB - dateA : dateA - dateB;
+  });
+
+  // 4. Render Table Body
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted); font-size: 13.5px;">
+          No college events registered matching selected filters.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(p => {
+    let displayDate = p.date || '';
+    if (displayDate.includes('-')) {
+      const parts = displayDate.split('-');
+      if (parts.length === 3) displayDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+
+    // Invitation tick/cross icons
+    const invitationIcon = p.invitation === 'Received' 
+      ? `<span style="color: var(--success); font-weight: 700; font-size: 17px;" title="Received">&#10003;</span>` 
+      : `<span style="color: var(--danger); font-weight: 700; font-size: 17px;" title="Not Received">&#10007;</span>`;
+
+    // Evidence tick/cross icons
+    const evidenceIcon = p.evidence === 'Received' 
+      ? `<span style="color: var(--success); font-weight: 700; font-size: 17px;" title="Received">&#10003;</span>` 
+      : `<span style="color: var(--danger); font-weight: 700; font-size: 17px;" title="Not Received">&#10007;</span>`;
+
+    return `
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(displayDate)}</td>
+        <td style="padding: 12px 16px; font-size: 13px; font-weight: 600; color: var(--text-main);">${escapeHtml(p.department)}</td>
+        <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(p.shift || '-')}</td>
+        <td style="padding: 12px 16px; font-size: 13px; font-weight: 500;">${escapeHtml(p.title)}</td>
+        <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(p.category)}</td>
+        <td style="padding: 12px 16px; text-align: center;">${invitationIcon}</td>
+        <td style="padding: 12px 16px; text-align: center;">${evidenceIcon}</td>
+        <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
+          <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+            <button class="btn btn-secondary btn-xs btn-icon" onclick="openEditProgramModal(${p.id})" style="padding: 6px; border-radius: 6px;" title="Edit Event">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
+            <button class="btn btn-danger btn-xs btn-icon" onclick="deleteCollegeProgram(${p.id})" style="padding: 6px; border-radius: 6px;" title="Delete Event">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openAddProgramModal() {
+  document.getElementById('college-program-form').reset();
+  document.getElementById('program-edit-id').value = '';
+  document.getElementById('program-modal-title').innerText = 'Add College Event';
+  document.getElementById('program-submit-btn').innerText = 'Register Event';
+  
+  updateCategorySelectOptions();
+  toggleCategoryOtherInput('');
+  
+  document.getElementById('college-program-modal').classList.add('open');
+}
+
+function closeCollegeProgramModal() {
+  document.getElementById('college-program-modal').classList.remove('open');
+}
+
+function toggleCategoryOtherInput(val) {
+  const otherInput = document.getElementById('program-category-other');
+  if (otherInput) {
+    if (val === 'others') {
+      otherInput.style.display = 'block';
+      otherInput.required = true;
+    } else {
+      otherInput.style.display = 'none';
+      otherInput.required = false;
+      otherInput.value = '';
+    }
+  }
+}
+
+function updateCategorySelectOptions() {
+  const select = document.getElementById('program-category-select');
+  if (!select) return;
+  const defaultValue = select.value;
+  
+  const defaultOptions = [
+    "Endowment Lecture", "Conference", "Webinar", "Seminar", "Orientation",
+    "Skill Development", "VAC", "CC", "Induction", "FDP", "Workshop",
+    "Club Activity", "IKS", "Gender Based"
+  ];
+  
+  const programs = state.collegePrograms || [];
+  const uniqueCats = [...new Set(programs.map(p => p.category).filter(Boolean))];
+  const customCats = uniqueCats.filter(c => !defaultOptions.includes(c));
+  
+  let optionsHtml = '<option value="">Select Category</option>';
+  defaultOptions.forEach(opt => {
+    optionsHtml += `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`;
+  });
+  
+  customCats.forEach(opt => {
+    optionsHtml += `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`;
+  });
+  
+  optionsHtml += '<option value="others">others</option>';
+  select.innerHTML = optionsHtml;
+  select.value = defaultValue;
+}
+
+function openEditProgramModal(id) {
+  const p = (state.collegePrograms || []).find(prog => prog.id == id);
+  if (!p) return;
+
+  document.getElementById('program-edit-id').value = p.id;
+  document.getElementById('program-title').value = p.title || '';
+  document.getElementById('program-dept').value = p.department || '';
+  document.getElementById('program-shift').value = p.shift || '';
+  document.getElementById('program-date').value = p.date || '';
+  document.getElementById('program-invitation').value = p.invitation || 'Received';
+  document.getElementById('program-evidence').value = p.evidence || 'Received';
+
+  updateCategorySelectOptions();
+
+  const categorySelect = document.getElementById('program-category-select');
+  const categoryOther = document.getElementById('program-category-other');
+  const catVal = p.category || '';
+  
+  const defaultOptions = [
+    "Endowment Lecture", "Conference", "Webinar", "Seminar", "Orientation",
+    "Skill Development", "VAC", "CC", "Induction", "FDP", "Workshop",
+    "Club Activity", "IKS", "Gender Based"
+  ];
+
+  if (defaultOptions.includes(catVal)) {
+    categorySelect.value = catVal;
+    toggleCategoryOtherInput(catVal);
+  } else {
+    categorySelect.value = catVal;
+    toggleCategoryOtherInput(catVal);
+    if (categorySelect.value !== catVal) {
+      categorySelect.value = 'others';
+      toggleCategoryOtherInput('others');
+      categoryOther.value = catVal;
+    }
+  }
+
+  document.getElementById('program-modal-title').innerText = 'Edit College Event';
+  document.getElementById('program-submit-btn').innerText = 'Update Event';
+  document.getElementById('college-program-modal').classList.add('open');
+}
+
+async function saveCollegeProgram(e) {
+  e.preventDefault();
+  const id = document.getElementById('program-edit-id').value;
+  const title = document.getElementById('program-title').value.trim();
+  const department = document.getElementById('program-dept').value.trim();
+  const shift = document.getElementById('program-shift').value.trim();
+  const date = document.getElementById('program-date').value;
+  const invitation = document.getElementById('program-invitation').value;
+  const evidence = document.getElementById('program-evidence').value;
+
+  const categorySelect = document.getElementById('program-category-select').value;
+  const categoryOther = document.getElementById('program-category-other').value.trim();
+  const category = categorySelect === 'others' ? categoryOther : categorySelect;
+
+  if (!category) {
+    showToast("Please enter or select a category.", "error");
+    return;
+  }
+
+  const payload = { title, department, shift, category, date, invitation, evidence };
+
+  try {
+    if (id) {
+      await fetchAPI(`/college-programs/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+      showToast("College event updated successfully.", "success");
+    } else {
+      await fetchAPI('/college-programs', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      showToast("College event registered successfully.", "success");
+    }
+    
+    closeCollegeProgramModal();
+    await loadCollegePrograms();
+    renderCollegePrograms();
+  } catch (err) {
+    console.error("Failed to save college program:", err);
+  }
+}
+
+async function deleteCollegeProgram(id) {
+  const confirmed = await showCustomConfirm(
+    "Delete Event?",
+    "Are you sure you want to delete this college event? This action cannot be undone."
+  );
+  if (!confirmed) return;
+
+  try {
+    await fetchAPI(`/college-programs/${id}`, {
+      method: 'DELETE'
+    });
+    showToast("College event deleted successfully.", "success");
+    await loadCollegePrograms();
+    renderCollegePrograms();
+  } catch (err) {
+    console.error("Failed to delete college program:", err);
+  }
+}
+
+function exportCollegeEventsExcel() {
+  try {
+    const programs = state.collegePrograms || [];
+    const escapeCsv = (str) => {
+      if (str === null || str === undefined) return '';
+      const stringified = String(str).replace(/"/g, '""');
+      if (stringified.includes(',') || stringified.includes('\n') || stringified.includes('"')) {
+        return `"${stringified}"`;
+      }
+      return stringified;
+    };
+
+    let csvRows = [];
+    csvRows.push([escapeCsv("St. Joseph's College (Autonomous), Tiruchirappalli - 620 002")]);
+    csvRows.push([escapeCsv("Internal Quality Assurance Cell (IQAC)")]);
+    csvRows.push([escapeCsv("College Events / Programs Report")]);
+    csvRows.push([]);
+    csvRows.push([
+      escapeCsv('Date'),
+      escapeCsv('Department'),
+      escapeCsv('Shift'),
+      escapeCsv('Program Title'),
+      escapeCsv('Category'),
+      escapeCsv('Invitation Status'),
+      escapeCsv('Evidence Status')
+    ]);
+
+    programs.forEach(p => {
+      let displayDate = p.date || '';
+      if (displayDate.includes('-')) {
+        const parts = displayDate.split('-');
+        if (parts.length === 3) displayDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      csvRows.push([
+        escapeCsv(displayDate),
+        escapeCsv(p.department),
+        escapeCsv(p.shift || '-'),
+        escapeCsv(p.title),
+        escapeCsv(p.category),
+        escapeCsv(p.invitation),
+        escapeCsv(p.evidence)
+      ]);
+    });
+
+    const csvContent = csvRows.map(e => e.join(",")).join("\n");
+    downloadCSV(csvContent, 'college_events_report.csv');
+  } catch (err) {
+    console.error("Failed to export College Events Excel:", err);
+    alert("Failed to export Excel: " + err.message);
+  }
+}
+
+async function exportCollegeEventsPDF() {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    const marginX = 15;
+    let currentY = 15;
+    
+    // Draw Crest Logo
+    const logoImg = document.querySelector('.letter-header-logo');
+    if (logoImg) {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = logoImg.naturalWidth || logoImg.width;
+        canvas.height = logoImg.naturalHeight || logoImg.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(logoImg, 0, 0);
+        const logoData = canvas.toDataURL('image/png');
+        doc.addImage(logoData, 'PNG', marginX, currentY - 3, 25, 29);
+      } catch(e) {
+        console.warn("Could not embed logo in PDF:", e);
+      }
+    }
+    
+    // Draw Header Text
+    doc.setFont("Times", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text("INTERNAL QUALITY ASSURANCE CELL", 116, currentY + 3, { align: "center" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(15);
+    doc.text("ST. JOSEPH'S COLLEGE (AUTONOMOUS)", 116, currentY + 8, { align: "center" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(8.5);
+    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC", marginX + 26, currentY + 12);
+    doc.text("Special Heritage College Status awarded by UGC", 210 - marginX, currentY + 12, { align: "right" });
+    
+    doc.text("College with Potential for Excellence by UGC", marginX + 26, currentY + 15);
+    doc.text("DBT-STAR & DST-FIST Sponsored College", 210 - marginX, currentY + 15, { align: "right" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(10.5);
+    doc.text("TIRUCHIRAPPALLI - 620 002", 116, currentY + 19, { align: "center" });
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(8.5);
+    doc.text("Email: iqaccoor@mail.sjctni.edu               website: www.sjctni.edu", 116, currentY + 22.5, { align: "center" });
+    
+    currentY += 25;
+    
+    // Double Line Divider
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.line(marginX, currentY, 210 - marginX, currentY);
+    doc.setLineWidth(1.1);
+    doc.line(marginX, currentY + 0.9, 210 - marginX, currentY + 0.9);
+    
+    currentY += 12;
+    
+    doc.setFont("Times", "bold");
+    doc.setFontSize(12);
+    doc.text("COLLEGE EVENTS / PROGRAMS REPORT", 105, currentY, { align: "center" });
+    
+    currentY += 8;
+
+    const headers = [['Date', 'Department', 'Shift', 'Program Title', 'Category', 'Invitation', 'Evidence']];
+    const rows = [];
+    const programs = state.collegePrograms || [];
+
+    programs.forEach(p => {
+      let displayDate = p.date || '';
+      if (displayDate.includes('-')) {
+        const parts = displayDate.split('-');
+        if (parts.length === 3) displayDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      rows.push([
+        displayDate,
+        p.department,
+        p.shift || '-',
+        p.title,
+        p.category,
+        p.invitation,
+        p.evidence
+      ]);
+    });
+
+    doc.autoTable({
+      startY: currentY,
+      margin: { left: marginX, right: marginX },
+      head: headers,
+      body: rows,
+      theme: 'grid',
+      styles: {
+        font: 'Times',
+        fontSize: 9,
+        textColor: [0, 0, 0],
+        lineColor: [0, 0, 0],
+        lineWidth: 0.15
+      },
+      headStyles: {
+        fillColor: [240, 240, 240],
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { halign: 'center', width: 22 },
+        2: { halign: 'center', width: 18 },
+        5: { halign: 'center', width: 22 },
+        6: { halign: 'center', width: 22 }
+      }
+    });
+
+    doc.save('college_events_report.pdf');
+  } catch (err) {
+    console.error("Failed to generate College Events PDF:", err);
+    alert("Failed to generate PDF: " + err.message);
+  }
+}
+
 

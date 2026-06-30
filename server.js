@@ -289,6 +289,28 @@ function createTables(dbRunExecutor, callback) {
         FOREIGN KEY (student_id) REFERENCES ewyl_students (id) ON DELETE CASCADE
       )`;
 
+  const collegeProgramsSql = usePostgres
+    ? `CREATE TABLE IF NOT EXISTS college_programs (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        department VARCHAR(255) NOT NULL,
+        shift VARCHAR(100),
+        category VARCHAR(255) NOT NULL,
+        date VARCHAR(100) NOT NULL,
+        invitation VARCHAR(50) NOT NULL,
+        evidence VARCHAR(50) NOT NULL
+      )`
+    : `CREATE TABLE IF NOT EXISTS college_programs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        department TEXT NOT NULL,
+        shift TEXT,
+        category TEXT NOT NULL,
+        date TEXT NOT NULL,
+        invitation TEXT NOT NULL,
+        evidence TEXT NOT NULL
+      )`;
+
   dbRunExecutor(usersSql, [], () => {
     dbRunExecutor(deptsSql, [], () => {
       dbRunExecutor(eventsSql, [], () => {
@@ -297,7 +319,9 @@ function createTables(dbRunExecutor, callback) {
             dbRunExecutor(invRecordsSql, [], () => {
               dbRunExecutor(ewylStudentsSql, [], () => {
                 dbRunExecutor(ewylHoursSql, [], () => {
-                  callback();
+                  dbRunExecutor(collegeProgramsSql, [], () => {
+                    callback();
+                  });
                 });
               });
             });
@@ -333,7 +357,8 @@ function initializeDatabase() {
         'staff_involvement_categories',
         'staff_involvement_records',
         'ewyl_students',
-        'ewyl_hours'
+        'ewyl_hours',
+        'college_programs'
       ];
       secureTables.forEach(table => {
         db.run(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`, [], (err) => {
@@ -1216,6 +1241,55 @@ app.get('/api/ewyl/summary', (req, res) => {
     }));
     
     res.json(formatted);
+  });
+});
+
+// 9. College Events (Programs) API
+app.get('/api/college-programs', (req, res) => {
+  db.all("SELECT * FROM college_programs ORDER BY date DESC, title ASC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.post('/api/college-programs', (req, res) => {
+  const { title, department, shift, category, date, invitation, evidence } = req.body;
+  if (!title || !department || !category || !date || !invitation || !evidence) {
+    return res.status(400).json({ error: 'Required fields: title, department, category, date, invitation, evidence' });
+  }
+  
+  db.run(
+    "INSERT INTO college_programs (title, department, shift, category, date, invitation, evidence) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [title, department, shift || '', category, date, invitation, evidence],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID, title, department, shift: shift || '', category, date, invitation, evidence });
+    }
+  );
+});
+
+app.put('/api/college-programs/:id', (req, res) => {
+  const { id } = req.params;
+  const { title, department, shift, category, date, invitation, evidence } = req.body;
+  if (!title || !department || !category || !date || !invitation || !evidence) {
+    return res.status(400).json({ error: 'Required fields: title, department, category, date, invitation, evidence' });
+  }
+
+  db.run(
+    "UPDATE college_programs SET title = ?, department = ?, shift = ?, category = ?, date = ?, invitation = ?, evidence = ? WHERE id = ?",
+    [title, department, shift || '', category, date, invitation, evidence, id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id, title, department, shift: shift || '', category, date, invitation, evidence });
+    }
+  );
+});
+
+app.delete('/api/college-programs/:id', (req, res) => {
+  const { id } = req.params;
+  db.run("DELETE FROM college_programs WHERE id = ?", [id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, id });
   });
 });
 
