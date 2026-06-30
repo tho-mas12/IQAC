@@ -1454,13 +1454,13 @@
               <div class="letter-signatures">
                 <div class="letter-sig-block">
                   <div id="letter-sig-left" class="editable-block" contenteditable="true" style="min-width: 150px;">
-                    Dr. V. JUDE NIRMAL<br>
+                    Dr V. Jude Nirmal<br>
                     Director - IQAC
                   </div>
                 </div>
                 <div class="letter-sig-block">
                   <div id="letter-sig-right" class="editable-block" contenteditable="true" style="min-width: 150px;">
-                    Rev. Dr. K. Arockiam SJ<br>
+                    Rev. Dr K. Arockiam SJ<br>
                     Principal
                   </div>
                 </div>
@@ -1521,14 +1521,7 @@
                 </select>
               </div>
 
-              <!-- 4. Date Filter -->
-              <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" style="font-size: 12px; font-weight: 600; color: var(--text-main);">Sort Date</label>
-                <select id="program-sort-date" class="form-select" onchange="renderCollegePrograms()" style="font-size: 13px; height: 36px; padding: 0 10px;">
-                  <option value="desc">Newest First</option>
-                  <option value="asc">Oldest First</option>
-                </select>
-              </div>
+              <!-- 4. Empty spacer to align grid if needed -->
             </div>
           </div>
 
@@ -1537,14 +1530,48 @@
               <table class="custom-table" style="width: 100%;">
                 <thead>
                   <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--card-border);">
-                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px; min-width: 140px;">
-                      <div>Date</div>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px; min-width: 170px;">
+                      <div style="display: flex; align-items: center;">
+                        <span>Date</span>
+                        <select class="form-select" onchange="applyHeaderSort('date', this.value)" style="margin-left: 8px; font-size: 11px; padding: 2px 6px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; height: 24px; color: #374151; font-weight: normal; cursor: pointer; width: auto; display: inline-block;">
+                          <option value="">Sort</option>
+                          <option value="desc">Newest First</option>
+                          <option value="asc">Oldest First</option>
+                        </select>
+                      </div>
                       <input type="date" id="table-filter-date" class="form-control" onchange="renderCollegePrograms()" style="height: 24px; padding: 2px 6px; font-size: 11px; font-weight: normal; margin-top: 4px; width: 115px; border-radius: 4px; border: 1px solid var(--border);">
                     </th>
-                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Department</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px; min-width: 180px;">
+                      <div style="display: flex; align-items: center;">
+                        <span>Department</span>
+                        <select class="form-select" onchange="applyHeaderSort('dept', this.value)" style="margin-left: 8px; font-size: 11px; padding: 2px 6px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; height: 24px; color: #374151; font-weight: normal; cursor: pointer; width: auto; display: inline-block;">
+                          <option value="">Sort</option>
+                          <option value="asc">A-Z</option>
+                          <option value="desc">Z-A</option>
+                        </select>
+                      </div>
+                    </th>
                     <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Shift</th>
-                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Program Title</th>
-                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Category</th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px; min-width: 190px;">
+                      <div style="display: flex; align-items: center;">
+                        <span>Program Title</span>
+                        <select class="form-select" onchange="applyHeaderSort('title', this.value)" style="margin-left: 8px; font-size: 11px; padding: 2px 6px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; height: 24px; color: #374151; font-weight: normal; cursor: pointer; width: auto; display: inline-block;">
+                          <option value="">Sort</option>
+                          <option value="asc">A-Z</option>
+                          <option value="desc">Z-A</option>
+                        </select>
+                      </div>
+                    </th>
+                    <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px; min-width: 170px;">
+                      <div style="display: flex; align-items: center;">
+                        <span>Category</span>
+                        <select class="form-select" onchange="applyHeaderSort('category', this.value)" style="margin-left: 8px; font-size: 11px; padding: 2px 6px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; height: 24px; color: #374151; font-weight: normal; cursor: pointer; width: auto; display: inline-block;">
+                          <option value="">Sort</option>
+                          <option value="asc">A-Z</option>
+                          <option value="desc">Z-A</option>
+                        </select>
+                      </div>
+                    </th>
                     <th style="padding: 12px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 100px;">Invitation</th>
                     <th style="padding: 12px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 100px;">Evidence</th>
                     <th style="padding: 12px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 150px;">Actions</th>
@@ -2066,9 +2093,15 @@
             </select>
             <input type="text" id="program-category-other" class="form-control" style="padding-left: 12px; height: 38px; margin-top: 8px; display: none;">
           </div>
-          <div class="form-group" style="margin: 0;">
-            <label class="form-label" for="program-date">Date</label>
-            <input type="date" id="program-date" class="form-control" style="padding-left: 12px; height: 38px;" required>
+          <div class="form-group" style="margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label class="form-label" for="program-date-from">From Date</label>
+              <input type="date" id="program-date-from" class="form-control" style="padding-left: 12px; height: 38px;" required>
+            </div>
+            <div>
+              <label class="form-label" for="program-date-to">To Date (Optional)</label>
+              <input type="date" id="program-date-to" class="form-control" style="padding-left: 12px; height: 38px;">
+            </div>
           </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">

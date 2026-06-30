@@ -171,6 +171,8 @@ let state = {
   departments: [],
   users: [],
   selectedEventId: null,
+  programSortColumn: 'date',
+  programSortOrder: 'desc',
   
   // Checklist filters
   checklistTab: 'all',
@@ -7228,21 +7230,58 @@ function renderCollegePrograms() {
   const dateFilterInput = document.getElementById('table-filter-date');
   const selectedDate = dateFilterInput ? dateFilterInput.value : '';
   
-  const sortDateOrder = document.getElementById('program-sort-date') ? document.getElementById('program-sort-date').value : 'desc';
+  const sortCol = state.programSortColumn || 'date';
+  const sortOrder = state.programSortOrder || 'desc';
 
   let filtered = programs.filter(p => {
     if (selectedDept !== 'all' && p.department !== selectedDept) return false;
     if (selectedShift !== 'all' && p.shift !== selectedShift) return false;
     if (selectedCat !== 'all' && p.category !== selectedCat) return false;
-    if (selectedDate && p.date !== selectedDate) return false;
+    
+    if (selectedDate) {
+      if (p.date === selectedDate) {
+        // exact match
+      } else if (p.date && p.date.includes(' to ')) {
+        const parts = p.date.split(' to ');
+        const fromDate = parts[0];
+        const toDate = parts[1];
+        if (fromDate && toDate) {
+          if (selectedDate < fromDate || selectedDate > toDate) return false;
+        } else if (fromDate && selectedDate !== fromDate) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
     return true;
   });
 
-  // 3. Sort Datewise
+  // 3. Sort logic
   filtered.sort((a, b) => {
-    const dateA = new Date(a.date || 0);
-    const dateB = new Date(b.date || 0);
-    return sortDateOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    if (sortCol === 'date') {
+      const getFirstDateStr = (dateStr) => {
+        if (!dateStr) return '';
+        if (dateStr.includes(' to ')) return dateStr.split(' to ')[0];
+        return dateStr;
+      };
+      const dateA = new Date(getFirstDateStr(a.date) || 0);
+      const dateB = new Date(getFirstDateStr(b.date) || 0);
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    } else if (sortCol === 'dept') {
+      const valA = (a.department || '').toLowerCase();
+      const valB = (b.department || '').toLowerCase();
+      return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    } else if (sortCol === 'title') {
+      const valA = (a.title || '').toLowerCase();
+      const valB = (b.title || '').toLowerCase();
+      return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    } else if (sortCol === 'category') {
+      const valA = (a.category || '').toLowerCase();
+      const valB = (b.category || '').toLowerCase();
+      return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    }
+    return 0;
   });
 
   // 4. Render Table Body
@@ -7258,10 +7297,25 @@ function renderCollegePrograms() {
   }
 
   tbody.innerHTML = filtered.map(p => {
-    let displayDate = p.date || '';
-    if (displayDate.includes('-')) {
-      const parts = displayDate.split('-');
-      if (parts.length === 3) displayDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    let displayDate = '';
+    if (p.date) {
+      if (p.date.includes(' to ')) {
+        displayDate = p.date.split(' to ').map(d => {
+          if (d.includes('-')) {
+            const parts = d.split('-');
+            return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : d;
+          }
+          return d;
+        }).join(' to ');
+      } else {
+        const d = p.date;
+        if (d.includes('-')) {
+          const parts = d.split('-');
+          displayDate = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : d;
+        } else {
+          displayDate = d;
+        }
+      }
     }
 
     // Invitation tick/cross icons
@@ -7298,6 +7352,17 @@ function renderCollegePrograms() {
   }).join('');
 }
 
+function applyHeaderSort(col, order) {
+  if (!order) {
+    state.programSortColumn = 'date';
+    state.programSortOrder = 'desc';
+  } else {
+    state.programSortColumn = col;
+    state.programSortOrder = order;
+  }
+  renderCollegePrograms();
+}
+
 function openAddProgramModal() {
   document.getElementById('college-program-form').reset();
   document.getElementById('program-edit-id').value = '';
@@ -7306,6 +7371,10 @@ function openAddProgramModal() {
   
   updateCategorySelectOptions();
   toggleCategoryOtherInput('');
+  
+  // Clear dates explicitly
+  document.getElementById('program-date-from').value = '';
+  document.getElementById('program-date-to').value = '';
   
   document.getElementById('college-program-modal').classList.add('open');
 }
@@ -7365,7 +7434,17 @@ function openEditProgramModal(id) {
   document.getElementById('program-title').value = p.title || '';
   document.getElementById('program-dept').value = p.department || '';
   document.getElementById('program-shift').value = p.shift || '';
-  document.getElementById('program-date').value = p.date || '';
+  
+  // Handle date ranges
+  if (p.date && p.date.includes(' to ')) {
+    const parts = p.date.split(' to ');
+    document.getElementById('program-date-from').value = parts[0] || '';
+    document.getElementById('program-date-to').value = parts[1] || '';
+  } else {
+    document.getElementById('program-date-from').value = p.date || '';
+    document.getElementById('program-date-to').value = '';
+  }
+  
   document.getElementById('program-invitation').value = p.invitation || 'Received';
   document.getElementById('program-evidence').value = p.evidence || 'Received';
 
@@ -7405,7 +7484,11 @@ async function saveCollegeProgram(e) {
   const title = document.getElementById('program-title').value.trim();
   const department = document.getElementById('program-dept').value.trim();
   const shift = document.getElementById('program-shift').value.trim();
-  const date = document.getElementById('program-date').value;
+  
+  const fromDate = document.getElementById('program-date-from').value;
+  const toDate = document.getElementById('program-date-to').value;
+  const date = toDate ? `${fromDate} to ${toDate}` : fromDate;
+  
   const invitation = document.getElementById('program-invitation').value;
   const evidence = document.getElementById('program-evidence').value;
 
