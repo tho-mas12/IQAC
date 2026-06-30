@@ -1246,6 +1246,7 @@
                   </div>
                 </div>
 
+                <input type="hidden" id="ewyl-log-edit-id">
                 <div class="form-group">
                   <label class="form-label" for="ewyl-log-date">Working Date</label>
                   <input type="date" id="ewyl-log-date" class="form-control" style="height: 38px; padding-left: 10px;" required>
@@ -1362,26 +1363,29 @@
           <div class="letter-paper-wrapper">
             <div class="letter-paper" id="claim-letter-document">
               <!-- College Letterhead -->
-              <table class="letter-header-table">
+              <table class="letter-header-table" style="width: 100%; border-collapse: collapse; border: none !important; margin: 0 auto;">
                 <tr>
-                  <td style="width: 115px; vertical-align: top; padding: 0 !important; background: transparent !important;">
-                    <img src="logo.png" class="letter-header-logo" alt="College Crest" style="width: 105px; height: auto;">
+                  <td style="width: 90px; vertical-align: top; padding: 0 !important; background: transparent !important; border: none !important;">
+                    <img src="logo.png" class="letter-header-logo" alt="College Crest" style="width: 75px; height: 130px; display: block;">
                   </td>
-                  <td style="vertical-align: top; padding: 0 !important; background: transparent !important;">
-                    <div class="letter-header-text">
-                      <h2 style="font-size: 14.5px; font-weight: bold; margin: 0; color: #000; font-family: 'Times New Roman', Times, serif;">INTERNAL QUALITY ASSURANCE CELL</h2>
-                      <h1 style="font-size: 21px; font-weight: bold; margin: 3px 0 5px 0; color: #000; font-family: 'Times New Roman', Times, serif;">ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
-                      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; margin: 2px 0; color: #000; width: 100%; font-family: 'Times New Roman', Times, serif;">
-                        <span>Accredited at A<sup>++</sup> Grade (Cycle IV) by NAAC</span>
-                        <span>Special Heritage College Status awarded by UGC</span>
-                      </div>
-                      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; margin: 2px 0; color: #000; width: 100%; font-family: 'Times New Roman', Times, serif;">
-                        <span>College with Potential for Excellence by UGC</span>
-                        <span>DBT-STAR &amp; DST-FIST Sponsored College</span>
-                      </div>
-                      <h3 style="font-size: 13px; font-weight: bold; margin: 4px 0 2px 0; text-align: center; color: #000; font-family: 'Times New Roman', Times, serif;">TIRUCHIRAPPALLI - 620 002</h3>
-                       <p style="font-size: 10px; margin: 2px 0; text-align: center; color: #000; font-weight: 500; font-family: 'Times New Roman', Times, serif;">Email: iqaccoor@mail.sjctni.edu &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; website: www.sjctni.edu</p>
+                  <td style="vertical-align: top; padding: 0 !important; background: transparent !important; border: none !important; text-align: center;">
+                    <div class="letter-header-text" style="text-align: center; line-height: 1.3;">
+                      <h2 style="font-size: 14.5px; font-weight: bold; margin: 0; color: #000; font-family: 'Times New Roman', Times, serif; text-align: center;">INTERNAL QUALITY ASSURANCE CELL</h2>
+                      <h1 style="font-size: 21px; font-weight: bold; margin: 3px 0 5px 0; color: #000; font-family: 'Times New Roman', Times, serif; text-align: center;">ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
+                      <p style="font-size: 11px; font-weight: 600; margin: 2px 0; color: #000; font-family: 'Times New Roman', Times, serif; text-align: center;">
+                        Accredited at A<sup>++</sup> Grade (Cycle IV) by NAAC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Special Heritage College Status awarded by UGC
+                      </p>
+                      <p style="font-size: 11px; font-weight: 600; margin: 2px 0; color: #000; font-family: 'Times New Roman', Times, serif; text-align: center;">
+                        College with Potential for Excellence by UGC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DBT-STAR &amp; DST-FIST Sponsored College
+                      </p>
+                      <h3 style="font-size: 13.5px; font-weight: bold; margin: 4px 0 2px 0; text-align: center; color: #000; font-family: 'Times New Roman', Times, serif;">TIRUCHIRAPPALLI - 620 002</h3>
+                      <p style="font-size: 11px; margin: 2px 0; text-align: center; color: #000; font-weight: bold; font-family: 'Times New Roman', Times, serif;">
+                        Email: iqaccoor@mail.sjctni.edu &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; website: www.sjctni.edu
+                      </p>
                     </div>
+                  </td>
+                  <td style="width: 90px; padding: 0 !important; background: transparent !important; border: none !important;">
+                    <!-- Empty balance cell -->
                   </td>
                 </tr>
               </table>
@@ -2115,8 +2119,8 @@
           <div class="form-group" style="margin: 0;">
             <label class="form-label" for="program-evidence">Evidence</label>
             <select id="program-evidence" class="form-select" style="height: 38px; padding: 0 10px;">
-              <option value="Received">Received</option>
               <option value="Not Received">Not Received</option>
+              <option value="Received">Received</option>
             </select>
           </div>
         </div>

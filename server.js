@@ -1214,6 +1214,36 @@ app.delete('/api/ewyl/hours/:id', (req, res) => {
   });
 });
 
+// Update an hour log entry
+app.put('/api/ewyl/hours/:id', (req, res) => {
+  const { id } = req.params;
+  const { date, in_time, out_time, work_done } = req.body;
+  if (!date || !in_time || !out_time) {
+    return res.status(400).json({ error: 'Date, IN and OUT times are required' });
+  }
+
+  // Calculate hours
+  const [inH, inM] = in_time.split(':').map(Number);
+  const [outH, outM] = out_time.split(':').map(Number);
+  const inMinutes = inH * 60 + inM;
+  const outMinutes = outH * 60 + outM;
+
+  if (outMinutes <= inMinutes) {
+    return res.status(400).json({ error: 'OUT time must be after IN time' });
+  }
+
+  const total_hours = Number(((outMinutes - inMinutes) / 60).toFixed(2));
+
+  db.run(
+    "UPDATE ewyl_hours SET date = ?, in_time = ?, out_time = ?, total_hours = ?, work_done = ? WHERE id = ?",
+    [date, in_time, out_time, total_hours, work_done || '', id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Hours log entry updated successfully' });
+    }
+  );
+});
+
 // 8. Get monthly summary report of all students
 app.get('/api/ewyl/summary', (req, res) => {
   const { month } = req.query;

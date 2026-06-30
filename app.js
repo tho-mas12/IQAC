@@ -5936,9 +5936,14 @@ function renderEwylHoursLogTable() {
       <td style="padding: 10px 16px; text-align: center; font-weight: 600; color: var(--primary);">${Number(h.total_hours).toFixed(2)} hrs</td>
       <td style="padding: 10px 16px; color: var(--text-muted); font-size: 12.5px;">${escapeHtml(h.work_done || '-')}</td>
       <td style="padding: 10px 16px; text-align: center;">
-        <button class="btn btn-danger btn-xs" onclick="deleteEwylHoursLog(${h.id})" style="padding: 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;" title="Delete log entry">
-          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-        </button>
+        <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+          <button class="btn btn-secondary btn-xs btn-icon" onclick="openEditEwylHoursLog(${h.id})" style="padding: 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;" title="Edit log entry">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          <button class="btn btn-danger btn-xs btn-icon" onclick="deleteEwylHoursLog(${h.id})" style="padding: 6px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;" title="Delete log entry">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -5947,6 +5952,65 @@ function renderEwylHoursLogTable() {
   totalSumEl.innerText = `${totalSum.toFixed(2)} hrs`;
   statsHoursEl.innerText = `${totalSum.toFixed(2)} hrs`;
   statsMoneyEl.innerText = `Rs. ${(totalSum * 40).toLocaleString()}`;
+}
+
+function openEditEwylHoursLog(id) {
+  const h = (state.ewylHours || []).find(log => log.id == id);
+  if (!h) return;
+
+  document.getElementById('ewyl-log-edit-id').value = h.id;
+  document.getElementById('ewyl-log-date').value = h.date || '';
+  document.getElementById('ewyl-log-in').value = h.in_time || '';
+  document.getElementById('ewyl-log-out').value = h.out_time || '';
+  
+  const workDoneEl = document.getElementById('ewyl-log-work-done');
+  if (workDoneEl) {
+    workDoneEl.value = h.work_done || '';
+  }
+
+  // Update submit button text to indicate editing
+  const submitBtn = document.querySelector('#ewyl-hours-form button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.innerText = 'Update Hours Entry';
+    submitBtn.classList.remove('btn-primary');
+    submitBtn.classList.add('btn-success');
+    
+    // Add cancel button if not present
+    let cancelBtn = document.getElementById('ewyl-hours-edit-cancel');
+    if (!cancelBtn) {
+      cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.id = 'ewyl-hours-edit-cancel';
+      cancelBtn.className = 'btn btn-secondary';
+      cancelBtn.style.width = '100%';
+      cancelBtn.style.marginTop = '8px';
+      cancelBtn.innerText = 'Cancel Edit';
+      cancelBtn.onclick = resetEwylHoursForm;
+      submitBtn.parentNode.appendChild(cancelBtn);
+    }
+  }
+}
+
+function resetEwylHoursForm() {
+  document.getElementById('ewyl-hours-form').reset();
+  document.getElementById('ewyl-log-edit-id').value = '';
+  
+  const submitBtn = document.querySelector('#ewyl-hours-form button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.innerText = 'Record Hours Entry';
+    submitBtn.classList.remove('btn-success');
+    submitBtn.classList.add('btn-primary');
+  }
+  
+  const cancelBtn = document.getElementById('ewyl-hours-edit-cancel');
+  if (cancelBtn) {
+    cancelBtn.remove();
+  }
+  
+  const durationPreview = document.getElementById('ewyl-duration-calc-preview');
+  if (durationPreview) {
+    durationPreview.innerText = '';
+  }
 }
 
 // Save working hours log
@@ -5982,17 +6046,24 @@ async function saveEwylHoursLog(e) {
     work_done: workDoneVal
   };
   
+  const id = document.getElementById('ewyl-log-edit-id').value;
+  
   try {
-    await fetchAPI('/ewyl/hours', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-    
-    if (document.getElementById('ewyl-log-work-done')) {
-      document.getElementById('ewyl-log-work-done').value = '';
+    if (id) {
+      await fetchAPI(`/ewyl/hours/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+      alert("Hours log updated successfully.");
+    } else {
+      await fetchAPI('/ewyl/hours', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      alert("Hours log recorded successfully.");
     }
     
-    alert("Hours log recorded successfully.");
+    resetEwylHoursForm();
     await renderEwylHoursLogPage();
   } catch (err) {
     console.error("Failed to log hours:", err);
@@ -6279,8 +6350,8 @@ function exportClaimLetterWord() {
           padding: 0 !important;
         }
         .logo-img {
-          width: 300px;
-          height: 200px;
+          width: 75px;
+          height: 130px;
         }
         .header-text {
           text-align: center;
@@ -6336,30 +6407,27 @@ function exportClaimLetterWord() {
       </style>
     </head>
     <body>
-      <table class="header-table">
+      <table class="header-table" style="width: 100%; border-collapse: collapse; border: none !important;">
         <tr>
-          <td style="width: 115px; vertical-align: top;">
-            ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" alt="Logo">` : '[Logo]'}
+          <td style="width: 90px; vertical-align: top; border: none !important;">
+            ${logoBase64 ? `<img src="${logoBase64}" class="logo-img" alt="Logo" style="width: 75px; height: 130px;">` : '[Logo]'}
           </td>
-          <td style="vertical-align: top;">
-            <div class="header-text">
-              <h2>INTERNAL QUALITY ASSURANCE CELL</h2>
-              <h1>ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
-              <table style="width: 100%; border-collapse: collapse; border: none !important; margin: 1px 0;">
-                <tr>
-                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: left; font-weight: bold; font-family: 'Times New Roman', Times, serif;">Accredited at A++ Grade (Cycle IV) by NAAC</td>
-                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: right; font-weight: bold; font-family: 'Times New Roman', Times, serif;">Special Heritage College Status awarded by UGC</td>
-                </tr>
-              </table>
-              <table style="width: 100%; border-collapse: collapse; border: none !important; margin: 1px 0;">
-                <tr>
-                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: left; font-weight: bold; font-family: 'Times New Roman', Times, serif;">College with Potential for Excellence by UGC</td>
-                  <td style="border: none !important; padding: 0 !important; font-size: 8.5pt; text-align: right; font-weight: bold; font-family: 'Times New Roman', Times, serif;">DBT-STAR &amp; DST-FIST Sponsored College</td>
-                </tr>
-              </table>
-              <p style="font-size: 10pt; font-weight: bold; margin: 3px 0 1px 0;">TIRUCHIRAPPALLI - 620 002</p>
-              <p style="font-size: 8.5pt; margin: 1px 0;">Email: iqaccoor@mail.sjctni.edu &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; website: www.sjctni.edu</p>
+          <td style="vertical-align: top; border: none !important; text-align: center;">
+            <div class="header-text" style="text-align: center; line-height: 1.3;">
+              <h2 style="font-size: 11pt; font-weight: bold; margin: 0; font-family: 'Times New Roman', Times, serif; text-align: center;">INTERNAL QUALITY ASSURANCE CELL</h2>
+              <h1 style="font-size: 15pt; font-weight: bold; margin: 3px 0 5px 0; font-family: 'Times New Roman', Times, serif; text-align: center;">ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
+              <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0; font-family: 'Times New Roman', Times, serif; text-align: center;">
+                Accredited at A++ Grade (Cycle IV) by NAAC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Special Heritage College Status awarded by UGC
+              </p>
+              <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0; font-family: 'Times New Roman', Times, serif; text-align: center;">
+                College with Potential for Excellence by UGC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DBT-STAR &amp; DST-FIST Sponsored College
+              </p>
+              <p style="font-size: 10pt; font-weight: bold; margin: 3px 0 1px 0; text-align: center;">TIRUCHIRAPPALLI - 620 002</p>
+              <p style="font-size: 8.5pt; margin: 1px 0; text-align: center;">Email: iqaccoor@mail.sjctni.edu &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; website: www.sjctni.edu</p>
             </div>
+          </td>
+          <td style="width: 90px; border: none !important;">
+            <!-- Empty balance cell -->
           </td>
         </tr>
       </table>
@@ -6447,27 +6515,25 @@ async function exportClaimLetterPDF() {
     doc.setFont("Times", "bold");
     doc.setFontSize(11);
     doc.setTextColor(0, 0, 0);
-    doc.text("INTERNAL QUALITY ASSURANCE CELL", 116, currentY + 3, { align: "center" });
+    doc.text("INTERNAL QUALITY ASSURANCE CELL", 105, currentY + 3, { align: "center" });
     
     doc.setFont("Times", "bold");
     doc.setFontSize(15);
-    doc.text("ST. JOSEPH'S COLLEGE (AUTONOMOUS)", 116, currentY + 8, { align: "center" });
+    doc.text("ST. JOSEPH'S COLLEGE (AUTONOMOUS)", 105, currentY + 8, { align: "center" });
     
     doc.setFont("Times", "bold");
     doc.setFontSize(8.5);
-    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC", marginX + 25, currentY + 12);
-    doc.text("Special Heritage College Status awarded by UGC", 210 - marginX, currentY + 12, { align: "right" });
+    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC      Special Heritage College Status awarded by UGC", 105, currentY + 12, { align: "center" });
     
-    doc.text("College with Potential for Excellence by UGC", marginX + 25, currentY + 15);
-    doc.text("DBT-STAR & DST-FIST Sponsored College", 210 - marginX, currentY + 15, { align: "right" });
+    doc.text("College with Potential for Excellence by UGC      DBT-STAR & DST-FIST Sponsored College", 105, currentY + 15, { align: "center" });
     
     doc.setFont("Times", "bold");
     doc.setFontSize(10.5);
-    doc.text("TIRUCHIRAPPALLI - 620 002", 116, currentY + 19, { align: "center" });
+    doc.text("TIRUCHIRAPPALLI - 620 002", 105, currentY + 19, { align: "center" });
     
     doc.setFont("Times", "bold");
     doc.setFontSize(8.5);
-    doc.text("Email: iqaccoor@mail.sjctni.edu               website: www.sjctni.edu", 116, currentY + 22.5, { align: "center" });
+    doc.text("Email: iqaccoor@mail.sjctni.edu               website: www.sjctni.edu", 105, currentY + 22.5, { align: "center" });
     
     currentY += 25;
     
@@ -7375,6 +7441,10 @@ function openAddProgramModal() {
   // Clear dates explicitly
   document.getElementById('program-date-from').value = '';
   document.getElementById('program-date-to').value = '';
+  
+  // Set defaults explicitly
+  document.getElementById('program-invitation').value = 'Received';
+  document.getElementById('program-evidence').value = 'Not Received';
   
   document.getElementById('college-program-modal').classList.add('open');
 }
