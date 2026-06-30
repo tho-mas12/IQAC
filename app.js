@@ -6416,12 +6416,19 @@ function exportClaimLetterWord() {
             <div class="header-text" style="text-align: center; line-height: 1.3;">
               <h2 style="font-size: 11pt; font-weight: bold; margin: 0; font-family: 'Times New Roman', Times, serif; text-align: center;">INTERNAL QUALITY ASSURANCE CELL</h2>
               <h1 style="font-size: 15pt; font-weight: bold; margin: 3px 0 5px 0; font-family: 'Times New Roman', Times, serif; text-align: center;">ST. JOSEPH'S COLLEGE (AUTONOMOUS)</h1>
-              <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0; font-family: 'Times New Roman', Times, serif; text-align: center;">
-                Accredited at A++ Grade (Cycle IV) by NAAC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Special Heritage College Status awarded by UGC
-              </p>
-              <p style="font-size: 8.5pt; font-weight: bold; margin: 2px 0; font-family: 'Times New Roman', Times, serif; text-align: center;">
-                College with Potential for Excellence by UGC &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DBT-STAR &amp; DST-FIST Sponsored College
-              </p>
+              
+              <!-- Centered 2-column table for accreditation details in Word -->
+              <table style="margin: 3px auto; border-collapse: collapse; border: none !important; width: auto; font-family: 'Times New Roman', Times, serif; font-size: 8.5pt; font-weight: bold; color: #000; line-height: 1.4;">
+                <tr>
+                  <td style="border: none !important; padding: 0 15px 0 0 !important; text-align: left; white-space: nowrap;">Accredited at A++ Grade (Cycle IV) by NAAC</td>
+                  <td style="border: none !important; padding: 0 0 0 15px !important; text-align: left; white-space: nowrap;">Special Heritage College Status awarded by UGC</td>
+                </tr>
+                <tr>
+                  <td style="border: none !important; padding: 0 15px 0 0 !important; text-align: left; white-space: nowrap;">College with Potential for Excellence by UGC</td>
+                  <td style="border: none !important; padding: 0 0 0 15px !important; text-align: left; white-space: nowrap;">DBT-STAR &amp; DST-FIST Sponsored College</td>
+                </tr>
+              </table>
+              
               <p style="font-size: 10pt; font-weight: bold; margin: 3px 0 1px 0; text-align: center;">TIRUCHIRAPPALLI - 620 002</p>
               <p style="font-size: 8.5pt; margin: 1px 0; text-align: center;">Email: iqaccoor@mail.sjctni.edu &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; website: www.sjctni.edu</p>
             </div>
@@ -6523,9 +6530,11 @@ async function exportClaimLetterPDF() {
     
     doc.setFont("Times", "bold");
     doc.setFontSize(8.5);
-    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC      Special Heritage College Status awarded by UGC", 105, currentY + 12, { align: "center" });
+    doc.text("Accredited at A++ Grade (Cycle IV) by NAAC", 35, currentY + 12);
+    doc.text("Special Heritage College Status awarded by UGC", 112, currentY + 12);
     
-    doc.text("College with Potential for Excellence by UGC      DBT-STAR & DST-FIST Sponsored College", 105, currentY + 15, { align: "center" });
+    doc.text("College with Potential for Excellence by UGC", 35, currentY + 15);
+    doc.text("DBT-STAR & DST-FIST Sponsored College", 112, currentY + 15);
     
     doc.setFont("Times", "bold");
     doc.setFontSize(10.5);
