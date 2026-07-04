@@ -393,6 +393,31 @@ a:hover {
   color: #ffffff;
 }
 
+/* Submenu styles */
+.submenu-toggle {
+  cursor: pointer;
+}
+.submenu-item a {
+  display: block;
+  color: #94a3b8 !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  transition: all 0.2s;
+  background: transparent !important;
+  border: none !important;
+}
+.submenu-item a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+.submenu-item.active a {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  font-weight: 600 !important;
+}
+
+
 .sidebar-user {
   padding: 16px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
@@ -945,7 +970,9 @@ a:hover {
 
 /* Responsive (Mobile layouts) */
 @media (max-width: 992px) {
-  --sidebar-width: 80px;
+  :root {
+    --sidebar-width: 80px;
+  }
   
   .sidebar-title, .user-info, .sidebar-brand span {
     display: none;

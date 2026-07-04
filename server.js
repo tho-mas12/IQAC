@@ -311,6 +311,20 @@ function createTables(dbRunExecutor, callback) {
         evidence TEXT NOT NULL
       )`;
 
+  const pesScorecardsSql = usePostgres
+    ? `CREATE TABLE IF NOT EXISTS pes_scorecards (
+        id SERIAL PRIMARY KEY,
+        department VARCHAR(255) NOT NULL,
+        academic_year VARCHAR(100) NOT NULL,
+        data TEXT NOT NULL
+      )`
+    : `CREATE TABLE IF NOT EXISTS pes_scorecards (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        department TEXT NOT NULL,
+        academic_year TEXT NOT NULL,
+        data TEXT NOT NULL
+      )`;
+
   dbRunExecutor(usersSql, [], () => {
     dbRunExecutor(deptsSql, [], () => {
       dbRunExecutor(eventsSql, [], () => {
@@ -320,7 +334,9 @@ function createTables(dbRunExecutor, callback) {
               dbRunExecutor(ewylStudentsSql, [], () => {
                 dbRunExecutor(ewylHoursSql, [], () => {
                   dbRunExecutor(collegeProgramsSql, [], () => {
-                    callback();
+                    dbRunExecutor(pesScorecardsSql, [], () => {
+                      callback();
+                    });
                   });
                 });
               });
@@ -1318,6 +1334,78 @@ app.put('/api/college-programs/:id', (req, res) => {
 app.delete('/api/college-programs/:id', (req, res) => {
   const { id } = req.params;
   db.run("DELETE FROM college_programs WHERE id = ?", [id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, id });
+  });
+});
+
+// ================= PES SCORECARDS API =================
+app.get('/api/pes', (req, res) => {
+  db.all("SELECT * FROM pes_scorecards ORDER BY department ASC, academic_year DESC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows.map(r => ({
+      id: r.id,
+      department: r.department,
+      academic_year: r.academic_year,
+      data: JSON.parse(r.data)
+    })));
+  });
+});
+
+app.get('/api/pes/:id', (req, res) => {
+  const { id } = req.params;
+  db.get("SELECT * FROM pes_scorecards WHERE id = ?", [id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Scorecard not found' });
+    res.json({
+      id: row.id,
+      department: row.department,
+      academic_year: row.academic_year,
+      data: JSON.parse(row.data)
+    });
+  });
+});
+
+app.post('/api/pes', (req, res) => {
+  const { department, academic_year, data } = req.body;
+  if (!department || !academic_year || !data) {
+    return res.status(400).json({ error: 'Required fields: department, academic_year, data' });
+  }
+
+  const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
+
+  db.run(
+    "INSERT INTO pes_scorecards (department, academic_year, data) VALUES (?, ?, ?)",
+    [department, academic_year, dataStr],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID, department, academic_year, data });
+    }
+  );
+});
+
+app.put('/api/pes/:id', (req, res) => {
+  const { id } = req.params;
+  const { department, academic_year, data } = req.body;
+  if (!department || !academic_year || !data) {
+    return res.status(400).json({ error: 'Required fields: department, academic_year, data' });
+  }
+
+  const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
+
+  db.run(
+    "UPDATE pes_scorecards SET department = ?, academic_year = ?, data = ? WHERE id = ?",
+    [department, academic_year, dataStr, id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id, department, academic_year, data });
+    }
+  );
+});
+
+app.delete('/api/pes/:id', (req, res) => {
+  const { id } = req.params;
+  db.run("DELETE FROM pes_scorecards WHERE id = ?", [id], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, id });
   });

@@ -67,30 +67,41 @@
             <span>Dashboard</span>
           </a>
         </li>
-        <li class="menu-item" id="menu-staff-events">
-          <a onclick="switchSubView('staff-events')">
+        
+        <!-- Manage Checklist Dropdown -->
+        <li class="menu-item has-submenu" id="menu-staff-checklist-parent">
+          <a class="submenu-toggle" onclick="toggleSubmenu('submenu-checklist')">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
             <span>Manage Checklist</span>
+            <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto; transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
           </a>
+          <ul id="submenu-checklist" class="submenu" style="display: none; list-style: none; padding-left: 28px; margin-top: 4px; margin-bottom: 8px;">
+            <li class="submenu-item" id="menu-staff-events" style="margin: 2px 0;">
+              <a onclick="switchSubView('staff-events')" style="padding: 8px 12px; font-size: 13px; display: block; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">Manage Checklist</a>
+            </li>
+            <li class="submenu-item" id="menu-staff-departments" style="margin: 2px 0;">
+              <a onclick="switchSubView('staff-departments')" style="padding: 8px 12px; font-size: 13px; display: block; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">Departments</a>
+            </li>
+          </ul>
         </li>
-        <li class="menu-item" id="menu-staff-departments">
-          <a onclick="switchSubView('staff-departments')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span>Departments</span>
-          </a>
-        </li>
-        <li class="menu-item" id="menu-staff-involvement">
-          <a onclick="switchSubView('staff-involvement')">
+
+        <!-- Staff Involvement Dropdown -->
+        <li class="menu-item has-submenu" id="menu-staff-involvement-parent">
+          <a class="submenu-toggle" onclick="toggleSubmenu('submenu-involvement')">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             <span>Staff Involvement</span>
+            <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto; transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
           </a>
+          <ul id="submenu-involvement" class="submenu" style="display: none; list-style: none; padding-left: 28px; margin-top: 4px; margin-bottom: 8px;">
+            <li class="submenu-item" id="menu-staff-involvement" style="margin: 2px 0;">
+              <a onclick="switchSubView('staff-involvement')" style="padding: 8px 12px; font-size: 13px; display: block; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">Staff Involvement</a>
+            </li>
+            <li class="submenu-item" id="menu-staff-tentative-plan" style="margin: 2px 0;">
+              <a onclick="switchSubView('staff-tentative-plan')" style="padding: 8px 12px; font-size: 13px; display: block; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">Tentative Plans</a>
+            </li>
+          </ul>
         </li>
-        <li class="menu-item" id="menu-staff-tentative-plan">
-          <a onclick="switchSubView('staff-tentative-plan')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3.5"></path><path d="m12.5 17 3 3 5.5-5.5"></path><path d="M3 10h18"></path><path d="M8 2v4"></path><path d="M16 2v4"></path></svg>
-            <span>Tentative Plans</span>
-          </a>
-        </li>
+
         <li class="menu-item" id="menu-staff-ewyl">
           <a onclick="switchSubView('staff-ewyl')">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -103,11 +114,10 @@
             <span>College Events</span>
           </a>
         </li>
-
-        <li class="menu-item" id="menu-staff-users">
-          <a onclick="switchSubView('director-users')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span>User Access Control</span>
+        <li class="menu-item" id="menu-staff-pes">
+          <a onclick="switchSubView('staff-pes')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span>Performance & Excellence (PES)</span>
           </a>
         </li>
       </ul>
@@ -130,17 +140,39 @@
             <span>Action Plan Form</span>
           </a>
         </li>
+        <li class="menu-item" id="menu-user-pes">
+          <a onclick="switchSubView('user-pes')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span>Performance & Excellence (PES)</span>
+          </a>
+        </li>
       </ul>
 
+
+
       <!-- User footer area -->
-      <div class="sidebar-user">
-        <div class="user-info">
-          <span id="current-username" class="user-name">User Name</span>
-          <span id="current-userrole" class="user-role">Role</span>
+      <div class="sidebar-user" style="display: flex; flex-direction: column; gap: 12px; align-items: stretch; margin-top: auto;">
+        
+        <!-- General Admin/UAC Menu (Docked at bottom of sidebar, inside user footer info) -->
+        <div id="common-uac-menu" style="display: none; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 12px; margin-bottom: 4px;">
+          <div class="menu-item" id="menu-uac-item" style="list-style: none;">
+            <a onclick="switchSubView('director-users')" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; color: #94a3b8; font-weight: 500; cursor: pointer;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>User Access Control</span>
+            </a>
+          </div>
         </div>
-        <button onclick="logout()" class="logout-btn" title="Log Out">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-        </button>
+
+        <!-- Footer User Info & Logout Row -->
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div class="user-info">
+            <span id="current-username" class="user-name">User Name</span>
+            <span id="current-userrole" class="user-role">Role</span>
+          </div>
+          <button onclick="logout()" class="logout-btn" title="Log Out">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -1596,6 +1628,676 @@
           </div>
         </div>
 
+        <!-- ================= USER SUB-VIEW: PES SCORECARD ================= -->
+        <div id="subview-user-pes" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div class="section-title">
+              <h3>Performance & Excellence Scorecard (PES)</h3>
+              <p class="section-desc">Submit and manage your department's annual performance targets</p>
+            </div>
+          </div>
+
+          <!-- 1. Submission Registry Table Container -->
+          <div id="user-pes-table-container" class="glass-panel" style="padding: 24px; border-radius: 12px; border: 1px solid var(--card-border); background: #ffffff; display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+              <h4 style="font-weight: 700; color: var(--text-main); margin: 0;">Submission Registry</h4>
+              <div style="display: flex; gap: 12px;">
+                <button class="btn btn-secondary btn-sm" onclick="exportUserPesExcel()">Export Excel</button>
+                <button class="btn btn-primary btn-sm" onclick="showUserPesForm()">+ Add New Scorecard</button>
+              </div>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                  <tr style="border-bottom: 2px solid #e5e7eb; background: #f9fafb;">
+                    <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 60px;">S.No</th>
+                    <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px;">Department Name</th>
+                    <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; text-align: center; width: 220px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="user-pes-table-body">
+                  <!-- Dynamic Rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. Full Screen Scorecard Form Container -->
+          <div id="user-pes-form-container" class="glass-panel" style="padding: 24px; border-radius: 12px; border: 1px solid var(--card-border); background: #ffffff;">
+            <h4 id="user-pes-form-title" style="font-weight: 700; color: var(--primary); margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; font-size: 18px;">Create Department Scorecard</h4>
+            
+            <form id="user-pes-scorecard-form" onsubmit="saveUserPesScorecard(event)">
+              <input type="hidden" id="user-pes-edit-id">
+
+              <!-- Meta Data: Department Text Box -->
+              <div class="form-group" style="margin-bottom: 24px; max-width: 500px;">
+                <label class="form-label" for="user-pes-form-dept" style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Department Name</label>
+                <input type="text" id="user-pes-form-dept" class="form-control" placeholder="Enter Department Name (e.g. Department of Botany)" required style="height: 38px; padding-left: 10px;">
+              </div>
+
+              <!-- SECTION 1: RESEARCH, TEACHING EXCELLENCE, AND INNOVATION -->
+              <div style="margin-bottom: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <h5 style="font-weight: 700; color: var(--text-main); font-size: 15px; margin-bottom: 16px;">SECTION 1: RESEARCH, TEACHING EXCELLENCE, AND INNOVATION</h5>
+                
+                <!-- Major Research Areas -->
+                <div style="margin-bottom: 24px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="font-weight: 600; margin: 0;">Major Research Areas of the Department:</label>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="addUserPesResearchAreaRow()" style="padding: 4px 8px; border-radius: 4px;">+ Add Research Area</button>
+                  </div>
+                  <div id="user-pes-research-areas-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamic Area inputs -->
+                  </div>
+                </div>
+
+                <!-- Parameters Table -->
+                <div class="table-responsive">
+                  <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                    <thead>
+                      <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                        <th style="padding: 8px; width: 60px; text-align: center;">S. No.</th>
+                        <th style="padding: 8px;">Research Parameter</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Previous Year (2025–26)</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Target for 2026–27</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style="text-align: center;">1</td><td>Research Publications</td><td><input type="number" min="0" id="user-pes-param-1-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-1-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">2</td><td>Books Published</td><td><input type="number" min="0" id="user-pes-param-2-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-2-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">3</td><td>Book Chapters Published</td><td><input type="number" min="0" id="user-pes-param-3-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-3-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">4</td><td>Conference Proceedings</td><td><input type="number" min="0" id="user-pes-param-4-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-4-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">5</td><td>Average Departmental H-index</td><td><input type="number" min="0" step="0.1" id="user-pes-param-5-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" step="0.1" id="user-pes-param-5-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">6</td><td style="font-weight: 600;">Research Projects: <br>&nbsp;&nbsp;(a) Submitted <br>&nbsp;&nbsp;(b) Sanctioned</td>
+                        <td>
+                          <input type="number" min="0" id="user-pes-param-6a-prev" class="form-control" placeholder="Submitted" style="height: 30px; padding: 4px 8px; text-align: center; margin-bottom: 4px;">
+                          <input type="number" min="0" id="user-pes-param-6b-prev" class="form-control" placeholder="Sanctioned" style="height: 30px; padding: 4px 8px; text-align: center;">
+                        </td>
+                        <td>
+                          <input type="number" min="0" id="user-pes-param-6a-target" class="form-control" placeholder="Submitted" style="height: 30px; padding: 4px 8px; text-align: center; margin-bottom: 4px;">
+                          <input type="number" min="0" id="user-pes-param-6b-target" class="form-control" placeholder="Sanctioned" style="height: 30px; padding: 4px 8px; text-align: center;">
+                        </td>
+                      </tr>
+                      <tr><td style="text-align: center;">7</td><td>Patent Applications Submitted</td><td><input type="number" min="0" id="user-pes-param-7-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-7-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">8</td><td>Patents Granted</td><td><input type="number" min="0" id="user-pes-param-8-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-8-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">9</td><td>Copyrights Filed</td><td><input type="number" min="0" id="user-pes-param-9-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-9-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">10</td><td>Product Development Projects</td><td><input type="number" min="0" id="user-pes-param-10-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-10-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">11</td><td>Prototypes Developed</td><td><input type="number" min="0" id="user-pes-param-11-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-11-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">12</td><td>Start-ups Incubated</td><td><input type="number" min="0" id="user-pes-param-12-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-12-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">13</td><td>Technology Transfer Initiatives</td><td><input type="number" min="0" id="user-pes-param-13-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-param-13-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- SECTION 2: TEACHING-LEARNING PEDAGOGY (TLP) -->
+              <div style="margin-bottom: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <h5 style="font-weight: 700; color: var(--text-main); font-size: 15px; margin-bottom: 16px;">SECTION 2: TEACHING-LEARNING PEDAGOGY (TLP)</h5>
+                
+                <!-- Faculty Grid -->
+                <div style="margin-bottom: 24px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label class="form-label" style="font-weight: 600; margin: 0;">Faculty-wise Compliance Plan:</label>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addUserPesFacultyRow()" style="border-radius: 6px; padding: 6px 12px;">+ Add Faculty Row</button>
+                  </div>
+                  
+                  <div class="table-responsive">
+                    <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                      <thead>
+                        <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                          <th rowspan="2" style="padding: 8px; width: 50px; text-align: center;">S. No</th>
+                          <th rowspan="2" style="padding: 8px;">Faculty Name</th>
+                          <th colspan="2" style="padding: 8px; text-align: center; border-bottom: 1px solid #e5e7eb;">No. of TLPs Planned</th>
+                          <th colspan="2" style="padding: 8px; text-align: center; border-bottom: 1px solid #e5e7eb;">No. of Innovative Assessments</th>
+                          <th rowspan="2" style="padding: 8px; text-align: center; width: 140px;">E-Content <br>(4 Quadrant)</th>
+                          <th rowspan="2" style="padding: 8px; width: 50px; text-align: center;">Del</th>
+                        </tr>
+                        <tr style="background: #f9fafb; font-weight: 600;">
+                          <th style="padding: 6px; text-align: center; border-right: 1px solid #e5e7eb; font-size: 11px;">Odd Sem</th>
+                          <th style="padding: 6px; text-align: center; border-right: 1px solid #e5e7eb; font-size: 11px;">Even Sem</th>
+                          <th style="padding: 6px; text-align: center; border-right: 1px solid #e5e7eb; font-size: 11px;">Odd Sem</th>
+                          <th style="padding: 6px; text-align: center; font-size: 11px;">Even Sem</th>
+                        </tr>
+                      </thead>
+                      <tbody id="user-pes-faculty-tbody">
+                        <!-- Dynamic Faculty rows will go here -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Teaching Innovation Targets -->
+                <div style="margin-top: 24px;">
+                  <label class="form-label" style="font-weight: 600; margin-bottom: 12px; display: block;">Department Teaching Innovation Targets:</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                      <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                          <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                            <th style="padding: 6px; width: 50px; text-align: center;">S. No</th>
+                            <th style="padding: 6px;">Teaching-Learning Practice</th>
+                            <th style="padding: 6px; width: 120px; text-align: center;">No. Planned</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr><td style="text-align: center;">1</td><td>Flipped Classroom Sessions</td><td><input type="number" min="0" id="user-pes-target-1" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">2</td><td>Project-Based Learning Activities</td><td><input type="number" min="0" id="user-pes-target-2" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">3</td><td>Problem-Based Learning Activities</td><td><input type="number" min="0" id="user-pes-target-3" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">4</td><td>Experiential Learning Activities</td><td><input type="number" min="0" id="user-pes-target-4" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">5</td><td>ICT-Enabled Teaching Sessions</td><td><input type="number" min="0" id="user-pes-target-5" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div>
+                      <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                          <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                            <th style="padding: 6px; width: 50px; text-align: center;">S. No</th>
+                            <th style="padding: 6px;">Teaching-Learning Practice</th>
+                            <th style="padding: 6px; width: 120px; text-align: center;">No. Planned</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr><td style="text-align: center;">6</td><td>AI-Assisted Learning Activities</td><td><input type="number" min="0" id="user-pes-target-6" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">7</td><td>Peer Learning Activities</td><td><input type="number" min="0" id="user-pes-target-7" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">8</td><td>Case Study-Based Teaching</td><td><input type="number" min="0" id="user-pes-target-8" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">9</td><td>Field-Based Learning Activities</td><td><input type="number" min="0" id="user-pes-target-9" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Any Other Practice dynamic list -->
+                  <div style="margin-top: 20px; border-top: 1px dashed #e5e7eb; padding-top: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <label class="form-label" style="font-weight: 600; margin: 0;">10. Any other - specify:</label>
+                      <button type="button" class="btn btn-secondary btn-xs" onclick="addUserPesOtherInnovationRow()" style="padding: 4px 8px; border-radius: 4px;">+ Add Other Target</button>
+                    </div>
+                    <div id="user-pes-other-targets-list" style="display: flex; flex-direction: column; gap: 8px;">
+                      <!-- Dynamic specifying targets list -->
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- SECTION 3: PLACEMENT AND CAREER DEVELOPMENT -->
+              <div style="margin-bottom: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <h5 style="font-weight: 700; color: var(--text-main); font-size: 15px; margin-bottom: 16px;">SECTION 3: PLACEMENT AND CAREER DEVELOPMENT</h5>
+                
+                <!-- Parameters Table -->
+                <div class="table-responsive" style="margin-bottom: 20px;">
+                  <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                    <thead>
+                      <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                        <th style="padding: 8px; width: 60px; text-align: center;">S. No.</th>
+                        <th style="padding: 8px;">Placement Parameter</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Previous Year (2025–26)</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Target for 2026–27</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style="text-align: center;">1</td><td>MoUs created for Placements / Projects / Internships</td><td><input type="number" min="0" id="user-pes-place-1-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-place-1-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">2</td><td>Placement Training Programmes</td><td><input type="number" min="0" id="user-pes-place-2-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-place-2-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">3</td><td>Industry Interaction / Training Sessions</td><td><input type="number" min="0" id="user-pes-place-3-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-place-3-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Plans list -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="font-weight: 600; margin: 0;">Plans to Improve Placement Opportunities:</label>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="addUserPesPlacementPlanRow()" style="padding: 4px 8px; border-radius: 4px;">+ Add Placement Plan</button>
+                  </div>
+                  <div id="user-pes-placement-plans-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamic placement plans -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 4: INDUSTRY-ACADEMIA COLLABORATION -->
+              <div style="margin-bottom: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <h5 style="font-weight: 700; color: var(--text-main); font-size: 15px; margin-bottom: 16px;">SECTION 4: INDUSTRY-ACADEMIA COLLABORATION</h5>
+                
+                <!-- Parameters Table -->
+                <div class="table-responsive" style="margin-bottom: 20px;">
+                  <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                    <thead>
+                      <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                        <th style="padding: 8px; width: 60px; text-align: center;">S. No.</th>
+                        <th style="padding: 8px;">Parameter</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Previous Year (2025–26)</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Target for 2026–27</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style="text-align: center;">1</td><td>MoUs Signed</td><td><input type="number" min="0" id="user-pes-collab-1-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-collab-1-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">2</td><td>Active MoUs</td><td><input type="number" min="0" id="user-pes-collab-2-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-collab-2-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">3</td><td>Industry Experts Invited</td><td><input type="number" min="0" id="user-pes-collab-3-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-collab-3-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">4</td><td>Industrial Visits Conducted</td><td><input type="number" min="0" id="user-pes-collab-4-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-collab-4-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">5</td><td>Industry - Sponsored Research Projects</td><td><input type="number" min="0" id="user-pes-collab-5-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-collab-5-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">6</td><td>Consultancy Assignments</td><td><input type="number" min="0" id="user-pes-collab-6-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-collab-6-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">7</td><td>Joint Publications with Industry</td><td><input type="number" min="0" id="user-pes-collab-7-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="user-pes-collab-7-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Plans list -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="font-weight: 600; margin: 0;">Plans for Industry-Academia Collaboration:</label>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="addUserPesCollabPlanRow()" style="padding: 4px 8px; border-radius: 4px;">+ Add Collaboration Plan</button>
+                  </div>
+                  <div id="user-pes-collab-plans-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamic collaboration plans -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Form Buttons -->
+              <div style="display: flex; gap: 12px; margin-top: 30px; border-top: 2px solid #f3f4f6; padding-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Submit Scorecard</button>
+                <button type="button" id="user-pes-cancel-btn" class="btn btn-secondary" onclick="hideUserPesForm()" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Back</button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- ================= STAFF SUB-VIEW: PES SCORECARD REPORT ================= -->
+        <div id="subview-staff-pes" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div class="section-title">
+              <h3>Performance & Excellence Scorecard (PES)</h3>
+              <p class="section-desc">Monitor, analyze and compile departmental annual targets</p>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <button class="btn btn-secondary" onclick="exportStaffPesExcel()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 10px; padding: 10px 18px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Download Excel
+              </button>
+              <button class="btn btn-secondary" onclick="exportStaffPesPDF()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 10px; padding: 10px 18px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Download PDF
+              </button>
+              <button class="btn btn-primary" onclick="openAddPesModal()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 10px; padding: 10px 18px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add/Edit (PES)
+              </button>
+            </div>
+          </div>
+          
+          <div id="staff-pes-table-container">
+            <!-- Dynamic Filters panel -->
+            <div class="glass-panel" style="padding: 24px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                
+                <!-- 1st Box: Department -->
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Department Name</label>
+                  <select id="staff-pes-filter-dept" class="form-select" onchange="applyPesFilters()" style="height: 45px; padding: 8px 36px 8px 12px;">
+                    <option value="">All Registered Departments</option>
+                  </select>
+                </div>
+                
+                <!-- 2nd Box: Research Parameter -->
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Research Parameter</label>
+                  <select id="staff-pes-filter-res-param" class="form-select" onchange="onResParamFilterChange()" style="height: 45px; padding: 8px 36px 8px 12px;">
+                    <option value="">All Parameters</option>
+                    <option value="Research Publications">Research Publications</option>
+                    <option value="Books Published">Books Published</option>
+                    <option value="Book Chapters Published">Book Chapters Published</option>
+                    <option value="Conference Proceedings">Conference Proceedings</option>
+                    <option value="Average Departmental H-index">Average Departmental H-index</option>
+                    <option value="Research Projects">Research Projects (a) Submitted (b) Sanctioned</option>
+                    <option value="Patent Applications Submitted">Patent Applications Submitted</option>
+                    <option value="Patents Granted">Patents Granted</option>
+                    <option value="Copyrights Filed">Copyrights Filed</option>
+                    <option value="Product Development Projects">Product Development Projects</option>
+                    <option value="Prototypes Developed">Prototypes Developed</option>
+                    <option value="Start-ups Incubated">Start-ups Incubated</option>
+                    <option value="Technology Transfer Initiatives">Technology Transfer Initiatives</option>
+                  </select>
+                </div>
+                
+                <!-- 3rd Box: Teaching-Learning Pedagogy (TLP) -->
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Teaching-Learning Pedagogy (TLP)</label>
+                  <input type="text" id="staff-pes-filter-tlp-search" class="form-control" placeholder="Search Faculty Name..." oninput="onTlpSearchChange()" style="height: 45px; padding-left: 12px;">
+                </div>
+                
+                <!-- 4th Box: Department Teaching Innovation Targets -->
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Teaching Innovation Targets</label>
+                  <select id="staff-pes-filter-innovation" class="form-select" onchange="onInnovationFilterChange()" style="height: 45px; padding: 8px 36px 8px 12px;">
+                    <option value="">All Innovation Targets</option>
+                    <option value="Flipped Classroom Sessions">Flipped Classroom Sessions</option>
+                    <option value="Project-Based Learning Activities">Project-Based Learning Activities</option>
+                    <option value="Problem-Based Learning Activities">Problem-Based Learning Activities</option>
+                    <option value="Experiential Learning Activities">Experiential Learning Activities</option>
+                    <option value="ICT-Enabled Teaching Sessions">ICT-Enabled Teaching Sessions</option>
+                    <option value="AI-Assisted Learning Activities">AI-Assisted Learning Activities</option>
+                    <option value="Peer Learning Activities">Peer Learning Activities</option>
+                    <option value="Case Study-Based Teaching">Case Study-Based Teaching</option>
+                    <option value="Field-Based Learning Activities">Field-Based Learning Activities</option>
+                    <option value="Any other - specify">Any other - specify</option>
+                  </select>
+                </div>
+                
+                <!-- 5th Box: Placement & Career Development -->
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Placement & Career</label>
+                  <select id="staff-pes-filter-placement" class="form-select" onchange="onPlacementFilterChange()" style="height: 45px; padding: 8px 36px 8px 12px;">
+                    <option value="">All Placement Parameters</option>
+                    <option value="MoUs created for Placements / Projects / Internships">MoUs created for Placements / Projects / Internships</option>
+                    <option value="Placement Training Programmes">Placement Training Programmes</option>
+                    <option value="Industry Interaction / Training Sessions">Industry Interaction / Training Sessions</option>
+                  </select>
+                </div>
+                
+                <!-- 6th Box: Industry-Academia Collaboration -->
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Industry Collaboration</label>
+                  <select id="staff-pes-filter-collab" class="form-select" onchange="onCollabFilterChange()" style="height: 45px; padding: 8px 36px 8px 12px;">
+                    <option value="">All Collaboration Parameters</option>
+                    <option value="MoUs Signed">MoUs Signed</option>
+                    <option value="Active MoUs">Active MoUs</option>
+                    <option value="Industry Experts Invited">Industry Experts Invited</option>
+                    <option value="Industrial Visits Conducted">Industrial Visits Conducted</option>
+                    <option value="Industry - Sponsored Research Projects">Industry - Sponsored Research Projects</option>
+                    <option value="Consultancy Assignments">Consultancy Assignments</option>
+                    <option value="Joint Publications with Industry">Joint Publications with Industry</option>
+                  </select>
+                </div>
+
+              </div>
+              <div style="display: flex; justify-content: flex-end; margin-top: 16px; border-top: 1px solid #f3f4f6; padding-top: 16px;">
+                <button class="btn btn-secondary" onclick="clearAllPesFilters()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 8px; padding: 8px 16px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  Clear All Filters
+                </button>
+              </div>
+            </div>
+
+            <!-- Submissions Table with Summary Total Row -->
+            <div class="glass-panel" style="padding: 24px; border-radius: 12px; border: 1px solid var(--card-border); background: #ffffff;">
+              <h3 id="staff-pes-table-title" style="display: none; font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 12px;"></h3>
+              <div class="table-responsive">
+                <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                  <thead id="staff-pes-table-head">
+                    <tr style="border-bottom: 2px solid #e5e7eb; background: #f9fafb;">
+                      <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 60px;">S.No</th>
+                      <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 180px;">Department</th>
+                      <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 120px;">Academic Year</th>
+                      <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; text-align: center;">Res. Publications (Prev/Target)</th>
+                      <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; text-align: center;">Books Published (Prev/Target)</th>
+                      <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; text-align: center;">Res. Projects (Prev/Target)</th>
+                      <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; text-align: center;">MoUs Signed (Prev/Target)</th>
+                      <th style="padding: 12px 16px; font-weight: 600; color: var(--text-muted); font-size: 13px; text-align: center; width: 180px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="staff-pes-table-body">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                  <tfoot>
+                    <tr id="staff-pes-total-row" style="background: #f3f4f6; font-weight: 700; border-top: 2px solid #d1d5db;">
+                      <td colspan="3" style="padding: 12px 16px;">Total of Filtered Data</td>
+                      <td id="staff-pes-total-pub" style="padding: 12px 16px; text-align: center;">0 / 0</td>
+                      <td id="staff-pes-total-books" style="padding: 12px 16px; text-align: center;">0 / 0</td>
+                      <td id="staff-pes-total-projects" style="padding: 12px 16px; text-align: center;">0 / 0</td>
+                      <td id="staff-pes-total-mous" style="padding: 12px 16px; text-align: center;">0 / 0</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Full Screen Scorecard Form Container (Staff version, identical to User) -->
+          <div id="staff-pes-form-container" class="glass-panel" style="padding: 24px; border-radius: 12px; border: 1px solid var(--card-border); background: #ffffff; display: none;">
+            <h4 id="staff-pes-form-title" style="font-weight: 700; color: var(--primary); margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; font-size: 18px;">Create Department Scorecard</h4>
+            
+            <form id="pes-scorecard-form" onsubmit="savePesScorecard(event)">
+              <input type="hidden" id="pes-edit-id">
+              <input type="hidden" id="pes-academic-year" value="2026-2027">
+
+              <!-- Meta Data: Department Text Box -->
+              <div class="form-group" style="margin-bottom: 24px; max-width: 500px;">
+                <label class="form-label" for="pes-department" style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Department Name</label>
+                <input type="text" id="pes-department" class="form-control" placeholder="Enter Department Name (e.g. Department of Botany)" required style="height: 38px; padding-left: 10px;">
+              </div>
+
+              <!-- SECTION 1: RESEARCH, TEACHING EXCELLENCE, AND INNOVATION -->
+              <div style="margin-bottom: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <h5 style="font-weight: 700; color: var(--text-main); font-size: 15px; margin-bottom: 16px;">SECTION 1: RESEARCH, TEACHING EXCELLENCE, AND INNOVATION</h5>
+                
+                <!-- Major Research Areas -->
+                <div style="margin-bottom: 24px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="font-weight: 600; margin: 0;">Major Research Areas of the Department:</label>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="addPesResearchAreaRow()" style="padding: 4px 8px; border-radius: 4px;">+ Add Research Area</button>
+                  </div>
+                  <div id="pes-research-areas-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamic Area inputs -->
+                  </div>
+                </div>
+
+                <!-- Parameters Table -->
+                <div class="table-responsive">
+                  <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                    <thead>
+                      <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                        <th style="padding: 8px; width: 60px; text-align: center;">S. No.</th>
+                        <th style="padding: 8px;">Research Parameter</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Previous Year (2025–26)</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Target for 2026–27</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style="text-align: center;">1</td><td>Research Publications</td><td><input type="number" min="0" id="pes-param-1-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-1-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">2</td><td>Books Published</td><td><input type="number" min="0" id="pes-param-2-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-2-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">3</td><td>Book Chapters Published</td><td><input type="number" min="0" id="pes-param-3-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-3-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">4</td><td>Conference Proceedings</td><td><input type="number" min="0" id="pes-param-4-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-4-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">5</td><td>Average Departmental H-index</td><td><input type="number" min="0" step="0.1" id="pes-param-5-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" step="0.1" id="pes-param-5-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">6</td><td style="font-weight: 600;">Research Projects: <br>&nbsp;&nbsp;(a) Submitted <br>&nbsp;&nbsp;(b) Sanctioned</td>
+                        <td>
+                          <input type="number" min="0" id="pes-param-6a-prev" class="form-control" placeholder="Submitted" style="height: 30px; padding: 4px 8px; text-align: center; margin-bottom: 4px;">
+                          <input type="number" min="0" id="pes-param-6b-prev" class="form-control" placeholder="Sanctioned" style="height: 30px; padding: 4px 8px; text-align: center;">
+                        </td>
+                        <td>
+                          <input type="number" min="0" id="pes-param-6a-target" class="form-control" placeholder="Submitted" style="height: 30px; padding: 4px 8px; text-align: center; margin-bottom: 4px;">
+                          <input type="number" min="0" id="pes-param-6b-target" class="form-control" placeholder="Sanctioned" style="height: 30px; padding: 4px 8px; text-align: center;">
+                        </td>
+                      </tr>
+                      <tr><td style="text-align: center;">7</td><td>Patent Applications Submitted</td><td><input type="number" min="0" id="pes-param-7-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-7-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">8</td><td>Patents Granted</td><td><input type="number" min="0" id="pes-param-8-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-8-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">9</td><td>Copyrights Filed</td><td><input type="number" min="0" id="pes-param-9-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-9-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">10</td><td>Product Development Projects</td><td><input type="number" min="0" id="pes-param-10-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-10-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">11</td><td>Prototypes Developed</td><td><input type="number" min="0" id="pes-param-11-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-11-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">12</td><td>Start-ups Incubated</td><td><input type="number" min="0" id="pes-param-12-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-12-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">13</td><td>Technology Transfer Initiatives</td><td><input type="number" min="0" id="pes-param-13-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-param-13-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- SECTION 2: TEACHING-LEARNING PEDAGOGY (TLP) -->
+              <div style="margin-bottom: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <h5 style="font-weight: 700; color: var(--text-main); font-size: 15px; margin-bottom: 16px;">SECTION 2: TEACHING-LEARNING PEDAGOGY (TLP)</h5>
+                
+                <!-- Faculty Grid -->
+                <div style="margin-bottom: 24px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label class="form-label" style="font-weight: 600; margin: 0;">Faculty-wise Compliance Plan:</label>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addPesFacultyRow()" style="border-radius: 6px; padding: 6px 12px;">+ Add Faculty Row</button>
+                  </div>
+                  
+                  <div class="table-responsive">
+                    <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                      <thead>
+                        <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                          <th rowspan="2" style="padding: 8px; width: 50px; text-align: center;">S. No</th>
+                          <th rowspan="2" style="padding: 8px;">Faculty Name</th>
+                          <th colspan="2" style="padding: 8px; text-align: center; border-bottom: 1px solid #e5e7eb;">No. of TLPs Planned</th>
+                          <th colspan="2" style="padding: 8px; text-align: center; border-bottom: 1px solid #e5e7eb;">No. of Innovative Assessments</th>
+                          <th rowspan="2" style="padding: 8px; text-align: center; width: 140px;">E-Content <br>(4 Quadrant)</th>
+                          <th rowspan="2" style="padding: 8px; width: 50px; text-align: center;">Del</th>
+                        </tr>
+                        <tr style="background: #f9fafb; font-weight: 600;">
+                          <th style="padding: 6px; text-align: center; border-right: 1px solid #e5e7eb; font-size: 11px;">Odd Sem</th>
+                          <th style="padding: 6px; text-align: center; border-right: 1px solid #e5e7eb; font-size: 11px;">Even Sem</th>
+                          <th style="padding: 6px; text-align: center; border-right: 1px solid #e5e7eb; font-size: 11px;">Odd Sem</th>
+                          <th style="padding: 6px; text-align: center; font-size: 11px;">Even Sem</th>
+                        </tr>
+                      </thead>
+                      <tbody id="pes-faculty-tbody">
+                        <!-- Dynamic Faculty rows will go here -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Teaching Innovation Targets -->
+                <div style="margin-top: 24px;">
+                  <label class="form-label" style="font-weight: 600; margin-bottom: 12px; display: block;">Department Teaching Innovation Targets:</label>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                      <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                          <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                            <th style="padding: 6px; width: 50px; text-align: center;">S. No</th>
+                            <th style="padding: 6px;">Teaching-Learning Practice</th>
+                            <th style="padding: 6px; width: 120px; text-align: center;">No. Planned</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr><td style="text-align: center;">1</td><td>Flipped Classroom Sessions</td><td><input type="number" min="0" id="pes-target-1" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">2</td><td>Project-Based Learning Activities</td><td><input type="number" min="0" id="pes-target-2" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">3</td><td>Problem-Based Learning Activities</td><td><input type="number" min="0" id="pes-target-3" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">4</td><td>Experiential Learning Activities</td><td><input type="number" min="0" id="pes-target-4" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">5</td><td>ICT-Enabled Teaching Sessions</td><td><input type="number" min="0" id="pes-target-5" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div>
+                      <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                          <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                            <th style="padding: 6px; width: 50px; text-align: center;">S. No</th>
+                            <th style="padding: 6px;">Teaching-Learning Practice</th>
+                            <th style="padding: 6px; width: 120px; text-align: center;">No. Planned</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr><td style="text-align: center;">6</td><td>AI-Assisted Learning Activities</td><td><input type="number" min="0" id="pes-target-6" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">7</td><td>Peer Learning Activities</td><td><input type="number" min="0" id="pes-target-7" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">8</td><td>Case Study-Based Teaching</td><td><input type="number" min="0" id="pes-target-8" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                          <tr><td style="text-align: center;">9</td><td>Field-Based Learning Activities</td><td><input type="number" min="0" id="pes-target-9" class="form-control" style="height: 28px; padding: 4px 8px; text-align: center;"></td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Any Other Practice dynamic list -->
+                  <div style="margin-top: 20px; border-top: 1px dashed #e5e7eb; padding-top: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                      <label class="form-label" style="font-weight: 600; margin: 0;">10. Any other - specify:</label>
+                      <button type="button" class="btn btn-secondary btn-xs" onclick="addPesOtherInnovationRow()" style="padding: 4px 8px; border-radius: 4px;">+ Add Other Target</button>
+                    </div>
+                    <div id="pes-other-targets-list" style="display: flex; flex-direction: column; gap: 8px;">
+                      <!-- Dynamic specifying targets list -->
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- SECTION 3: PLACEMENT AND CAREER DEVELOPMENT -->
+              <div style="margin-bottom: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <h5 style="font-weight: 700; color: var(--text-main); font-size: 15px; margin-bottom: 16px;">SECTION 3: PLACEMENT AND CAREER DEVELOPMENT</h5>
+                
+                <!-- Parameters Table -->
+                <div class="table-responsive" style="margin-bottom: 20px;">
+                  <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                    <thead>
+                      <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                        <th style="padding: 8px; width: 60px; text-align: center;">S. No.</th>
+                        <th style="padding: 8px;">Placement Parameter</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Previous Year (2025–26)</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Target for 2026–27</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style="text-align: center;">1</td><td>MoUs created for Placements / Projects / Internships</td><td><input type="number" min="0" id="pes-place-1-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-place-1-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">2</td><td>Placement Training Programmes</td><td><input type="number" min="0" id="pes-place-2-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-place-2-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">3</td><td>Industry Interaction / Training Sessions</td><td><input type="number" min="0" id="pes-place-3-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-place-3-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Plans list -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="font-weight: 600; margin: 0;">Plans to Improve Placement Opportunities:</label>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="addPesPlacementPlanRow()" style="padding: 4px 8px; border-radius: 4px;">+ Add Placement Plan</button>
+                  </div>
+                  <div id="pes-placement-plans-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamic placement plans -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 4: INDUSTRY-ACADEMIA COLLABORATION -->
+              <div style="margin-bottom: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                <h5 style="font-weight: 700; color: var(--text-main); font-size: 15px; margin-bottom: 16px;">SECTION 4: INDUSTRY-ACADEMIA COLLABORATION</h5>
+                
+                <!-- Parameters Table -->
+                <div class="table-responsive" style="margin-bottom: 20px;">
+                  <table class="checklist-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                    <thead>
+                      <tr style="border-bottom: 2px solid #e5e7eb; background: #f3f4f6; font-weight: 700;">
+                        <th style="padding: 8px; width: 60px; text-align: center;">S. No.</th>
+                        <th style="padding: 8px;">Parameter</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Previous Year (2025–26)</th>
+                        <th style="padding: 8px; width: 180px; text-align: center;">Target for 2026–27</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style="text-align: center;">1</td><td>MoUs Signed</td><td><input type="number" min="0" id="pes-collab-1-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-collab-1-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">2</td><td>Active MoUs</td><td><input type="number" min="0" id="pes-collab-2-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-collab-2-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">3</td><td>Industry Experts Invited</td><td><input type="number" min="0" id="pes-collab-3-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-collab-3-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">4</td><td>Industrial Visits Conducted</td><td><input type="number" min="0" id="pes-collab-4-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-collab-4-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">5</td><td>Industry - Sponsored Research Projects</td><td><input type="number" min="0" id="pes-collab-5-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-collab-5-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">6</td><td>Consultancy Assignments</td><td><input type="number" min="0" id="pes-collab-6-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-collab-6-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                      <tr><td style="text-align: center;">7</td><td>Joint Publications with Industry</td><td><input type="number" min="0" id="pes-collab-7-prev" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td><td><input type="number" min="0" id="pes-collab-7-target" class="form-control" style="height: 30px; padding: 4px 8px; text-align: center;"></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Plans list -->
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="font-weight: 600; margin: 0;">Plans for Industry-Academia Collaboration:</label>
+                    <button type="button" class="btn btn-secondary btn-xs" onclick="addPesCollabPlanRow()" style="padding: 4px 8px; border-radius: 4px;">+ Add Collaboration Plan</button>
+                  </div>
+                  <div id="pes-collab-plans-list" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Dynamic collaboration plans -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Form Buttons -->
+              <div style="display: flex; gap: 12px; margin-top: 30px; border-top: 2px solid #f3f4f6; padding-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Submit Scorecard</button>
+                <button type="button" id="staff-pes-cancel-btn" class="btn btn-secondary" onclick="hideStaffPesForm()" style="font-weight: 600; border-radius: 8px; padding: 10px 24px;">Back</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
       </div>
 
   <!-- ================= MODAL: EWYL STUDENT CRUD ================= -->
@@ -2136,6 +2838,161 @@
           <button type="submit" id="program-submit-btn" class="btn btn-primary">Save Event</button>
         </div>
       </form>
+    </div>
+  </div>
+
+
+
+  <!-- ================= MODAL: PES SCORECARD READ-ONLY DETAILED VIEWER ================= -->
+  <div id="pes-view-modal" class="modal-overlay">
+    <div class="modal-container glass-panel" style="max-width: 900px; padding: 30px; max-height: 90vh; overflow-y: auto; border-radius: 16px; background: #fff;">
+      <button class="modal-close" onclick="closePesViewModal()" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 20px;">
+        <button class="btn btn-secondary btn-sm" onclick="exportSinglePesExcel()">Download Excel</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportSinglePesPDF()">Download PDF</button>
+      </div>
+
+      <!-- Printable Document Wrapper -->
+      <div id="pes-printable-document" style="font-family: 'Times New Roman', Times, serif; color: #000; padding: 20px;">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h3 style="font-size: 16.5px; font-weight: bold; margin: 0; text-transform: uppercase;">Internal Quality Assurance Cell</h3>
+          <h2 style="font-size: 18.5px; font-weight: bold; margin: 4px 0;">St. Joseph’s College (Autonomous), Tiruchirappalli – 620 002</h2>
+          <h1 style="font-size: 20.5px; font-weight: bold; margin: 4px 0;">Department Performance and Excellence Scorecard</h1>
+          <h3 style="font-size: 16.5px; font-weight: bold; margin: 4px 0;" id="view-pes-academic-year">2026-2027</h3>
+          <h3 style="font-size: 17.5px; font-weight: bold; color: var(--primary); margin: 6px 0;" id="view-pes-department">DEPARTMENT NAME</h3>
+        </div>
+
+        <!-- Section 1 -->
+        <div style="margin-bottom: 30px;">
+          <h4 style="font-size: 15px; font-weight: bold; color: #b91c1c; border-bottom: 1.5px solid #000; padding-bottom: 3px; margin-bottom: 10px; text-transform: uppercase; text-align: center;">
+            Research, Teaching Excellence, and Innovation
+          </h4>
+          <p style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Major Research Areas of the Department:</p>
+          <ol style="font-size: 13.5px; margin-left: 20px; margin-bottom: 16px; line-height: 1.4;" id="view-pes-research-areas">
+            <!-- Dynamic Areas -->
+          </ol>
+
+          <table style="width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 10px;">
+            <thead>
+              <tr style="background: #f2f2f2; border: 1.5px solid #000; font-weight: bold;">
+                <th style="padding: 6px; border: 1px solid #000; width: 60px; text-align: center;">S. No.</th>
+                <th style="padding: 6px; border: 1px solid #000;">Research Parameter</th>
+                <th style="padding: 6px; border: 1px solid #000; width: 180px; text-align: center;">Previous Year (2025–26)</th>
+                <th style="padding: 6px; border: 1px solid #000; width: 180px; text-align: center;">Target for 2026–27</th>
+              </tr>
+            </thead>
+            <tbody id="view-pes-params-tbody">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Section 2 -->
+        <div style="margin-bottom: 30px;">
+          <h4 style="font-size: 15px; font-weight: bold; color: #b91c1c; border-bottom: 1.5px solid #000; padding-bottom: 3px; margin-bottom: 10px; text-transform: uppercase; text-align: center;">
+            Teaching- Learning Pedagogy (TLP)
+          </h4>
+          <p style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Faculty-wise Compliance Plan:</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: center;">
+            <thead>
+              <tr style="background: #f2f2f2; border: 1.5px solid #000; font-weight: bold;">
+                <th rowspan="2" style="padding: 6px; border: 1px solid #000; width: 50px;">S. No</th>
+                <th rowspan="2" style="padding: 6px; border: 1px solid #000; text-align: left;">Faculty Name</th>
+                <th colspan="2" style="padding: 6px; border: 1px solid #000;">No. of TLPs Planned</th>
+                <th colspan="2" style="padding: 6px; border: 1px solid #000;">No. of Innovative Assessments</th>
+                <th rowspan="2" style="padding: 6px; border: 1px solid #000; width: 140px;">E-Content <br>(4 Quadrant)</th>
+              </tr>
+              <tr style="background: #f2f2f2; font-weight: bold;">
+                <th style="padding: 4px; border: 1px solid #000; font-size: 11.5px;">Odd Sem</th>
+                <th style="padding: 4px; border: 1px solid #000; font-size: 11.5px;">Even Sem</th>
+                <th style="padding: 4px; border: 1px solid #000; font-size: 11.5px;">Odd Sem</th>
+                <th style="padding: 4px; border: 1px solid #000; font-size: 11.5px;">Even Sem</th>
+              </tr>
+            </thead>
+            <tbody id="view-pes-faculty-tbody">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+
+          <p style="font-weight: bold; font-size: 14px; margin: 20px 0 8px 0;">Department Teaching Innovation Targets:</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+            <thead>
+              <tr style="background: #f2f2f2; border: 1.5px solid #000; font-weight: bold;">
+                <th style="padding: 6px; border: 1px solid #000; width: 50px; text-align: center;">S. No</th>
+                <th style="padding: 6px; border: 1px solid #000;">Teaching-Learning Practice</th>
+                <th style="padding: 6px; border: 1px solid #000; width: 120px; text-align: center;">Number Planned</th>
+                <th style="padding: 6px; border: 1px solid #000; width: 50px; text-align: center;">S. No</th>
+                <th style="padding: 6px; border: 1px solid #000;">Teaching-Learning Practice</th>
+                <th style="padding: 6px; border: 1px solid #000; width: 120px; text-align: center;">Number Planned</th>
+              </tr>
+            </thead>
+            <tbody id="view-pes-targets-tbody">
+              <!-- Dynamic targets side-by-side -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Section 3 & 4 -->
+        <div style="margin-bottom: 30px;">
+          <h4 style="font-size: 15px; font-weight: bold; color: #b91c1c; border-bottom: 1.5px solid #000; padding-bottom: 3px; margin-bottom: 10px; text-transform: uppercase; text-align: center;">
+            Placement and Career Development
+          </h4>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+            <thead>
+              <tr style="background: #f2f2f2; border: 1.5px solid #000; font-weight: bold;">
+                <th style="padding: 6px; border: 1px solid #000; width: 60px; text-align: center;">S. No.</th>
+                <th style="padding: 6px; border: 1px solid #000;">Placement Parameter</th>
+                <th style="padding: 6px; border: 1px solid #000; width: 180px; text-align: center;">Previous Year (2025–26)</th>
+                <th style="padding: 6px; border: 1px solid #000; width: 180px; text-align: center;">Target for 2026–27</th>
+              </tr>
+            </thead>
+            <tbody id="view-pes-placement-tbody">
+              <!-- Dynamic -->
+            </tbody>
+          </table>
+          
+          <p style="font-weight: bold; font-size: 13.5px; margin: 14px 0 6px 0;">Plans to Improve Placement Opportunities:</p>
+          <ol style="font-size: 13px; margin-left: 20px; line-height: 1.4;" id="view-pes-placement-plans">
+            <!-- Dynamic -->
+          </ol>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+          <h4 style="font-size: 15px; font-weight: bold; color: #b91c1c; border-bottom: 1.5px solid #000; padding-bottom: 3px; margin-bottom: 10px; text-transform: uppercase; text-align: center;">
+            Industry-Academia Collaboration
+          </h4>
+          <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+            <thead>
+              <tr style="background: #f2f2f2; border: 1.5px solid #000; font-weight: bold;">
+                <th style="padding: 6px; border: 1px solid #000; width: 60px; text-align: center;">S. No.</th>
+                <th style="padding: 6px; border: 1px solid #000;">Parameter</th>
+                <th style="padding: 6px; border: 1px solid #000; width: 180px; text-align: center;">Previous Year (2025–26)</th>
+                <th style="padding: 6px; border: 1px solid #000; width: 180px; text-align: center;">Target for 2026–27</th>
+              </tr>
+            </thead>
+            <tbody id="view-pes-collab-tbody">
+              <!-- Dynamic -->
+            </tbody>
+          </table>
+          
+          <p style="font-weight: bold; font-size: 13.5px; margin: 14px 0 6px 0;">Plans for Industry-Academia Collaboration:</p>
+          <ol style="font-size: 13px; margin-left: 20px; line-height: 1.4;" id="view-pes-collab-plans">
+            <!-- Dynamic -->
+          </ol>
+        </div>
+
+        <!-- Signature -->
+        <div style="display: flex; justify-content: flex-end; margin-top: 60px;">
+          <div style="text-align: center; width: 250px;">
+            <p style="border-bottom: 1px solid #000; font-size: 14px; font-weight: bold; padding-bottom: 4px;" id="view-pes-hod-signature">HOD Name</p>
+            <p style="font-size: 13px; font-weight: bold; margin-top: 6px;">Head of the Department / Coordinator</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
