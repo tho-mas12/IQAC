@@ -2948,8 +2948,9 @@ function exportTentativePlanExcel() {
     }
 
     const filteredCats = (state.involvementCategories || []).filter(c => {
-      if (selectedDept !== 'all' && c.department !== selectedDept) return false;
-      if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
+      const info = getCleanDeptAndShift(c);
+      if (selectedDept !== 'all' && info.department !== selectedDept) return false;
+      if (selectedShift !== 'all' && info.shift !== selectedShift) return false;
       return true;
     });
 
@@ -2957,6 +2958,19 @@ function exportTentativePlanExcel() {
       if (selectedMonth === 'all') return true;
       if (!recordMonth) return false;
       return recordMonth.trim().toLowerCase() === selectedMonth.trim().toLowerCase();
+    };
+
+    const matchConfType = (recordType, selectedType) => {
+      if (selectedType === 'all') return true;
+      if (!recordType) return false;
+      
+      const rType = recordType.trim().toLowerCase();
+      const sType = selectedType.trim().toLowerCase();
+      
+      const rNorm = rType.endsWith('s') ? rType.slice(0, -1) : rType;
+      const sNorm = sType.endsWith('s') ? sType.slice(0, -1) : sType;
+      
+      return rNorm === sNorm;
     };
 
     const escapeCsv = (str) => {
@@ -2984,10 +2998,10 @@ function exportTentativePlanExcel() {
 
     let recordsToDisplay = [];
     filteredCats.forEach(cat => {
-      const catRecords = (state.involvementRecords || []).filter(r => r.category_id === cat.id);
+      const catRecords = (state.involvementRecords || []).filter(r => r.category_id == cat.id);
       if (mode === 'A') {
         catRecords.filter(r => r.section_type === 'Conferences').forEach(r => {
-          if (selectedType !== 'all' && r.col3 && r.col3.trim().toLowerCase() !== selectedType.trim().toLowerCase()) return;
+          if (!matchConfType(r.col3, selectedType)) return;
           if (!isMonthMatch(r.col5)) return;
           recordsToDisplay.push({ category: cat, record: r });
         });
@@ -3106,8 +3120,9 @@ async function exportTentativePlanPDF() {
     }
 
     const filteredCats = (state.involvementCategories || []).filter(c => {
-      if (selectedDept !== 'all' && c.department !== selectedDept) return false;
-      if (selectedShift !== 'all' && c.shift !== selectedShift) return false;
+      const info = getCleanDeptAndShift(c);
+      if (selectedDept !== 'all' && info.department !== selectedDept) return false;
+      if (selectedShift !== 'all' && info.shift !== selectedShift) return false;
       return true;
     });
 
@@ -3117,12 +3132,25 @@ async function exportTentativePlanPDF() {
       return recordMonth.trim().toLowerCase() === selectedMonth.trim().toLowerCase();
     };
 
+    const matchConfType = (recordType, selectedType) => {
+      if (selectedType === 'all') return true;
+      if (!recordType) return false;
+      
+      const rType = recordType.trim().toLowerCase();
+      const sType = selectedType.trim().toLowerCase();
+      
+      const rNorm = rType.endsWith('s') ? rType.slice(0, -1) : rType;
+      const sNorm = sType.endsWith('s') ? sType.slice(0, -1) : sType;
+      
+      return rNorm === sNorm;
+    };
+
     let recordsToDisplay = [];
     filteredCats.forEach(cat => {
-      const catRecords = (state.involvementRecords || []).filter(r => r.category_id === cat.id);
+      const catRecords = (state.involvementRecords || []).filter(r => r.category_id == cat.id);
       if (mode === 'A') {
         catRecords.filter(r => r.section_type === 'Conferences').forEach(r => {
-          if (selectedType !== 'all' && r.col3 && r.col3.trim().toLowerCase() !== selectedType.trim().toLowerCase()) return;
+          if (!matchConfType(r.col3, selectedType)) return;
           if (!isMonthMatch(r.col5)) return;
           recordsToDisplay.push({ category: cat, record: r });
         });
@@ -3428,7 +3456,7 @@ function generateRecordFieldsHTML(sectionType, cardRecords) {
 
 function renderCategoryDetailPage() {
   const categoryId = state.activeCategoryId;
-  const category = state.involvementCategories.find(c => c.id === categoryId);
+  const category = state.involvementCategories.find(c => c.id == categoryId);
   if (!category) {
     switchSubView('staff-involvement');
     return;
@@ -4898,6 +4926,12 @@ async function renderPublicEventDetail(eventId) {
 
 // ================= APP BOOTSTRAPPING =================
 window.addEventListener('DOMContentLoaded', async () => {
+  // Restore sidebar collapse state
+  const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+  if (isCollapsed) {
+    document.body.classList.add('sidebar-collapsed');
+  }
+
   try {
     await loadEvents();
     await loadDepartments();
@@ -5277,7 +5311,7 @@ async function loadExistingActionPlanById(categoryId) {
   if (!state.involvementCategories) {
     await loadInvolvementData();
   }
-  const category = state.involvementCategories.find(c => c.id === categoryId);
+  const category = state.involvementCategories.find(c => c.id == categoryId);
   if (category) {
     loadActionPlanFromCategory(category);
   }
@@ -6016,36 +6050,68 @@ function openEditEwylHoursLog(id) {
   const h = (state.ewylHours || []).find(log => log.id == id);
   if (!h) return;
 
-  document.getElementById('ewyl-log-edit-id').value = h.id;
-  document.getElementById('ewyl-log-date').value = h.date || '';
-  document.getElementById('ewyl-log-in').value = h.in_time || '';
-  document.getElementById('ewyl-log-out').value = h.out_time || '';
+  document.getElementById('ewyl-editmodal-id').value = h.id;
+  document.getElementById('ewyl-editmodal-date').value = h.date || '';
+  document.getElementById('ewyl-editmodal-in').value = h.in_time || '';
+  document.getElementById('ewyl-editmodal-out').value = h.out_time || '';
   
-  const workDoneEl = document.getElementById('ewyl-log-work-done');
+  const workDoneEl = document.getElementById('ewyl-editmodal-work-done');
   if (workDoneEl) {
     workDoneEl.value = h.work_done || '';
   }
 
-  // Update submit button text to indicate editing
-  const submitBtn = document.querySelector('#ewyl-hours-form button[type="submit"]');
-  if (submitBtn) {
-    submitBtn.innerText = 'Update Hours Entry';
-    submitBtn.classList.remove('btn-primary');
-    submitBtn.classList.add('btn-success');
-    
-    // Add cancel button if not present
-    let cancelBtn = document.getElementById('ewyl-hours-edit-cancel');
-    if (!cancelBtn) {
-      cancelBtn = document.createElement('button');
-      cancelBtn.type = 'button';
-      cancelBtn.id = 'ewyl-hours-edit-cancel';
-      cancelBtn.className = 'btn btn-secondary';
-      cancelBtn.style.width = '100%';
-      cancelBtn.style.marginTop = '8px';
-      cancelBtn.innerText = 'Cancel Edit';
-      cancelBtn.onclick = resetEwylHoursForm;
-      submitBtn.parentNode.appendChild(cancelBtn);
-    }
+  document.getElementById('ewyl-edit-log-modal').classList.add('open');
+}
+
+function closeEwylEditLogModal() {
+  document.getElementById('ewyl-edit-log-modal').classList.remove('open');
+}
+
+async function saveEwylHoursLogFromModal(e) {
+  e.preventDefault();
+  
+  const student = state.ewylStudents.find(s => s.id === state.ewylSelectedStudentId);
+  if (!student) return;
+  
+  const dateVal = document.getElementById('ewyl-editmodal-date').value;
+  const inVal = document.getElementById('ewyl-editmodal-in').value;
+  const outVal = document.getElementById('ewyl-editmodal-out').value;
+  const workDoneVal = document.getElementById('ewyl-editmodal-work-done') ? document.getElementById('ewyl-editmodal-work-done').value.trim() : '';
+  
+  if (!dateVal || !inVal || !outVal) {
+    alert("Please enter date, IN and OUT times.");
+    return;
+  }
+  
+  const logMonth = dateVal.substring(0, 7); // "YYYY-MM"
+  if (logMonth !== state.ewylActiveMonth) {
+    alert(`The selected date falls under ${getMonthNameInWords(logMonth)}. Please record work done only for the active month: ${getMonthNameInWords(state.ewylActiveMonth)}.`);
+    return;
+  }
+  
+  const payload = {
+    student_id: student.id,
+    date: dateVal,
+    in_time: inVal,
+    out_time: outVal,
+    month_active: state.ewylActiveMonth,
+    work_done: workDoneVal
+  };
+  
+  const id = document.getElementById('ewyl-editmodal-id').value;
+  if (!id) return;
+  
+  try {
+    await fetchAPI(`/ewyl/hours/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    alert("Hours log updated successfully.");
+    closeEwylEditLogModal();
+    await renderEwylHoursLogPage();
+  } catch (err) {
+    console.error("Failed to log hours:", err);
+    alert(err.message || "Failed to save entry. Check IN and OUT time coherence.");
   }
 }
 
@@ -9232,6 +9298,31 @@ function clearAllPesFilters() {
   applyPesFilters();
 }
 
+function toggleStaffPesFilters() {
+  const wrapper = document.getElementById('staff-pes-filters-wrapper');
+  const btn = document.getElementById('staff-pes-filter-toggle-btn');
+  if (!wrapper || !btn) return;
+  
+  const isHidden = (wrapper.style.display === 'none');
+  if (isHidden) {
+    wrapper.style.display = 'block';
+    btn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+      <span>Hide Filter</span>
+    `;
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-secondary');
+  } else {
+    wrapper.style.display = 'none';
+    btn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Show Filter</span>
+    `;
+    btn.classList.remove('btn-secondary');
+    btn.classList.add('btn-primary');
+  }
+}
+
 function applyPesFilters() {
   const tbody = document.getElementById('staff-pes-table-body');
   const thead = document.getElementById('staff-pes-table-head');
@@ -10360,6 +10451,12 @@ async function deletePesScorecard(id) {
     console.error("Failed to delete scorecard:", err);
     alert(err.message || "Failed to delete scorecard");
   }
+}
+
+function toggleSidebarCollapse() {
+  document.body.classList.toggle('sidebar-collapsed');
+  const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+  localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
 }
 
 

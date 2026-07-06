@@ -54,6 +54,11 @@
   <div id="app-view" class="app-container" style="display: none;">
     <!-- Sidebar -->
     <aside class="sidebar">
+      <!-- Floating collapse toggle button -->
+      <button id="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" style="position: absolute; right: -12px; top: 32px; width: 24px; height: 24px; border-radius: 50%; background: var(--bg-secondary); border: 1px solid rgba(255, 255, 255, 0.15); color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: all 0.2s ease;" title="Toggle Sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon" style="transition: transform 0.3s ease;"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+
       <div class="sidebar-brand">
         <img src="logo.png" alt="IQAC Logo" class="sidebar-logo-img">
         <span class="sidebar-title">IQAC Checklist</span>
@@ -1929,8 +1934,20 @@
           </div>
           
           <div id="staff-pes-table-container">
+            <!-- Filters Toggle Control Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                Dashboard Filters & Parameters
+              </h4>
+              <button class="btn btn-secondary btn-sm" id="staff-pes-filter-toggle-btn" onclick="toggleStaffPesFilters()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 8px; padding: 6px 12px; font-size: 12.5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                <span>Hide Filter</span>
+              </button>
+            </div>
+
             <!-- Dynamic Filters panel -->
-            <div class="glass-panel" style="padding: 24px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
+            <div id="staff-pes-filters-wrapper" class="glass-panel" style="padding: 24px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
                 
                 <!-- 1st Box: Department -->
@@ -2732,6 +2749,44 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeAddRecordModal()">Cancel</button>
           <button type="submit" class="btn btn-primary" id="record-submit-btn">Save Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: EDIT EWYL HOURS LOG ENTRY ================= -->
+  <div id="ewyl-edit-log-modal" class="modal-overlay" style="z-index: 10002;">
+    <div class="modal-container glass-panel" style="max-width: 480px; padding: 28px; border-radius: 16px; border: 1px solid var(--card-border); box-shadow: var(--shadow-lg); background: #ffffff;">
+      <h3 style="font-weight: 700; font-size: 18px; color: var(--text-main); margin-bottom: 4px;">Update Hours Entry</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Modify the working hours and description for this log record.</p>
+      
+      <form id="ewyl-edit-log-form" onsubmit="saveEwylHoursLogFromModal(event)">
+        <input type="hidden" id="ewyl-editmodal-id">
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="ewyl-editmodal-date" style="font-weight: 600; margin-bottom: 6px; display: block;">Working Date</label>
+          <input type="date" id="ewyl-editmodal-date" class="form-control" style="height: 38px; padding-left: 10px;" required>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="ewyl-editmodal-in" style="font-weight: 600; margin-bottom: 6px; display: block;">IN Time (Arrival)</label>
+            <input type="time" id="ewyl-editmodal-in" class="form-control" style="height: 38px; padding-left: 10px;" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ewyl-editmodal-out" style="font-weight: 600; margin-bottom: 6px; display: block;">OUT Time (Departure)</label>
+            <input type="time" id="ewyl-editmodal-out" class="form-control" style="height: 38px; padding-left: 10px;" required>
+          </div>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="ewyl-editmodal-work-done" style="font-weight: 600; margin-bottom: 6px; display: block;">Brief Description of Work Done</label>
+          <textarea id="ewyl-editmodal-work-done" class="form-control" style="height: 80px; min-height: 80px; padding: 10px; resize: vertical;" placeholder="Brief details of work completed..." required></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="closeEwylEditLogModal()" style="padding: 10px 20px; font-size: 13.5px; font-weight: 600; border-radius: 8px;">Cancel</button>
+          <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 13.5px; font-weight: 600; border-radius: 8px;">Update Entry</button>
         </div>
       </form>
     </div>

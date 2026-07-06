@@ -332,6 +332,7 @@ a:hover {
   position: fixed;
   height: 100vh;
   z-index: 10;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-brand {
@@ -465,6 +466,7 @@ a:hover {
   min-width: 0;
   max-width: calc(100% - var(--sidebar-width));
   width: calc(100% - var(--sidebar-width));
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .subview {
@@ -1618,4 +1620,46 @@ input:checked + .slider:before {
   font-size: 13.5px;
   font-weight: bold;
   line-height: 1.4;
+}
+
+/* Sidebar collapsed state (desktop/tablet) */
+@media (min-width: 769px) {
+  body.sidebar-collapsed {
+    --sidebar-width: 80px;
+  }
+  body.sidebar-collapsed .sidebar-title,
+  body.sidebar-collapsed .user-info,
+  body.sidebar-collapsed .sidebar-brand span,
+  body.sidebar-collapsed .menu-item a span,
+  body.sidebar-collapsed #common-uac-menu span {
+    display: none !important;
+  }
+  body.sidebar-collapsed .sidebar-brand {
+    padding: 0;
+    justify-content: center;
+  }
+  body.sidebar-collapsed .menu-item a {
+    justify-content: center;
+    padding: 12px;
+  }
+  body.sidebar-collapsed .sidebar-user {
+    padding: 16px 0;
+    justify-content: center;
+  }
+  body.sidebar-collapsed #sidebar-collapse-btn .chevron-icon {
+    transform: rotate(180deg);
+  }
+}
+
+#sidebar-collapse-btn:hover {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+}
+
+@media (max-width: 768px) {
+  #sidebar-collapse-btn {
+    display: none !important;
+  }
 }
