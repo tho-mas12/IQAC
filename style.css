@@ -1663,3 +1663,23 @@ input:checked + .slider:before {
     display: none !important;
   }
 }
+
+/* Pulsing/Blinking collapse arrow indicator */
+@keyframes pulse-arrow {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.15);
+    background-color: var(--bg-secondary);
+    color: #94a3b8;
+  }
+  50% {
+    box-shadow: 0 0 15px var(--primary);
+    border-color: var(--primary);
+    background-color: var(--primary);
+    color: #ffffff;
+  }
+}
+
+#sidebar-collapse-btn {
+  animation: pulse-arrow 2.5s infinite ease-in-out;
+}

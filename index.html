@@ -350,8 +350,20 @@
             </button>
           </div>
 
+          <!-- Filters Toggle Control Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Department Filters
+            </h4>
+            <button class="btn btn-primary btn-sm" id="staff-departments-filter-toggle-btn" onclick="toggleStaffDepartmentsFilters()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 8px; padding: 6px 12px; font-size: 12.5px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Show Filter</span>
+            </button>
+          </div>
+
           <!-- Filters -->
-          <div class="filter-bar">
+          <div id="staff-departments-filters-wrapper" class="filter-bar" style="display: none; margin-bottom: 24px;">
             <div class="form-group filter-search" style="margin-bottom: 0;">
               <div class="input-wrapper">
                 <span class="input-icon">
@@ -414,8 +426,20 @@
             </div>
           </div>
 
+          <!-- Filters Toggle Control Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Checklist Filters
+            </h4>
+            <button class="btn btn-primary btn-sm" id="staff-checklist-filter-toggle-btn" onclick="toggleStaffChecklistFilters()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 8px; padding: 6px 12px; font-size: 12.5px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Show Filter</span>
+            </button>
+          </div>
+
           <!-- Filters -->
-          <div class="filter-bar">
+          <div id="staff-checklist-filters-wrapper" class="filter-bar" style="display: none; margin-bottom: 24px;">
             <div class="form-group filter-search" style="margin-bottom: 0;">
               <div class="input-wrapper">
                 <span class="input-icon">
@@ -737,8 +761,20 @@
             </div>
           </div>
 
+          <!-- Filters Toggle Control Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Involvement Filters
+            </h4>
+            <button class="btn btn-primary btn-sm" id="staff-involvement-filter-toggle-btn" onclick="toggleStaffInvolvementFilters()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 8px; padding: 6px 12px; font-size: 12.5px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Show Filter</span>
+            </button>
+          </div>
+
           <!-- Restructured Filters Panel -->
-          <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
+          <div id="staff-involvement-filters-wrapper" class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff; display: none;">
             <h5 style="margin-bottom: 12px; font-weight: 600; color: var(--primary);">Filter Options</h5>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
               <!-- 1. Responsibility Filter -->
@@ -906,8 +942,20 @@
             </div>
           </div>
 
+          <!-- Filters Toggle Control Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Tentative Plan Filters
+            </h4>
+            <button class="btn btn-primary btn-sm" id="staff-tentative-filter-toggle-btn" onclick="toggleStaffTentativeFilters()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 8px; padding: 6px 12px; font-size: 12.5px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Show Filter</span>
+            </button>
+          </div>
+
           <!-- Filters Panel -->
-          <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
+          <div id="staff-tentative-filters-wrapper" class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff; display: none;">
             <h5 style="margin-bottom: 12px; font-weight: 600; color: var(--primary);">Filter Options</h5>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
               <!-- 1. Shift Filter -->
@@ -1541,8 +1589,20 @@
             </div>
           </div>
 
+          <!-- Filters Toggle Control Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              College Event Filters
+            </h4>
+            <button class="btn btn-primary btn-sm" id="staff-college-events-filter-toggle-btn" onclick="toggleStaffCollegeEventsFilters()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 8px; padding: 6px 12px; font-size: 12.5px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Show Filter</span>
+            </button>
+          </div>
+
           <!-- Dynamic Filters panel -->
-          <div class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
+          <div id="staff-college-events-filters-wrapper" class="glass-panel" style="padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff; display: none;">
             <h5 style="margin-bottom: 12px; font-weight: 600; color: var(--primary);">Filter Options</h5>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
               <!-- 1. Department Filter -->
@@ -1940,14 +2000,14 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary);"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                 Dashboard Filters & Parameters
               </h4>
-              <button class="btn btn-secondary btn-sm" id="staff-pes-filter-toggle-btn" onclick="toggleStaffPesFilters()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 8px; padding: 6px 12px; font-size: 12.5px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
-                <span>Hide Filter</span>
+              <button class="btn btn-primary btn-sm" id="staff-pes-filter-toggle-btn" onclick="toggleStaffPesFilters()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 8px; padding: 6px 12px; font-size: 12.5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>Show Filter</span>
               </button>
             </div>
 
             <!-- Dynamic Filters panel -->
-            <div id="staff-pes-filters-wrapper" class="glass-panel" style="padding: 24px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff;">
+            <div id="staff-pes-filters-wrapper" class="glass-panel" style="padding: 24px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 24px; background: #ffffff; display: none;">
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
                 
                 <!-- 1st Box: Department -->
