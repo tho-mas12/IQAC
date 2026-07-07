@@ -388,10 +388,14 @@ async function switchSubView(viewId) {
     await renderManageEvents();
   } else if (viewId === 'user-action-plan') {
     document.getElementById('subview-user-action-plan').style.display = 'block';
-    document.getElementById('menu-user-action-plan').classList.add('active');
-    document.getElementById('header-title').innerText = 'Department Action Plan';
+    const menuEl = document.getElementById('menu-user-action-plan');
+    if (menuEl) menuEl.classList.add('active');
+    const menuElStaff = document.getElementById('menu-staff-action-plan');
+    if (menuElStaff) menuElStaff.classList.add('active');
+    document.getElementById('header-title').innerText = 'Department Action Plan Form';
     await loadDepartments();
-    renderUserActionPlan();
+    await loadInvolvementData();
+    renderUserActionPlanForm();
   } else if (viewId === 'user-pes') {
     document.getElementById('subview-user-pes').style.display = 'block';
     document.getElementById('menu-user-pes').classList.add('active');
@@ -464,16 +468,6 @@ async function switchSubView(viewId) {
     document.getElementById('header-title').innerText = 'IQAC Public Activity Checklist Status';
     await loadEvents();
     renderPublicStatusDashboard();
-  } else if (viewId === 'user-action-plan') {
-    document.getElementById('subview-user-action-plan').style.display = 'block';
-    const menuEl = document.getElementById('menu-user-action-plan');
-    if (menuEl) menuEl.classList.add('active');
-    const menuElStaff = document.getElementById('menu-staff-action-plan');
-    if (menuElStaff) menuElStaff.classList.add('active');
-    document.getElementById('header-title').innerText = 'Department Action Plan Form';
-    await loadDepartments();
-    await loadInvolvementData();
-    renderUserActionPlanForm();
   } else if (viewId === 'staff-ewyl') {
     document.getElementById('subview-staff-ewyl').style.display = 'block';
     const menuEl = document.getElementById('menu-staff-ewyl');
@@ -5179,7 +5173,7 @@ function loadActionPlanFromCategory(category) {
     // Populate custom rows
     const defaultLabels = partAFields.map(f => f.label.toLowerCase());
     partARecords.forEach(r => {
-      const isDefaultRow = defaultLabels.includes(r.col2.toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 23);
+      const isDefaultRow = defaultLabels.includes((r.col2 || '').toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 23);
       if (!isDefaultRow) {
         addUserPlanPartARow(r.col1, r.col2, r.col3, false);
       }
@@ -5204,7 +5198,7 @@ function loadActionPlanFromCategory(category) {
     // Populate custom rows
     const defaultLabels = partBFields.map(f => f.label.toLowerCase());
     partBRecords.forEach(r => {
-      const isDefaultRow = defaultLabels.includes(r.col2.toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 19);
+      const isDefaultRow = defaultLabels.includes((r.col2 || '').toLowerCase()) || (parseInt(r.col1) >= 1 && parseInt(r.col1) <= 19);
       if (!isDefaultRow) {
         addUserPlanPartBRow(r.col1, r.col2, r.col3, r.col4, r.col5, false);
       }
