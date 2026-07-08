@@ -9250,6 +9250,7 @@ function renderStaffPesPage() {
 
 // ---------------- MUTUAL EXCLUSION FILTER HANDLERS ----------------
 function onResParamFilterChange() {
+  document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
   document.getElementById('staff-pes-filter-innovation').value = '';
   document.getElementById('staff-pes-filter-placement').value = '';
@@ -9257,7 +9258,19 @@ function onResParamFilterChange() {
   applyPesFilters();
 }
 
+function onTlpSelectChange() {
+  document.getElementById('staff-pes-filter-res-param').value = '';
+  document.getElementById('staff-pes-filter-innovation').value = '';
+  document.getElementById('staff-pes-filter-placement').value = '';
+  document.getElementById('staff-pes-filter-collab').value = '';
+  applyPesFilters();
+}
+
 function onTlpSearchChange() {
+  const selectEl = document.getElementById('staff-pes-filter-tlp-select');
+  if (selectEl && !selectEl.value) {
+    selectEl.value = 'all-staff';
+  }
   document.getElementById('staff-pes-filter-res-param').value = '';
   document.getElementById('staff-pes-filter-innovation').value = '';
   document.getElementById('staff-pes-filter-placement').value = '';
@@ -9267,6 +9280,7 @@ function onTlpSearchChange() {
 
 function onInnovationFilterChange() {
   document.getElementById('staff-pes-filter-res-param').value = '';
+  document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
   document.getElementById('staff-pes-filter-placement').value = '';
   document.getElementById('staff-pes-filter-collab').value = '';
@@ -9275,6 +9289,7 @@ function onInnovationFilterChange() {
 
 function onPlacementFilterChange() {
   document.getElementById('staff-pes-filter-res-param').value = '';
+  document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
   document.getElementById('staff-pes-filter-innovation').value = '';
   document.getElementById('staff-pes-filter-collab').value = '';
@@ -9283,6 +9298,7 @@ function onPlacementFilterChange() {
 
 function onCollabFilterChange() {
   document.getElementById('staff-pes-filter-res-param').value = '';
+  document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
   document.getElementById('staff-pes-filter-innovation').value = '';
   document.getElementById('staff-pes-filter-placement').value = '';
@@ -9292,6 +9308,7 @@ function onCollabFilterChange() {
 function clearAllPesFilters() {
   document.getElementById('staff-pes-filter-dept').value = '';
   document.getElementById('staff-pes-filter-res-param').value = '';
+  document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
   document.getElementById('staff-pes-filter-innovation').value = '';
   document.getElementById('staff-pes-filter-placement').value = '';
@@ -9459,6 +9476,7 @@ function applyPesFilters() {
   const deptFilter = document.getElementById('staff-pes-filter-dept').value;
   const resParamFilter = document.getElementById('staff-pes-filter-res-param').value;
   const tlpSearchFilter = document.getElementById('staff-pes-filter-tlp-search').value.toLowerCase().trim();
+  const tlpSelectFilter = document.getElementById('staff-pes-filter-tlp-select').value;
   const innovationFilter = document.getElementById('staff-pes-filter-innovation').value;
   const placementFilter = document.getElementById('staff-pes-filter-placement').value;
   const collabFilter = document.getElementById('staff-pes-filter-collab').value;
@@ -9554,8 +9572,8 @@ function applyPesFilters() {
     tbody.appendChild(trTotal);
   }
   
-  // Case B: Teaching-Learning Pedagogy text search
-  else if (tlpSearchFilter) {
+  // Case B: Teaching-Learning Pedagogy select or search
+  else if (tlpSelectFilter === 'all-staff' || tlpSearchFilter) {
     const totalRowEl = document.getElementById('staff-pes-total-row');
     if (totalRowEl) totalRowEl.style.display = 'none';
     if (titleEl) {
@@ -9583,7 +9601,7 @@ function applyPesFilters() {
       const data = p.data || {};
       const facultyList = data.faculty_compliance || [];
       facultyList.forEach(f => {
-        if (f.name.toLowerCase().includes(tlpSearchFilter)) {
+        if (!tlpSearchFilter || f.name.toLowerCase().includes(tlpSearchFilter)) {
           totals.tlpOdd += Number(f.tlp_odd) || 0;
           totals.tlpEven += Number(f.tlp_even) || 0;
           totals.assOdd += Number(f.assess_odd) || 0;

@@ -2040,8 +2040,12 @@
                 </div>
                 
                 <!-- 3rd Box: Teaching-Learning Pedagogy (TLP) -->
-                <div class="form-group" style="margin: 0;">
-                  <label class="form-label" style="font-weight: 700; color: var(--text-main); margin-bottom: 6px; display: block;">Teaching-Learning Pedagogy (TLP)</label>
+                <div class="form-group" style="margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                  <label class="form-label" style="font-weight: 700; color: var(--text-main); margin: 0;">Teaching-Learning Pedagogy (TLP)</label>
+                  <select id="staff-pes-filter-tlp-select" class="form-select" onchange="onTlpSelectChange()" style="height: 45px; padding: 8px 36px 8px 12px;">
+                    <option value="">Select View Option</option>
+                    <option value="all-staff">All Staff Compliance List</option>
+                  </select>
                   <input type="text" id="staff-pes-filter-tlp-search" class="form-control" placeholder="Search Faculty Name..." oninput="onTlpSearchChange()" style="height: 45px; padding-left: 12px;">
                 </div>
                 
