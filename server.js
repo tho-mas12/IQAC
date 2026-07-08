@@ -374,7 +374,8 @@ function initializeDatabase() {
         'staff_involvement_records',
         'ewyl_students',
         'ewyl_hours',
-        'college_programs'
+        'college_programs',
+        'pes_scorecards'
       ];
       secureTables.forEach(table => {
         db.run(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`, [], (err) => {
