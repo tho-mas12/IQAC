@@ -2328,6 +2328,82 @@ function renderStaffInvolvementRestructured() {
     return;
   }
 
+  if (selectedResp === 'Clubs') {
+    headersHtml = `
+      <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--card-border);">
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Department Name</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Shift</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Head / Coordinator</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Club Name</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Nature of Club (Technical/Cultural/Domain/others)</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Faculty Assigned</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 150px;">Action</th>
+      </tr>
+    `;
+    thead.innerHTML = headersHtml;
+
+    filteredCategories.forEach(category => {
+      const info = getCleanDeptAndShift(category);
+      const deptName = info.department;
+      const shift = info.shift;
+      const coordinator = category.coordinator || '-';
+      const viewButtonHtml = `
+        <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
+          <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+            <button class="btn btn-primary btn-xs" onclick="viewActionPlanFromStaff('${category.id}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">
+              View Data
+            </button>
+            <button class="btn btn-danger btn-xs" onclick="confirmDeleteActionPlan('${category.id}', \`${escapeHtml(deptName).replace(/'/g, "\\'")}\`, '${shift}')" style="padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px;" title="Delete Action Plan">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
+          </div>
+        </td>
+      `;
+
+      const matchingRecords = (state.involvementRecords || []).filter(r => 
+        r.category_id === category.id &&
+        r.section_type === 'Clubs'
+      );
+
+      if (matchingRecords.length > 0) {
+        matchingRecords.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--border)';
+          tr.style.transition = 'background 0.2s';
+          tr.onmouseover = () => { tr.style.background = '#f8fafc'; };
+          tr.onmouseout = () => { tr.style.background = 'transparent'; };
+
+          tr.innerHTML = `
+            <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main); font-size: 13px;">${escapeHtml(deptName)}</td>
+            <td style="padding: 12px 16px; font-size: 13px;"><span class="badge ${shift === 'Shift 1' ? 'badge-primary' : (shift === 'Shift 2' ? 'badge-secondary' : 'badge-success')}">${escapeHtml(shift)}</span></td>
+            <td style="padding: 12px 16px; color: var(--text-main); font-size: 13px;">${escapeHtml(coordinator)}</td>
+            <td style="padding: 12px 16px; font-size: 13px; font-weight: 500;">${escapeHtml(r.col2 || '-')}</td>
+            <td style="padding: 12px 16px; font-size: 13px;">${escapeHtml(r.col3 || '-')}</td>
+            <td style="padding: 12px 16px; font-size: 13px; color: var(--primary); font-weight: 500;">${escapeHtml(r.col4 || '-')}</td>
+            ${viewButtonHtml}
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--border)';
+        tr.style.transition = 'background 0.2s';
+        tr.onmouseover = () => { tr.style.background = '#f8fafc'; };
+        tr.onmouseout = () => { tr.style.background = 'transparent'; };
+
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main); font-size: 13px;">${escapeHtml(deptName)}</td>
+          <td style="padding: 12px 16px; font-size: 13px;"><span class="badge ${shift === 'Shift 1' ? 'badge-primary' : (shift === 'Shift 2' ? 'badge-secondary' : 'badge-success')}">${escapeHtml(shift)}</span></td>
+          <td style="padding: 12px 16px; color: var(--text-main); font-size: 13px;">${escapeHtml(coordinator)}</td>
+          <td colspan="3" style="padding: 12px 16px; font-size: 13px; color: var(--text-muted); font-style: italic; text-align: center;">Not Assigned</td>
+          ${viewButtonHtml}
+        `;
+        tbody.appendChild(tr);
+      }
+    });
+    return;
+  }
+
   filteredCategories.forEach(category => {
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid var(--border)';
@@ -2493,48 +2569,86 @@ async function exportRestructuredInvolvementsExcel() {
         ]);
       });
     } else {
-      csvRows.push([
-        escapeCsv('Department Name'),
-        escapeCsv('Shift'),
-        escapeCsv('Head / Coordinator'),
-        escapeCsv(`Data (${selectedResp})`)
-      ]);
-
-      filteredCats.forEach(c => {
-        let matchingRecords = [];
-        if (selectedResp === 'Clubs' || selectedResp === 'Class Mentors') {
-          matchingRecords = (state.involvementRecords || []).filter(r => 
-            r.category_id === c.id &&
-            r.section_type === selectedResp
-          );
-        } else {
-          matchingRecords = (state.involvementRecords || []).filter(r => 
-            r.category_id === c.id &&
-            r.section_type === 'Part A' &&
-            r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
-          );
-        }
-
-        let dataText = '';
-        if (matchingRecords.length > 0) {
-          if (selectedResp === 'Clubs') {
-            dataText = matchingRecords.map(r => `${r.col2 || '-'} (${r.col4 || '-'})`).join('; ');
-          } else if (selectedResp === 'Class Mentors') {
-            dataText = matchingRecords.map(r => `${r.col1 || '-'}: ${r.col2 || '-'}`).join('; ');
-          } else {
-            dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
-          }
-        } else {
-          dataText = 'Not Assigned';
-        }
-
+      if (selectedResp === 'Clubs') {
         csvRows.push([
-          escapeCsv(c.department || c.name),
-          escapeCsv(c.shift || ''),
-          escapeCsv(c.coordinator || '-'),
-          escapeCsv(dataText)
+          escapeCsv('Department Name'),
+          escapeCsv('Shift'),
+          escapeCsv('Head / Coordinator'),
+          escapeCsv('Club Name'),
+          escapeCsv('Nature of Club (Technical/Cultural/Domain/others)'),
+          escapeCsv('Faculty Assigned')
         ]);
-      });
+
+        filteredCats.forEach(c => {
+          const matchingRecords = (state.involvementRecords || []).filter(r => 
+            r.category_id === c.id &&
+            r.section_type === 'Clubs'
+          );
+
+          if (matchingRecords.length > 0) {
+            matchingRecords.forEach(r => {
+              csvRows.push([
+                escapeCsv(c.department || c.name),
+                escapeCsv(c.shift || ''),
+                escapeCsv(c.coordinator || '-'),
+                escapeCsv(r.col2 || '-'),
+                escapeCsv(r.col3 || '-'),
+                escapeCsv(r.col4 || '-')
+              ]);
+            });
+          } else {
+            csvRows.push([
+              escapeCsv(c.department || c.name),
+              escapeCsv(c.shift || ''),
+              escapeCsv(c.coordinator || '-'),
+              escapeCsv('Not Assigned'),
+              escapeCsv('Not Assigned'),
+              escapeCsv('Not Assigned')
+            ]);
+          }
+        });
+      } else {
+        csvRows.push([
+          escapeCsv('Department Name'),
+          escapeCsv('Shift'),
+          escapeCsv('Head / Coordinator'),
+          escapeCsv(`Data (${selectedResp})`)
+        ]);
+
+        filteredCats.forEach(c => {
+          let matchingRecords = [];
+          if (selectedResp === 'Class Mentors') {
+            matchingRecords = (state.involvementRecords || []).filter(r => 
+              r.category_id === c.id &&
+              r.section_type === selectedResp
+            );
+          } else {
+            matchingRecords = (state.involvementRecords || []).filter(r => 
+              r.category_id === c.id &&
+              r.section_type === 'Part A' &&
+              r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
+            );
+          }
+
+          let dataText = '';
+          if (matchingRecords.length > 0) {
+            if (selectedResp === 'Class Mentors') {
+              dataText = matchingRecords.map(r => `${r.col1 || '-'}: ${r.col2 || '-'}`).join('; ');
+            } else {
+              dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+            }
+          } else {
+            dataText = 'Not Assigned';
+          }
+
+          csvRows.push([
+            escapeCsv(c.department || c.name),
+            escapeCsv(c.shift || ''),
+            escapeCsv(c.coordinator || '-'),
+            escapeCsv(dataText)
+          ]);
+        });
+      }
     }
 
     const csvContent = csvRows.map(e => e.join(",")).join("\n");
@@ -2587,42 +2701,72 @@ async function exportRestructuredInvolvementsPDF() {
         ]);
       });
     } else {
-      tableHeaders = [['Department Name', 'Shift', 'Head / Coordinator', `Data (${selectedResp})`]];
-      filteredCats.forEach(c => {
-        let matchingRecords = [];
-        if (selectedResp === 'Clubs' || selectedResp === 'Class Mentors') {
-          matchingRecords = (state.involvementRecords || []).filter(r => 
+      if (selectedResp === 'Clubs') {
+        tableHeaders = [['Department Name', 'Shift', 'Head / Coordinator', 'Club Name', 'Nature of Club (Technical/Cultural/Domain/others)', 'Faculty Assigned']];
+        filteredCats.forEach(c => {
+          const matchingRecords = (state.involvementRecords || []).filter(r => 
             r.category_id === c.id &&
-            r.section_type === selectedResp
+            r.section_type === 'Clubs'
           );
-        } else {
-          matchingRecords = (state.involvementRecords || []).filter(r => 
-            r.category_id === c.id &&
-            r.section_type === 'Part A' &&
-            r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
-          );
-        }
 
-        let dataText = '';
-        if (matchingRecords.length > 0) {
-          if (selectedResp === 'Clubs') {
-            dataText = matchingRecords.map(r => `${r.col2 || '-'} (${r.col4 || '-'})`).join('\n');
-          } else if (selectedResp === 'Class Mentors') {
-            dataText = matchingRecords.map(r => `${r.col1 || '-'}: ${r.col2 || '-'}`).join('\n');
+          if (matchingRecords.length > 0) {
+            matchingRecords.forEach(r => {
+              tableBody.push([
+                c.department || c.name,
+                c.shift || '',
+                c.coordinator || '-',
+                r.col2 || '-',
+                r.col3 || '-',
+                r.col4 || '-'
+              ]);
+            });
           } else {
-            dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+            tableBody.push([
+              c.department || c.name,
+              c.shift || '',
+              c.coordinator || '-',
+              'Not Assigned',
+              'Not Assigned',
+              'Not Assigned'
+            ]);
           }
-        } else {
-          dataText = 'Not Assigned';
-        }
+        });
+      } else {
+        tableHeaders = [['Department Name', 'Shift', 'Head / Coordinator', `Data (${selectedResp})`]];
+        filteredCats.forEach(c => {
+          let matchingRecords = [];
+          if (selectedResp === 'Class Mentors') {
+            matchingRecords = (state.involvementRecords || []).filter(r => 
+              r.category_id === c.id &&
+              r.section_type === selectedResp
+            );
+          } else {
+            matchingRecords = (state.involvementRecords || []).filter(r => 
+              r.category_id === c.id &&
+              r.section_type === 'Part A' &&
+              r.col2 && r.col2.trim().toLowerCase() === selectedResp.trim().toLowerCase()
+            );
+          }
 
-        tableBody.push([
-          c.department || c.name,
-          c.shift || '',
-          c.coordinator || '-',
-          dataText
-        ]);
-      });
+          let dataText = '';
+          if (matchingRecords.length > 0) {
+            if (selectedResp === 'Class Mentors') {
+              dataText = matchingRecords.map(r => `${r.col1 || '-'}: ${r.col2 || '-'}`).join('\n');
+            } else {
+              dataText = matchingRecords.map(r => r.col3 || '-').join(', ');
+            }
+          } else {
+            dataText = 'Not Assigned';
+          }
+
+          tableBody.push([
+            c.department || c.name,
+            c.shift || '',
+            c.coordinator || '-',
+            dataText
+          ]);
+        });
+      }
     }
 
     if (tableBody.length === 0) {
