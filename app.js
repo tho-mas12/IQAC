@@ -287,7 +287,11 @@ document.getElementById('login-form').addEventListener('submit', async function(
     
     loginUser(user);
   } catch (err) {
-    // Error is already alerted in fetchAPI
+    console.error("Login submission error:", err);
+    // If the error was from fetchAPI it was already alerted. But if loginUser or anything else failed, alert here.
+    if (err.message && !err.message.includes('HTTP error') && !err.message.includes('Invalid username')) {
+      alert(`Login error: ${err.message}`);
+    }
   }
 });
 
@@ -333,9 +337,14 @@ function logout() {
 }
 
 function checkSession() {
-  const session = localStorage.getItem('iqac_session');
-  if (session) {
-    loginUser(JSON.parse(session));
+  try {
+    const session = localStorage.getItem('iqac_session');
+    if (session && session !== 'undefined') {
+      loginUser(JSON.parse(session));
+    }
+  } catch (e) {
+    console.error("Session restore failed:", e);
+    localStorage.removeItem('iqac_session');
   }
 }
 

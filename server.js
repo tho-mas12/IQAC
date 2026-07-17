@@ -36,6 +36,7 @@ app.use((req, res, next) => {
 const usePostgres = !!process.env.DATABASE_URL;
 let pgClient = null;
 let sqliteDb = null;
+let isDbConnected = false;
 
 if (usePostgres) {
   const { Client } = require('pg');
@@ -43,11 +44,19 @@ if (usePostgres) {
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   });
+  
+  pgClient.on('error', (err) => {
+    console.error('PostgreSQL client error:', err.stack || err.message);
+    isDbConnected = false;
+  });
+
   pgClient.connect((err) => {
     if (err) {
       console.error('Error connecting to Supabase PostgreSQL database:', err.stack);
+      isDbConnected = false;
     } else {
       console.log('Connected to Supabase PostgreSQL database.');
+      isDbConnected = true;
       initializeDatabase();
     }
   });
@@ -65,8 +74,10 @@ if (usePostgres) {
   sqliteDb = new sqlite3.Database(dbPath, (err) => {
     if (err) {
       console.error('Error opening database:', err.message);
+      isDbConnected = false;
     } else {
       console.log('Connected to SQLite database.');
+      isDbConnected = true;
       initializeDatabase();
     }
   });
@@ -83,6 +94,9 @@ function dbRun(sql, params = [], callback = () => {}) {
   if (typeof params === 'function') {
     callback = params;
     params = [];
+  }
+  if (!isDbConnected) {
+    return callback(new Error("Database connection is not established. Please check if your database is active (e.g. Supabase is not paused)."));
   }
   let querySql = convertSqlParams(sql);
   if (usePostgres) {
@@ -109,6 +123,9 @@ function dbGet(sql, params = [], callback = () => {}) {
     callback = params;
     params = [];
   }
+  if (!isDbConnected) {
+    return callback(new Error("Database connection is not established. Please check if your database is active (e.g. Supabase is not paused)."));
+  }
   const querySql = convertSqlParams(sql);
   if (usePostgres) {
     pgClient.query(querySql, params, (err, res) => {
@@ -126,6 +143,9 @@ function dbAll(sql, params = [], callback = () => {}) {
   if (typeof params === 'function') {
     callback = params;
     params = [];
+  }
+  if (!isDbConnected) {
+    return callback(new Error("Database connection is not established. Please check if your database is active (e.g. Supabase is not paused)."));
   }
   const querySql = convertSqlParams(sql);
   if (usePostgres) {
