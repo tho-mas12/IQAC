@@ -543,7 +543,7 @@ function seedDepartments() {
         { id: "s1-pg-mca", name: "MCA", category: "Postgraduate", shift: "Shift 1" },
 
         // Shift 2 - Computer & Data Sciences
-        { id: "s2-cds-aiml", name: "AI & Machine Learning", category: "Computer & Data Sciences", shift: "Shift 2" },
+        { id: "s2-cds-aiml", name: "Artificial Intelligence", category: "Computer & Data Sciences", shift: "Shift 2" },
         { id: "s2-cds-bca", name: "Computer Applications (BCA)", category: "Computer & Data Sciences", shift: "Shift 2" },
         { id: "s2-cds-cs", name: "Computer Science", category: "Computer & Data Sciences", shift: "Shift 2" },
         // Shift 2 - Commerce & Management
@@ -553,6 +553,7 @@ function seedDepartments() {
         { id: "s2-cm-ba", name: "Business Analytics", category: "Commerce & Management", shift: "Shift 2" },
         { id: "s2-cm-sf", name: "Strategic Finance", category: "Commerce & Management", shift: "Shift 2" },
         { id: "s2-cm-ch", name: "Commerce Honours", category: "Commerce & Management", shift: "Shift 2" },
+        { id: "s2-cm-bcom-hons", name: "B.Com Honours", category: "Commerce & Management", shift: "Shift 2" },
         // Shift 2 - Applied Sciences
         { id: "s2-as-biotech", name: "Biotechnology", category: "Applied Sciences", shift: "Shift 2" },
         { id: "s2-as-biochem", name: "Biochemistry", category: "Applied Sciences", shift: "Shift 2" },
@@ -627,6 +628,20 @@ function seedDepartments() {
         seedEvents();
       }
     }
+    
+    // Migration: Update existing "AI & Machine Learning" name to "Artificial Intelligence"
+    db.run("UPDATE departments SET name = 'Artificial Intelligence' WHERE name = 'AI & Machine Learning'", [], (err) => {
+      if (err) console.error("Error migrating AI & Machine Learning department name:", err.message);
+    });
+
+    // Migration: Ensure B.Com Honours is present in departments table
+    db.get("SELECT COUNT(*) as count FROM departments WHERE id = 's2-cm-bcom-hons'", [], (err, checkRow) => {
+      if (checkRow && (checkRow.count === 0 || checkRow.count === '0' || checkRow.count === 0)) {
+        db.run("INSERT INTO departments (id, name, category, shift) VALUES ('s2-cm-bcom-hons', 'B.Com Honours', 'Commerce & Management', 'Shift 2')", [], (err) => {
+          if (err) console.error("Error inserting B.Com Honours department:", err.message);
+        });
+      }
+    });
   });
 }
 

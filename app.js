@@ -1822,6 +1822,17 @@ async function deleteUser(userId) {
 
 // ================= EXPORT UTILITIES (Excel / PDF) =================
 function downloadCSV(csvContent, filename) {
+  if (typeof XLSX !== 'undefined') {
+    try {
+      const xlsxFilename = filename.replace(/\.csv$/i, '.xlsx');
+      const workbook = XLSX.read(csvContent, { type: 'string', raw: true });
+      XLSX.writeFile(workbook, xlsxFilename);
+      return;
+    } catch (err) {
+      console.error("SheetJS Excel export failed, falling back to CSV:", err);
+    }
+  }
+
   const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -10150,14 +10161,8 @@ function exportStaffPesExcel() {
       }
     }
     
-    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "staff_pes_scorecards_summary.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = csvRows.map(row => Array.isArray(row) ? row.join(',') : row).join('\n');
+    downloadCSV(csvContent, "staff_pes_scorecards_summary.csv");
   } catch (err) {
     console.error("Failed to export Excel:", err);
     alert("Failed to export Excel: " + err.message);
@@ -10476,14 +10481,7 @@ function exportSinglePesExcel() {
     csvContent += `${String.fromCharCode(97 + idx)}. ${escapeCsv(c)}\r\n`;
   });
   
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", `pes_scorecard_${pes.department.replace(/\s+/g, '_')}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadCSV(csvContent, `pes_scorecard_${pes.department.replace(/\s+/g, '_')}.csv`);
 }
 
 // ---------------- PES SCORECARD VIEW & DELETE ACTIONS ----------------
