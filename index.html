@@ -113,16 +113,45 @@
             <span>Earn While You Learn</span>
           </a>
         </li>
-        <li class="menu-item" id="menu-staff-college-events">
-          <a onclick="switchSubView('staff-college-events')">
+        <li class="menu-item has-submenu" id="menu-staff-college-events-parent">
+          <a class="submenu-toggle" onclick="toggleSubmenu('submenu-college-events')">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
             <span>College Events</span>
+            <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto; transition: transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
           </a>
+          <ul id="submenu-college-events" class="submenu" style="display: none; list-style: none; padding-left: 28px; margin-top: 4px; margin-bottom: 8px;">
+            <li class="submenu-item" id="menu-staff-college-events" style="margin: 2px 0;">
+              <a onclick="switchSubView('staff-college-events')" style="padding: 8px 12px; font-size: 13px; display: block; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">College Events</a>
+            </li>
+            <li class="submenu-item" id="menu-staff-social-media" style="margin: 2px 0;">
+              <a onclick="switchSubView('staff-social-media')" style="padding: 8px 12px; font-size: 13px; display: block; border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">Social Media</a>
+            </li>
+          </ul>
         </li>
         <li class="menu-item" id="menu-staff-pes">
           <a onclick="switchSubView('staff-pes')">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
             <span>Performance & Excellence (PES)</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Approval Team Menu -->
+      <ul id="approval-menu" class="sidebar-menu" style="display: none;">
+        <li class="menu-item" id="menu-approval-social-media">
+          <a onclick="switchSubView('approval-social-media')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
+            <span>Social Media Approvals</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Media Team Menu -->
+      <ul id="media-menu" class="sidebar-menu" style="display: none;">
+        <li class="menu-item" id="menu-media-social-media">
+          <a onclick="switchSubView('media-social-media')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
+            <span>Social Media Uploads</span>
           </a>
         </li>
       </ul>
@@ -1693,6 +1722,112 @@
           </div>
         </div>
 
+        <!-- ================= STAFF SUB-VIEW: SOCIAL MEDIA ================= -->
+        <div id="subview-staff-social-media" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div class="section-title">
+              <h3>Social Media Invitations</h3>
+              <p class="section-desc">Track, approve, and upload invitation requests to college social media platforms</p>
+            </div>
+            <div>
+              <button class="btn btn-primary" onclick="openAddSocialMediaModal()" style="display: flex; align-items: center; gap: 6px; font-weight: 600; border-radius: 10px; padding: 10px 18px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Invitation
+              </button>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 24px; border-radius: 16px; border: 1px solid var(--card-border); background: #ffffff; box-shadow: var(--shadow-sm); overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; min-width: 900px;">
+              <thead>
+                <tr style="border-bottom: 1.5px solid var(--card-border); background: #f8fafc;">
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">SM.Number</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Date</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Department Name</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Shift</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Programme Title</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Category</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Invitation Forward Date</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Invitation</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Evidence</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px;">Approval Status</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px;">Social Media Status</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 140px;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="social-media-table-body">
+                <!-- JS Dynamic Content -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ================= APPROVAL TEAM SUB-VIEW ================= -->
+        <div id="subview-approval-social-media" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header" style="margin-bottom: 20px;">
+            <div class="section-title">
+              <h3>Social Media Approvals</h3>
+              <p class="section-desc">Review and approve invitation requests submitted by the departments</p>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 24px; border-radius: 16px; border: 1px solid var(--card-border); background: #ffffff; box-shadow: var(--shadow-sm); overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; min-width: 900px;">
+              <thead>
+                <tr style="border-bottom: 1.5px solid var(--card-border); background: #f8fafc;">
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">SM.Number</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Date</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Department Name</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Shift</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Programme Title</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Category</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Invitation Forward Date</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Invitation</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Evidence</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px;">Approval Status</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px;">Social Media Status</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 150px;">Approval Action</th>
+                </tr>
+              </thead>
+              <tbody id="approval-social-media-table-body">
+                <!-- JS Dynamic Content -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ================= MEDIA TEAM SUB-VIEW ================= -->
+        <div id="subview-media-social-media" class="subview animate-fade-in" style="display: none;">
+          <div class="section-header" style="margin-bottom: 20px;">
+            <div class="section-title">
+              <h3>Social Media Upload Queue</h3>
+              <p class="section-desc">Track and upload approved invitations to college social media handles</p>
+            </div>
+          </div>
+
+          <div class="glass-panel" style="padding: 24px; border-radius: 16px; border: 1px solid var(--card-border); background: #ffffff; box-shadow: var(--shadow-sm); overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; min-width: 900px;">
+              <thead>
+                <tr style="border-bottom: 1.5px solid var(--card-border); background: #f8fafc;">
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">SM.Number</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Date</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Department Name</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Shift</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Programme Title</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Category</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Invitation</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 13px;">Evidence</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px;">Media Status</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600; color: var(--text-muted); font-size: 13px; width: 150px;">Media Action</th>
+                </tr>
+              </thead>
+              <tbody id="media-social-media-table-body">
+                <!-- JS Dynamic Content -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- ================= USER SUB-VIEW: PES SCORECARD ================= -->
         <div id="subview-user-pes" class="subview animate-fade-in" style="display: none;">
           <div class="section-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
@@ -2753,6 +2888,8 @@
             <option value="User">User (Department login - Can enter action plans)</option>
             <option value="Staff">Staff (Can update reports & checklists)</option>
             <option value="Director">Director (Can monitor and manage users)</option>
+            <option value="Approval Team">Approval Team (Can review and approve invitations)</option>
+            <option value="Media Team">Media Team (Can publish invitations to social media)</option>
           </select>
         </div>
         <div class="modal-footer">
@@ -2870,6 +3007,224 @@
         <button class="btn btn-secondary" onclick="closeConfirmDeleteModal()" style="padding: 8px 20px; font-size: 13px; font-weight: 600; border-radius: 8px;">Cancel</button>
         <button id="confirm-delete-submit-btn" class="btn btn-danger" style="padding: 8px 20px; font-size: 13px; font-weight: 600; border-radius: 8px;">Yes, Delete</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SOCIAL MEDIA INVITATION CRUD ================= -->
+  <div id="social-media-modal" class="modal-overlay">
+    <div class="modal-container glass-panel" style="padding-top: 40px; max-width: 550px;">
+      <button class="modal-close" onclick="closeSocialMediaModal()" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="background: rgba(37, 99, 235, 0.1); width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: var(--accent);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
+        </div>
+        <h3 id="social-media-modal-title" style="font-weight: 700; font-size: 20px; color: var(--text-main); margin-bottom: 4px;">Add Invitation</h3>
+        <p style="font-size: 13px; color: var(--text-muted);">Enter social media request details</p>
+      </div>
+      <form id="social-media-form" onsubmit="saveSocialMediaInvitation(event)">
+        <input type="hidden" id="social-media-edit-id">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" for="social-media-sm-number">SM.Number</label>
+            <input type="text" id="social-media-sm-number" class="form-control" style="padding-left: 12px; height: 38px;" required placeholder="e.g. SM-101">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" for="social-media-program-title">Programme Title</label>
+            <input type="text" id="social-media-program-title" class="form-control" style="padding-left: 12px; height: 38px;" required>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" for="social-media-dept-select">Department Name</label>
+            <select id="social-media-dept-select" class="form-select" onchange="toggleSmDeptOtherInput(this.value)" style="height: 38px; padding: 0 10px;" required>
+              <!-- Populated dynamically -->
+            </select>
+            <input type="text" id="social-media-dept-other" class="form-control" placeholder="Enter Department Name" style="display: none; margin-top: 8px; padding-left: 12px; height: 38px;">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" for="social-media-shift">Shift (Optional)</label>
+            <input type="text" id="social-media-shift" class="form-control" style="padding-left: 12px; height: 38px;">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" for="social-media-category-select">Category</label>
+            <select id="social-media-category-select" class="form-select" onchange="toggleSmCategoryOtherInput(this.value)" style="height: 38px; padding: 0 10px;" required>
+              <option value="">Select Category</option>
+              <option value="Endowment Lecture">Endowment Lecture</option>
+              <option value="Conference">Conference</option>
+              <option value="Webinar">Webinar</option>
+              <option value="Seminar">Seminar</option>
+              <option value="Orientation">Orientation</option>
+              <option value="Skill Development">Skill Development</option>
+              <option value="VAC">VAC</option>
+              <option value="CC">CC</option>
+              <option value="Induction">Induction</option>
+              <option value="FDP">FDP</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Club Activity">Club Activity</option>
+              <option value="IKS">IKS</option>
+              <option value="Gender Based">Gender Based</option>
+              <option value="others">others</option>
+            </select>
+            <input type="text" id="social-media-category-other" class="form-control" style="padding-left: 12px; height: 38px; margin-top: 8px; display: none;">
+          </div>
+          <div class="form-group" style="margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label class="form-label" for="social-media-date-from">From Date</label>
+              <input type="date" id="social-media-date-from" class="form-control" style="padding-left: 8px; height: 38px; font-size: 12px;" required>
+            </div>
+            <div>
+              <label class="form-label" for="social-media-date-to">To Date (Opt)</label>
+              <input type="date" id="social-media-date-to" class="form-control" style="padding-left: 8px; height: 38px; font-size: 12px;">
+            </div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" for="social-media-forward-date">Invitation Forward Date</label>
+            <input type="date" id="social-media-forward-date" class="form-control" style="padding-left: 12px; height: 38px;" required>
+          </div>
+          <div class="form-group" style="margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label class="form-label" for="social-media-invitation">Invitation</label>
+              <select id="social-media-invitation" class="form-select" style="height: 38px; padding: 0 10px;">
+                <option value="Received">Received</option>
+                <option value="Not Received">Not Received</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="social-media-evidence">Evidence</label>
+              <select id="social-media-evidence" class="form-select" style="height: 38px; padding: 0 10px;">
+                <option value="Not Received">Not Received</option>
+                <option value="Received">Received</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 0; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeSocialMediaModal()">Cancel</button>
+          <button type="submit" id="social-media-submit-btn" class="btn btn-primary">Save Invitation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SOCIAL MEDIA APPROVAL ================= -->
+  <div id="approval-status-modal" class="modal-overlay">
+    <div class="modal-container glass-panel" style="padding-top: 40px; max-width: 500px;">
+      <button class="modal-close" onclick="closeApprovalStatusModal()" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h3 style="font-weight: 700; font-size: 20px; color: var(--text-main); margin-bottom: 4px;">Review Invitation</h3>
+        <p style="font-size: 13px; color: var(--text-muted);">Set approval status and verification details</p>
+      </div>
+      <form id="approval-status-form" onsubmit="submitSocialMediaApproval(event)">
+        <input type="hidden" id="approval-status-id">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-weight: 600;">Invitation Approved</label>
+          <div style="display: flex; gap: 24px; align-items: center; margin-top: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #10b981;">
+              <input type="radio" name="approval-approved-check" value="tick" checked style="accent-color: #10b981;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Yes (Tick)
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #ef4444;">
+              <input type="radio" name="approval-approved-check" value="cross" style="accent-color: #ef4444;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              No (Cross)
+            </label>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-weight: 600;">Invitation Approved Date Options</label>
+          <div style="display: flex; gap: 16px; align-items: center; margin-top: 8px; margin-bottom: 12px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px;">
+              <input type="radio" name="approval-date-option" value="current" checked onchange="toggleApprovalManualDate(false)">
+              Current Time & Date
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px;">
+              <input type="radio" name="approval-date-option" value="manual" onchange="toggleApprovalManualDate(true)">
+              Manual Enter
+            </label>
+          </div>
+          <input type="datetime-local" id="approval-manual-date-val" class="form-control" style="padding-left: 12px; height: 38px; display: none;">
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="approval-approved-by">Invitation Approved By (Read-Only)</label>
+          <input type="text" id="approval-approved-by" class="form-control" style="padding-left: 12px; height: 38px; background: #f3f4f6; color: #4b5563; font-weight: 600;" readonly>
+        </div>
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="approval-status-select" style="font-weight: 600;">Status</label>
+          <select id="approval-status-select" class="form-select" style="height: 38px; padding: 0 10px;" required>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+          </select>
+        </div>
+        <div class="modal-footer" style="padding: 0;">
+          <button type="button" class="btn btn-secondary" onclick="closeApprovalStatusModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Approval</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SOCIAL MEDIA UPLOAD ================= -->
+  <div id="media-status-modal" class="modal-overlay">
+    <div class="modal-container glass-panel" style="padding-top: 40px; max-width: 500px;">
+      <button class="modal-close" onclick="closeMediaStatusModal()" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h3 style="font-weight: 700; font-size: 20px; color: var(--text-main); margin-bottom: 4px;">Update Upload Status</h3>
+        <p style="font-size: 13px; color: var(--text-muted);">Record the social media publishing details</p>
+      </div>
+      <form id="media-status-form" onsubmit="submitSocialMediaUpload(event)">
+        <input type="hidden" id="media-status-id">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-weight: 600;">Invitation Uploaded</label>
+          <div style="display: flex; gap: 24px; align-items: center; margin-top: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #10b981;">
+              <input type="radio" name="media-uploaded-check" value="tick" checked style="accent-color: #10b981;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Yes (Tick)
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #ef4444;">
+              <input type="radio" name="media-uploaded-check" value="cross" style="accent-color: #ef4444;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              No (Cross)
+            </label>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="font-weight: 600;">Invitation Uploaded Date Options</label>
+          <div style="display: flex; gap: 16px; align-items: center; margin-top: 8px; margin-bottom: 12px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px;">
+              <input type="radio" name="media-date-option" value="current" checked onchange="toggleMediaManualDate(false)">
+              Current Time & Date
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13.5px;">
+              <input type="radio" name="media-date-option" value="manual" onchange="toggleMediaManualDate(true)">
+              Manual Enter
+            </label>
+          </div>
+          <input type="datetime-local" id="media-manual-date-val" class="form-control" style="padding-left: 12px; height: 38px; display: none;">
+        </div>
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="media-status-select" style="font-weight: 600;">Status</label>
+          <select id="media-status-select" class="form-select" style="height: 38px; padding: 0 10px;" required>
+            <option value="Pending">Pending</option>
+            <option value="Mark Done">Mark Done</option>
+          </select>
+        </div>
+        <div class="modal-footer" style="padding: 0;">
+          <button type="button" class="btn btn-secondary" onclick="closeMediaStatusModal()">Cancel</button>
+          <button type="submit" class="btn class-btn btn-primary">Update Upload</button>
+        </div>
+      </form>
     </div>
   </div>
 

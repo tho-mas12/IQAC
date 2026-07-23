@@ -173,6 +173,7 @@ let state = {
   selectedEventId: null,
   programSortColumn: 'date',
   programSortOrder: 'desc',
+  socialMediaInvitations: [],
   
   // Checklist filters
   checklistTab: 'all',
@@ -306,22 +307,44 @@ function loginUser(userData) {
   // Toggle side menu views
   if (userData.role === 'Staff') {
     document.getElementById('staff-menu').style.display = 'flex';
+    document.getElementById('approval-menu').style.display = 'none';
+    document.getElementById('media-menu').style.display = 'none';
     document.getElementById('director-menu').style.display = 'none';
     document.getElementById('user-menu').style.display = 'none';
     document.getElementById('common-uac-menu').style.display = 'block';
     switchSubView('staff-dashboard');
   } else if (userData.role === 'Director') {
     document.getElementById('staff-menu').style.display = 'none';
+    document.getElementById('approval-menu').style.display = 'none';
+    document.getElementById('media-menu').style.display = 'none';
     document.getElementById('director-menu').style.display = 'flex';
     document.getElementById('user-menu').style.display = 'none';
     document.getElementById('common-uac-menu').style.display = 'block';
     switchSubView('director-dashboard');
   } else if (userData.role === 'User') {
     document.getElementById('staff-menu').style.display = 'none';
+    document.getElementById('approval-menu').style.display = 'none';
+    document.getElementById('media-menu').style.display = 'none';
     document.getElementById('director-menu').style.display = 'none';
     document.getElementById('user-menu').style.display = 'flex';
     document.getElementById('common-uac-menu').style.display = 'none';
     switchSubView('user-action-plan');
+  } else if (userData.role === 'Approval Team') {
+    document.getElementById('staff-menu').style.display = 'none';
+    document.getElementById('approval-menu').style.display = 'flex';
+    document.getElementById('media-menu').style.display = 'none';
+    document.getElementById('director-menu').style.display = 'none';
+    document.getElementById('user-menu').style.display = 'none';
+    document.getElementById('common-uac-menu').style.display = 'none';
+    switchSubView('approval-social-media');
+  } else if (userData.role === 'Media Team') {
+    document.getElementById('staff-menu').style.display = 'none';
+    document.getElementById('approval-menu').style.display = 'none';
+    document.getElementById('media-menu').style.display = 'flex';
+    document.getElementById('director-menu').style.display = 'none';
+    document.getElementById('user-menu').style.display = 'none';
+    document.getElementById('common-uac-menu').style.display = 'none';
+    switchSubView('media-social-media');
   }
   
   localStorage.setItem('iqac_session', JSON.stringify(userData));
@@ -376,6 +399,13 @@ async function switchSubView(viewId) {
     const shouldShow = (viewId === 'staff-involvement' || viewId === 'staff-tentative-plan' || viewId === 'staff-involvement-detail');
     submenuInvolvement.style.display = shouldShow ? 'block' : 'none';
     const chevron = document.querySelector('#menu-staff-involvement-parent .chevron-icon');
+    if (chevron) chevron.style.transform = shouldShow ? 'rotate(180deg)' : 'rotate(0deg)';
+  }
+  const submenuCollegeEvents = document.getElementById('submenu-college-events');
+  if (submenuCollegeEvents) {
+    const shouldShow = (viewId === 'staff-college-events' || viewId === 'staff-social-media');
+    submenuCollegeEvents.style.display = shouldShow ? 'block' : 'none';
+    const chevron = document.querySelector('#menu-staff-college-events-parent .chevron-icon');
     if (chevron) chevron.style.transform = shouldShow ? 'rotate(180deg)' : 'rotate(0deg)';
   }
   
@@ -494,9 +524,34 @@ async function switchSubView(viewId) {
     document.getElementById('subview-staff-college-events').style.display = 'block';
     const menuEl = document.getElementById('menu-staff-college-events');
     if (menuEl) menuEl.classList.add('active');
+    const parentEl = document.getElementById('menu-staff-college-events-parent');
+    if (parentEl) parentEl.classList.add('active');
     document.getElementById('header-title').innerText = 'College Events';
     await loadCollegePrograms();
     renderCollegePrograms();
+  } else if (viewId === 'staff-social-media') {
+    document.getElementById('subview-staff-social-media').style.display = 'block';
+    const menuEl = document.getElementById('menu-staff-social-media');
+    if (menuEl) menuEl.classList.add('active');
+    const parentEl = document.getElementById('menu-staff-college-events-parent');
+    if (parentEl) parentEl.classList.add('active');
+    document.getElementById('header-title').innerText = 'Social Media Invitations';
+    await loadSocialMediaInvitations();
+    renderSocialMediaInvitations();
+  } else if (viewId === 'approval-social-media') {
+    document.getElementById('subview-approval-social-media').style.display = 'block';
+    const menuEl = document.getElementById('menu-approval-social-media');
+    if (menuEl) menuEl.classList.add('active');
+    document.getElementById('header-title').innerText = 'Social Media Approvals';
+    await loadSocialMediaInvitations();
+    renderApprovalSocialMedia();
+  } else if (viewId === 'media-social-media') {
+    document.getElementById('subview-media-social-media').style.display = 'block';
+    const menuEl = document.getElementById('menu-media-social-media');
+    if (menuEl) menuEl.classList.add('active');
+    document.getElementById('header-title').innerText = 'Social Media Upload Queue';
+    await loadSocialMediaInvitations();
+    renderMediaSocialMedia();
   } else if (viewId === 'user-pes') {
     document.getElementById('subview-user-pes').style.display = 'block';
     const menuEl = document.getElementById('menu-user-pes');
@@ -10752,6 +10807,587 @@ function toggleSidebarCollapse() {
   document.body.classList.toggle('sidebar-collapsed');
   const isCollapsed = document.body.classList.contains('sidebar-collapsed');
   localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
+}
+
+// ================= SOCIAL MEDIA MODULE =================
+
+async function loadSocialMediaInvitations() {
+  state.socialMediaInvitations = await fetchAPI('/social-media');
+}
+
+function toggleSmCategoryOtherInput(val) {
+  const otherInput = document.getElementById('social-media-category-other');
+  if (otherInput) {
+    if (val === 'others') {
+      otherInput.style.display = 'block';
+      otherInput.required = true;
+    } else {
+      otherInput.style.display = 'none';
+      otherInput.required = false;
+      otherInput.value = '';
+    }
+  }
+}
+
+function toggleSmDeptOtherInput(val) {
+  const otherInput = document.getElementById('social-media-dept-other');
+  if (otherInput) {
+    if (val === 'others') {
+      otherInput.style.display = 'block';
+      otherInput.required = true;
+    } else {
+      otherInput.style.display = 'none';
+      otherInput.required = false;
+      otherInput.value = '';
+    }
+  }
+}
+
+function openAddSocialMediaModal() {
+  document.getElementById('social-media-modal-title').innerText = "Add Social Media Request";
+  document.getElementById('social-media-form').reset();
+  document.getElementById('social-media-edit-id').value = '';
+  document.getElementById('social-media-category-other').style.display = 'none';
+
+  // Populate departments dropdown
+  const deptSelect = document.getElementById('social-media-dept-select');
+  if (deptSelect) {
+    const deptNames = Array.from(new Set((state.departments || []).map(d => d.name))).sort();
+    deptSelect.innerHTML = '<option value="">Select Department Name</option>' +
+      deptNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('') +
+      '<option value="others">others</option>';
+  }
+  document.getElementById('social-media-dept-other').style.display = 'none';
+  document.getElementById('social-media-dept-other').value = '';
+  document.getElementById('social-media-dept-other').required = false;
+
+  // Calculate next SM number
+  let nextNum = 1;
+  if (state.socialMediaInvitations && state.socialMediaInvitations.length > 0) {
+    const numbers = state.socialMediaInvitations.map(item => {
+      if (!item.sm_number) return 0;
+      const match = item.sm_number.match(/SM_(\d+)/i) || item.sm_number.match(/SM-(\d+)/i) || item.sm_number.match(/SM(\d+)/i);
+      return match ? parseInt(match[1], 10) : 0;
+    });
+    nextNum = Math.max(...numbers, 0) + 1;
+  }
+  document.getElementById('social-media-sm-number').value = `SM_${nextNum}`;
+
+  document.getElementById('social-media-modal').classList.add('open');
+}
+
+function closeSocialMediaModal() {
+  document.getElementById('social-media-modal').classList.remove('open');
+}
+
+async function saveSocialMediaInvitation(e) {
+  e.preventDefault();
+  const id = document.getElementById('social-media-edit-id').value;
+  const sm_number = document.getElementById('social-media-sm-number').value.trim();
+  const program_title = document.getElementById('social-media-program-title').value.trim();
+  const deptSelect = document.getElementById('social-media-dept-select').value;
+  const deptOther = document.getElementById('social-media-dept-other').value.trim();
+  const department = deptSelect === 'others' ? deptOther : deptSelect;
+  const shift = document.getElementById('social-media-shift').value.trim();
+  
+  const categorySelect = document.getElementById('social-media-category-select').value;
+  const categoryOther = document.getElementById('social-media-category-other').value.trim();
+  const category = categorySelect === 'others' ? categoryOther : categorySelect;
+  
+  const fromDate = document.getElementById('social-media-date-from').value;
+  const toDate = document.getElementById('social-media-date-to').value;
+  const date = toDate ? `${fromDate} to ${toDate}` : fromDate;
+  
+  const invitation_forward_date = document.getElementById('social-media-forward-date').value;
+  const invitation = document.getElementById('social-media-invitation').value;
+  const evidence = document.getElementById('social-media-evidence').value;
+
+  const payload = { sm_number, date, department, shift, program_title, category, invitation_forward_date, invitation, evidence };
+
+  try {
+    if (id) {
+      await fetchAPI(`/social-media/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+      showToast("Social media invitation updated.", "success");
+    } else {
+      await fetchAPI('/social-media', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      showToast("Social media invitation submitted.", "success");
+    }
+    closeSocialMediaModal();
+    await loadSocialMediaInvitations();
+    renderSocialMediaInvitations();
+  } catch (err) {
+    console.error("Failed to save invitation:", err);
+    showToast(err.message || "Failed to save invitation", "error");
+  }
+}
+
+async function editSocialMediaInvitation(id) {
+  const item = state.socialMediaInvitations.find(x => x.id == id);
+  if (!item) return;
+  
+  document.getElementById('social-media-modal-title').innerText = "Edit Social Media Request";
+  document.getElementById('social-media-edit-id').value = item.id;
+  document.getElementById('social-media-sm-number').value = item.sm_number || '';
+  document.getElementById('social-media-program-title').value = item.program_title || '';
+  // Populate and set department dropdown
+  const deptSelect = document.getElementById('social-media-dept-select');
+  if (deptSelect) {
+    const deptNames = Array.from(new Set((state.departments || []).map(d => d.name))).sort();
+    deptSelect.innerHTML = '<option value="">Select Department Name</option>' +
+      deptNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('') +
+      '<option value="others">others</option>';
+    
+    if (deptNames.includes(item.department)) {
+      deptSelect.value = item.department;
+      document.getElementById('social-media-dept-other').style.display = 'none';
+      document.getElementById('social-media-dept-other').value = '';
+      document.getElementById('social-media-dept-other').required = false;
+    } else {
+      deptSelect.value = 'others';
+      document.getElementById('social-media-dept-other').style.display = 'block';
+      document.getElementById('social-media-dept-other').value = item.department || '';
+      document.getElementById('social-media-dept-other').required = true;
+    }
+  }
+  document.getElementById('social-media-shift').value = item.shift || '';
+  
+  const categories = ["Endowment Lecture", "Conference", "Webinar", "Seminar", "Orientation", "Skill Development", "VAC", "CC", "Induction", "FDP", "Workshop", "Club Activity", "IKS", "Gender Based"];
+  if (categories.includes(item.category)) {
+    document.getElementById('social-media-category-select').value = item.category;
+    document.getElementById('social-media-category-other').style.display = 'none';
+    document.getElementById('social-media-category-other').value = '';
+  } else {
+    document.getElementById('social-media-category-select').value = 'others';
+    document.getElementById('social-media-category-other').style.display = 'block';
+    document.getElementById('social-media-category-other').value = item.category || '';
+  }
+  
+  let fromDate = '', toDate = '';
+  if (item.date && item.date.includes(' to ')) {
+    const parts = item.date.split(' to ');
+    fromDate = parts[0];
+    toDate = parts[1];
+  } else {
+    fromDate = item.date || '';
+  }
+  document.getElementById('social-media-date-from').value = fromDate;
+  document.getElementById('social-media-date-to').value = toDate;
+  
+  document.getElementById('social-media-forward-date').value = item.invitation_forward_date || '';
+  document.getElementById('social-media-invitation').value = item.invitation || 'Received';
+  document.getElementById('social-media-evidence').value = item.evidence || 'Not Received';
+  
+  document.getElementById('social-media-modal').classList.add('open');
+}
+
+async function deleteSocialMediaInvitation(id) {
+  const confirmed = await showCustomConfirm(
+    "Delete Invitation Request?",
+    "Are you sure you want to delete this social media invitation request? This cannot be undone."
+  );
+  if (!confirmed) return;
+
+  try {
+    await fetchAPI(`/social-media/${id}`, { method: 'DELETE' });
+    showToast("Social media invitation deleted.", "success");
+    await loadSocialMediaInvitations();
+    renderSocialMediaInvitations();
+  } catch (err) {
+    console.error("Failed to delete invitation:", err);
+    showToast("Failed to delete request", "error");
+  }
+}
+
+function renderSocialMediaInvitations() {
+  const tbody = document.getElementById('social-media-table-body');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  const items = state.socialMediaInvitations || [];
+  
+  if (items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 40px; color: var(--text-muted);">No social media invitations registered.</td></tr>`;
+    return;
+  }
+  
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    
+    // Status Badge Helpers
+    const appBadgeClass = item.approval_status === 'Approved' ? 'badge-success' : 'badge-warning';
+    const mediaBadgeClass = item.media_status === 'Mark Done' ? 'badge-success' : 'badge-warning';
+    
+    const showUpdateNow = (item.approval_status === 'Approved' && item.media_status === 'Mark Done');
+    
+    // Icon for Approved Status
+    const approvedIndicator = item.invitation_approved === 'tick'
+      ? `<span style="color: #10b981; font-weight: bold;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><polyline points="20 6 9 17 4 12"/></svg></span>`
+      : `<span style="color: #ef4444; font-weight: bold;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`;
+
+    // Icon for Uploaded Status
+    const uploadedIndicator = item.invitation_uploaded === 'tick'
+      ? `<span style="color: #10b981; font-weight: bold;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><polyline points="20 6 9 17 4 12"/></svg></span>`
+      : `<span style="color: #ef4444; font-weight: bold;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right:4px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`;
+
+    tr.innerHTML = `
+      <td style="padding: 12px; font-weight: 600; font-size: 13px;">${escapeHtml(item.sm_number || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.date || '')}</td>
+      <td style="padding: 12px; font-weight: 500; font-size: 13px;">${escapeHtml(item.department || '')}</td>
+      <td style="padding: 12px; font-size: 13px;"><span class="badge badge-secondary">${escapeHtml(item.shift || '-')}</span></td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.program_title || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.category || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.invitation_forward_date || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.invitation || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.evidence || '')}</td>
+      <td style="padding: 12px; text-align: center; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span class="badge ${appBadgeClass}">${escapeHtml(item.approval_status || 'Pending')}</span>
+          <div style="display: flex; align-items: center; gap: 4px; font-size: 12px;">${approvedIndicator} ${escapeHtml(item.approval_status === 'Approved' ? 'Approved' : 'Pending')}</div>
+          ${item.approved_by ? `<div style="font-size: 10px; color: var(--text-muted);">By: ${escapeHtml(item.approved_by)}</div>` : ''}
+        </div>
+      </td>
+      <td style="padding: 12px; text-align: center; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span class="badge ${mediaBadgeClass}">${escapeHtml(item.media_status === 'Mark Done' ? 'Mark Done' : 'Pending')}</span>
+          <div style="display: flex; align-items: center; gap: 4px; font-size: 12px;">${uploadedIndicator} ${escapeHtml(item.media_status === 'Mark Done' ? 'Done' : 'Pending')}</div>
+          ${item.uploaded_date ? `<div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(item.uploaded_date)}</div>` : ''}
+        </div>
+      </td>
+      <td style="padding: 12px; text-align: center;">
+        <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+          <button class="btn btn-secondary btn-xs" onclick="editSocialMediaInvitation('${item.id}')" style="padding: 6px;" title="Edit Invitation">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>
+          </button>
+          <button class="btn btn-danger btn-xs" onclick="deleteSocialMediaInvitation('${item.id}')" style="padding: 6px;" title="Delete Invitation">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+          ${showUpdateNow ? `
+            <button class="btn btn-success btn-xs" onclick="transferToCollegeEvents('${item.id}')" style="padding: 4px 8px; font-size: 11px; font-weight: bold; border-radius: 6px;" title="Transfer details to College Events page">
+              Update Now
+            </button>
+          ` : ''}
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ================= APPROVAL TEAM LOGIC =================
+
+function openApprovalStatusModal(id) {
+  const item = state.socialMediaInvitations.find(x => x.id == id);
+  if (!item) return;
+  
+  document.getElementById('approval-status-id').value = item.id;
+  document.getElementById('approval-approved-by').value = state.currentUser ? state.currentUser.name : 'Authority';
+  document.getElementById('approval-status-select').value = (item.approval_status === 'Pending' || !item.approval_status) ? 'Approved' : item.approval_status;
+  
+  // Set radio value for check status (default to tick)
+  const checkVal = (item.invitation_approved === 'cross' || !item.invitation_approved) ? 'tick' : item.invitation_approved;
+  const checkRadios = document.getElementsByName('approval-approved-check');
+  checkRadios.forEach(radio => {
+    if (radio.value === checkVal) radio.checked = true;
+  });
+  
+  // Reset date fields
+  const currentRadio = document.querySelector('input[name="approval-date-option"][value="current"]');
+  if (currentRadio) currentRadio.checked = true;
+  toggleApprovalManualDate(false);
+  
+  document.getElementById('approval-status-modal').classList.add('open');
+}
+
+function closeApprovalStatusModal() {
+  document.getElementById('approval-status-modal').classList.remove('open');
+}
+
+function toggleApprovalManualDate(show) {
+  const el = document.getElementById('approval-manual-date-val');
+  el.style.display = show ? 'block' : 'none';
+  if (show) {
+    const now = new Date();
+    const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    el.value = localIso;
+  }
+}
+
+async function submitSocialMediaApproval(e) {
+  e.preventDefault();
+  const id = document.getElementById('approval-status-id').value;
+  const approval_status = document.getElementById('approval-status-select').value;
+  const approved_by = document.getElementById('approval-approved-by').value;
+  
+  const checkVal = document.querySelector('input[name="approval-approved-check"]:checked').value;
+  
+  const dateOption = document.querySelector('input[name="approval-date-option"]:checked').value;
+  let approved_date = '';
+  if (dateOption === 'current') {
+    approved_date = new Date().toLocaleString();
+  } else {
+    const rawVal = document.getElementById('approval-manual-date-val').value;
+    approved_date = rawVal ? new Date(rawVal).toLocaleString() : new Date().toLocaleString();
+  }
+  
+  const payload = { approval_status, invitation_approved: checkVal, approved_date, approved_by };
+  
+  try {
+    await fetchAPI(`/social-media/${id}/approve`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    showToast("Approval details updated.", "success");
+    closeApprovalStatusModal();
+    await loadSocialMediaInvitations();
+    renderApprovalSocialMedia();
+  } catch (err) {
+    console.error("Failed to approve invitation:", err);
+    showToast("Failed to update approval", "error");
+  }
+}
+
+function renderApprovalSocialMedia() {
+  const tbody = document.getElementById('approval-social-media-table-body');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  const items = state.socialMediaInvitations || [];
+  
+  if (items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 40px; color: var(--text-muted);">No invitation requests registered.</td></tr>`;
+    return;
+  }
+  
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    
+    const appBadgeClass = item.approval_status === 'Approved' ? 'badge-success' : 'badge-warning';
+    const mediaBadgeClass = item.media_status === 'Mark Done' ? 'badge-success' : 'badge-warning';
+    
+    // Check mark or cross indicators
+    const approvedIcon = item.invitation_approved === 'tick'
+      ? `<span style="color:#10b981; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tick</span>`
+      : `<span style="color:#ef4444; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cross</span>`;
+    
+    const uploadedIcon = item.invitation_uploaded === 'tick'
+      ? `<span style="color:#10b981; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tick</span>`
+      : `<span style="color:#ef4444; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cross</span>`;
+
+    tr.innerHTML = `
+      <td style="padding: 12px; font-weight: 600; font-size: 13px;">${escapeHtml(item.sm_number || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.date || '')}</td>
+      <td style="padding: 12px; font-weight: 500; font-size: 13px;">${escapeHtml(item.department || '')}</td>
+      <td style="padding: 12px; font-size: 13px;"><span class="badge badge-secondary">${escapeHtml(item.shift || '-')}</span></td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.program_title || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.category || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.invitation_forward_date || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.invitation || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.evidence || '')}</td>
+      <td style="padding: 12px; text-align: center; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span class="badge ${appBadgeClass}">${escapeHtml(item.approval_status || 'Pending')}</span>
+          <div style="font-size: 11px;">${approvedIcon}</div>
+          ${item.approved_by ? `<div style="font-size: 10px; color: var(--text-muted);">By: ${escapeHtml(item.approved_by)}</div>` : ''}
+          ${item.approved_date ? `<div style="font-size: 9px; color: var(--text-muted);">${escapeHtml(item.approved_date)}</div>` : ''}
+        </div>
+      </td>
+      <td style="padding: 12px; text-align: center; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span class="badge ${mediaBadgeClass}">${escapeHtml(item.media_status === 'Mark Done' ? 'Mark Done' : 'Pending')}</span>
+          <div style="font-size: 11px;">${uploadedIcon}</div>
+          ${item.uploaded_date ? `<div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(item.uploaded_date)}</div>` : ''}
+        </div>
+      </td>
+      <td style="padding: 12px; text-align: center;">
+        <button class="btn btn-primary btn-xs" onclick="openApprovalStatusModal('${item.id}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">
+          Review / Approve
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ================= MEDIA TEAM LOGIC =================
+
+function openMediaStatusModal(id) {
+  const item = state.socialMediaInvitations.find(x => x.id == id);
+  if (!item) return;
+  
+  document.getElementById('media-status-id').value = item.id;
+  document.getElementById('media-status-select').value = item.media_status || 'Pending';
+  
+  // Set radio value for uploaded check status
+  const checkVal = item.invitation_uploaded === 'tick' ? 'tick' : 'cross';
+  const checkRadios = document.getElementsByName('media-uploaded-check');
+  checkRadios.forEach(radio => {
+    if (radio.value === checkVal) radio.checked = true;
+  });
+  
+  // Reset date fields
+  const currentRadio = document.querySelector('input[name="media-date-option"][value="current"]');
+  if (currentRadio) currentRadio.checked = true;
+  toggleMediaManualDate(false);
+  
+  document.getElementById('media-status-modal').classList.add('open');
+}
+
+function closeMediaStatusModal() {
+  document.getElementById('media-status-modal').classList.remove('open');
+}
+
+function toggleMediaManualDate(show) {
+  const el = document.getElementById('media-manual-date-val');
+  el.style.display = show ? 'block' : 'none';
+  if (show) {
+    const now = new Date();
+    const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    el.value = localIso;
+  }
+}
+
+async function submitSocialMediaUpload(e) {
+  e.preventDefault();
+  const id = document.getElementById('media-status-id').value;
+  const media_status = document.getElementById('media-status-select').value;
+  
+  const checkVal = document.querySelector('input[name="media-uploaded-check"]:checked').value;
+  
+  const dateOption = document.querySelector('input[name="media-date-option"]:checked').value;
+  let uploaded_date = '';
+  if (dateOption === 'current') {
+    uploaded_date = new Date().toLocaleString();
+  } else {
+    const rawVal = document.getElementById('media-manual-date-val').value;
+    uploaded_date = rawVal ? new Date(rawVal).toLocaleString() : new Date().toLocaleString();
+  }
+  
+  const payload = { media_status, invitation_uploaded: checkVal, uploaded_date };
+  
+  try {
+    await fetchAPI(`/social-media/${id}/media`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    showToast("Media upload details updated.", "success");
+    closeMediaStatusModal();
+    await loadSocialMediaInvitations();
+    renderMediaSocialMedia();
+  } catch (err) {
+    console.error("Failed to update media status:", err);
+    showToast("Failed to update media status", "error");
+  }
+}
+
+function renderMediaSocialMedia() {
+  const tbody = document.getElementById('media-social-media-table-body');
+  if (!tbody) return;
+  
+  tbody.innerHTML = '';
+  // Media team only sees items that are already approved by the Approval Team
+  const approvedItems = (state.socialMediaInvitations || []).filter(x => x.approval_status === 'Approved');
+  
+  if (approvedItems.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 40px; color: var(--text-muted);">No approved invitation requests available for upload.</td></tr>`;
+    return;
+  }
+  
+  approvedItems.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border)';
+    
+    const mediaBadgeClass = item.media_status === 'Mark Done' ? 'badge-success' : 'badge-warning';
+    
+    const uploadedIcon = item.invitation_uploaded === 'tick'
+      ? `<span style="color:#10b981; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tick</span>`
+      : `<span style="color:#ef4444; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 4px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cross</span>`;
+    
+    tr.innerHTML = `
+      <td style="padding: 12px; font-weight: 600; font-size: 13px;">${escapeHtml(item.sm_number || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.date || '')}</td>
+      <td style="padding: 12px; font-weight: 500; font-size: 13px;">${escapeHtml(item.department || '')}</td>
+      <td style="padding: 12px; font-size: 13px;"><span class="badge badge-secondary">${escapeHtml(item.shift || '-')}</span></td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.program_title || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.category || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.invitation || '')}</td>
+      <td style="padding: 12px; font-size: 13px;">${escapeHtml(item.evidence || '')}</td>
+      <td style="padding: 12px; text-align: center; font-size: 13px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span class="badge ${mediaBadgeClass}">${escapeHtml(item.media_status || 'Pending')}</span>
+          <div style="font-size: 11px;">${uploadedIcon}</div>
+          ${item.uploaded_date ? `<div style="font-size: 10px; color: var(--text-muted);">Uploaded: ${escapeHtml(item.uploaded_date)}</div>` : ''}
+        </div>
+      </td>
+      <td style="padding: 12px; text-align: center;">
+        <button class="btn btn-primary btn-xs" onclick="openMediaStatusModal('${item.id}')" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">
+          Update Upload
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ================= DATA INTEGRATION: UPDATE NOW =================
+
+function transferToCollegeEvents(id) {
+  const item = state.socialMediaInvitations.find(x => x.id == id);
+  if (!item) return;
+  
+  // Switch to college events view
+  switchSubView('staff-college-events');
+  
+  // Open Add Event modal
+  openAddProgramModal();
+  
+  // Pre-fill the college event modal form details
+  document.getElementById('program-edit-id').value = '';
+  document.getElementById('program-title').value = item.program_title || '';
+  document.getElementById('program-dept').value = item.department || '';
+  document.getElementById('program-shift').value = item.shift || '';
+  
+  // Pre-fill Category select
+  const categorySelect = document.getElementById('program-category-select');
+  const categories = ["Endowment Lecture", "Conference", "Webinar", "Seminar", "Orientation", "Skill Development", "VAC", "CC", "Induction", "FDP", "Workshop", "Club Activity", "IKS", "Gender Based"];
+  if (categorySelect) {
+    if (categories.includes(item.category)) {
+      categorySelect.value = item.category;
+      toggleCategoryOtherInput(item.category);
+    } else {
+      categorySelect.value = 'others';
+      toggleCategoryOtherInput('others');
+      document.getElementById('program-category-other').value = item.category || '';
+    }
+  }
+  
+  // Pre-fill dates
+  let fromDate = '', toDate = '';
+  if (item.date && item.date.includes(' to ')) {
+    const parts = item.date.split(' to ');
+    fromDate = parts[0];
+    toDate = parts[1];
+  } else {
+    fromDate = item.date || '';
+  }
+  document.getElementById('program-date-from').value = fromDate;
+  document.getElementById('program-date-to').value = toDate;
+  
+  // Pre-fill invitation and evidence dropdowns
+  const invSelect = document.getElementById('program-invitation');
+  if (invSelect) invSelect.value = item.invitation || 'Received';
+  
+  const evSelect = document.getElementById('program-evidence');
+  if (evSelect) evSelect.value = item.evidence || 'Not Received';
+  
+  showToast("Fetched details from Social Media request. Click Save to complete.", "success");
 }
 
 

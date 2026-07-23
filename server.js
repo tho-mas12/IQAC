@@ -345,6 +345,46 @@ function createTables(dbRunExecutor, callback) {
         data TEXT NOT NULL
       )`;
 
+  const socialMediaSql = usePostgres
+    ? `CREATE TABLE IF NOT EXISTS social_media_invitations (
+        id SERIAL PRIMARY KEY,
+        sm_number VARCHAR(255),
+        date VARCHAR(255),
+        department VARCHAR(255),
+        shift VARCHAR(100),
+        program_title VARCHAR(255),
+        category VARCHAR(255),
+        invitation_forward_date VARCHAR(255),
+        invitation VARCHAR(255),
+        evidence VARCHAR(255),
+        approval_status VARCHAR(50) DEFAULT 'Pending',
+        invitation_approved VARCHAR(50) DEFAULT 'cross',
+        approved_date VARCHAR(255),
+        approved_by VARCHAR(255),
+        media_status VARCHAR(50) DEFAULT 'Pending',
+        invitation_uploaded VARCHAR(50) DEFAULT 'cross',
+        uploaded_date VARCHAR(255)
+      )`
+    : `CREATE TABLE IF NOT EXISTS social_media_invitations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sm_number TEXT,
+        date TEXT,
+        department TEXT,
+        shift TEXT,
+        program_title TEXT,
+        category TEXT,
+        invitation_forward_date TEXT,
+        invitation TEXT,
+        evidence TEXT,
+        approval_status TEXT DEFAULT 'Pending',
+        invitation_approved TEXT DEFAULT 'cross',
+        approved_date TEXT,
+        approved_by TEXT,
+        media_status TEXT DEFAULT 'Pending',
+        invitation_uploaded TEXT DEFAULT 'cross',
+        uploaded_date TEXT
+      )`;
+
   dbRunExecutor(usersSql, [], () => {
     dbRunExecutor(deptsSql, [], () => {
       dbRunExecutor(eventsSql, [], () => {
@@ -355,7 +395,9 @@ function createTables(dbRunExecutor, callback) {
                 dbRunExecutor(ewylHoursSql, [], () => {
                   dbRunExecutor(collegeProgramsSql, [], () => {
                     dbRunExecutor(pesScorecardsSql, [], () => {
-                      callback();
+                      dbRunExecutor(socialMediaSql, [], () => {
+                        callback();
+                      });
                     });
                   });
                 });
@@ -395,7 +437,8 @@ function initializeDatabase() {
         'ewyl_students',
         'ewyl_hours',
         'college_programs',
-        'pes_scorecards'
+        'pes_scorecards',
+        'social_media_invitations'
       ];
       secureTables.forEach(table => {
         db.run(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`, [], (err) => {
@@ -482,8 +525,12 @@ function initializeDatabase() {
                                             seedUser('staff', 'staff123', 'IQAC Coordinator', 'Staff', () => {
                                               seedUser('director', 'director123', 'Dr. Sarah Joseph (Director)', 'Director', () => {
                                                 seedUser('user', 'user123', 'Department User', 'User', () => {
-                                                  console.log('Default users checked and seeded if missing.');
-                                                  seedDepartments();
+                                                  seedUser('approval', 'approval123', 'IQAC Approval Authority', 'Approval Team', () => {
+                                                    seedUser('media', 'media123', 'IQAC Media Coordinator', 'Media Team', () => {
+                                                      console.log('Default users checked and seeded if missing.');
+                                                      seedDepartments();
+                                                    });
+                                                  });
                                                 });
                                               });
                                             });
@@ -1373,6 +1420,99 @@ app.delete('/api/college-programs/:id', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ success: true, id });
   });
+});
+
+// 10. Social Media Invitations API
+app.get('/api/social-media', (req, res) => {
+  db.all("SELECT * FROM social_media_invitations ORDER BY id DESC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.post('/api/social-media', (req, res) => {
+  const { sm_number, date, department, shift, program_title, category, invitation_forward_date, invitation, evidence } = req.body;
+  if (!sm_number || !date || !department || !program_title || !category || !invitation_forward_date || !invitation || !evidence) {
+    return res.status(400).json({ error: 'Required fields missing' });
+  }
+
+  db.run(
+    "INSERT INTO social_media_invitations (sm_number, date, department, shift, program_title, category, invitation_forward_date, invitation, evidence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [sm_number, date, department, shift || '', program_title, category, invitation_forward_date, invitation, evidence],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({
+        id: this.lastID,
+        sm_number, date, department, shift: shift || '', program_title, category, invitation_forward_date, invitation, evidence,
+        approval_status: 'Pending',
+        invitation_approved: 'cross',
+        approved_date: null,
+        approved_by: null,
+        media_status: 'Pending',
+        invitation_uploaded: 'cross',
+        uploaded_date: null
+      });
+    }
+  );
+});
+
+app.put('/api/social-media/:id', (req, res) => {
+  const { id } = req.params;
+  const { sm_number, date, department, shift, program_title, category, invitation_forward_date, invitation, evidence } = req.body;
+  if (!sm_number || !date || !department || !program_title || !category || !invitation_forward_date || !invitation || !evidence) {
+    return res.status(400).json({ error: 'Required fields missing' });
+  }
+
+  db.run(
+    "UPDATE social_media_invitations SET sm_number = ?, date = ?, department = ?, shift = ?, program_title = ?, category = ?, invitation_forward_date = ?, invitation = ?, evidence = ? WHERE id = ?",
+    [sm_number, date, department, shift || '', program_title, category, invitation_forward_date, invitation, evidence, id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id, sm_number, date, department, shift: shift || '', program_title, category, invitation_forward_date, invitation, evidence });
+    }
+  );
+});
+
+app.delete('/api/social-media/:id', (req, res) => {
+  const { id } = req.params;
+  db.run("DELETE FROM social_media_invitations WHERE id = ?", [id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, id });
+  });
+});
+
+app.put('/api/social-media/:id/approve', (req, res) => {
+  const { id } = req.params;
+  const { approval_status, invitation_approved, approved_date, approved_by } = req.body;
+  if (!approval_status || !invitation_approved || !approved_by) {
+    return res.status(400).json({ error: 'Required fields missing' });
+  }
+
+  db.run(
+    "UPDATE social_media_invitations SET approval_status = ?, invitation_approved = ?, approved_date = ?, approved_by = ? WHERE id = ?",
+    [approval_status, invitation_approved, approved_date || '', approved_by, id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id, approval_status, invitation_approved, approved_date, approved_by });
+    }
+  );
+});
+
+app.put('/api/social-media/:id/media', (req, res) => {
+  const { id } = req.params;
+  const { media_status, invitation_uploaded, uploaded_date } = req.body;
+  if (!media_status || !invitation_uploaded) {
+    return res.status(400).json({ error: 'Required fields missing' });
+  }
+
+  db.run(
+    "UPDATE social_media_invitations SET media_status = ?, invitation_uploaded = ?, uploaded_date = ? WHERE id = ?",
+    [media_status, invitation_uploaded, uploaded_date || '', id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id, media_status, invitation_uploaded, uploaded_date });
+    }
+  );
 });
 
 // ================= PES SCORECARDS API =================
