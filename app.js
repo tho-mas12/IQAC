@@ -9468,7 +9468,18 @@ function renderStaffPesPage() {
 }
 
 // ---------------- MUTUAL EXCLUSION FILTER HANDLERS ----------------
+function onPesHeadingFilterChange() {
+  document.getElementById('staff-pes-filter-res-param').value = '';
+  document.getElementById('staff-pes-filter-tlp-select').value = '';
+  document.getElementById('staff-pes-filter-tlp-search').value = '';
+  document.getElementById('staff-pes-filter-innovation').value = '';
+  document.getElementById('staff-pes-filter-placement').value = '';
+  document.getElementById('staff-pes-filter-collab').value = '';
+  applyPesFilters();
+}
+
 function onResParamFilterChange() {
+  document.getElementById('staff-pes-filter-heading').value = '';
   document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
   document.getElementById('staff-pes-filter-innovation').value = '';
@@ -9478,6 +9489,7 @@ function onResParamFilterChange() {
 }
 
 function onTlpSelectChange() {
+  document.getElementById('staff-pes-filter-heading').value = '';
   document.getElementById('staff-pes-filter-res-param').value = '';
   document.getElementById('staff-pes-filter-innovation').value = '';
   document.getElementById('staff-pes-filter-placement').value = '';
@@ -9490,6 +9502,7 @@ function onTlpSearchChange() {
   if (selectEl && !selectEl.value) {
     selectEl.value = 'all-staff';
   }
+  document.getElementById('staff-pes-filter-heading').value = '';
   document.getElementById('staff-pes-filter-res-param').value = '';
   document.getElementById('staff-pes-filter-innovation').value = '';
   document.getElementById('staff-pes-filter-placement').value = '';
@@ -9498,6 +9511,7 @@ function onTlpSearchChange() {
 }
 
 function onInnovationFilterChange() {
+  document.getElementById('staff-pes-filter-heading').value = '';
   document.getElementById('staff-pes-filter-res-param').value = '';
   document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
@@ -9507,6 +9521,7 @@ function onInnovationFilterChange() {
 }
 
 function onPlacementFilterChange() {
+  document.getElementById('staff-pes-filter-heading').value = '';
   document.getElementById('staff-pes-filter-res-param').value = '';
   document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
@@ -9516,6 +9531,7 @@ function onPlacementFilterChange() {
 }
 
 function onCollabFilterChange() {
+  document.getElementById('staff-pes-filter-heading').value = '';
   document.getElementById('staff-pes-filter-res-param').value = '';
   document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
@@ -9526,6 +9542,7 @@ function onCollabFilterChange() {
 
 function clearAllPesFilters() {
   document.getElementById('staff-pes-filter-dept').value = '';
+  document.getElementById('staff-pes-filter-heading').value = '';
   document.getElementById('staff-pes-filter-res-param').value = '';
   document.getElementById('staff-pes-filter-tlp-select').value = '';
   document.getElementById('staff-pes-filter-tlp-search').value = '';
@@ -9699,6 +9716,7 @@ function applyPesFilters() {
   const innovationFilter = document.getElementById('staff-pes-filter-innovation').value;
   const placementFilter = document.getElementById('staff-pes-filter-placement').value;
   const collabFilter = document.getElementById('staff-pes-filter-collab').value;
+  const headingFilter = document.getElementById('staff-pes-filter-heading').value;
   
   let filtered = state.pesSubmissions;
   
@@ -9707,8 +9725,336 @@ function applyPesFilters() {
     filtered = filtered.filter(p => p.department === deptFilter);
   }
   
-  // Case A: Research Parameter dropdown selection
-  if (resParamFilter) {
+  // Heading Filter checks
+  if (headingFilter === 'Research, Teaching Excellence, and Innovation') {
+    const totalRowEl = document.getElementById('staff-pes-total-row');
+    if (totalRowEl) totalRowEl.style.display = 'none';
+    if (titleEl) {
+      titleEl.style.display = 'block';
+      titleEl.innerText = "SECTION 1: RESEARCH, TEACHING EXCELLENCE, AND INNOVATION";
+    }
+    thead.innerHTML = `
+      <tr style="background: var(--bg-light); border-bottom: 2px solid #e5e7eb;">
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 60px;">S.No</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 180px;">Department Name</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 100px;">Academic Year</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 200px;">Major Research Areas</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main);">Research Parameter Name</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 150px;">Previous Year (2025–26)</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 150px;">Target for 2026–27</th>
+      </tr>
+    `;
+
+    const paramNames = [
+      "Research Publications",
+      "Books Published",
+      "Book Chapters Published",
+      "Conference Proceedings",
+      "Average Departmental H-index",
+      "Research Projects (a) Submitted",
+      "Research Projects (b) Sanctioned",
+      "Patent Applications Submitted",
+      "Patents Granted",
+      "Copyrights Filed",
+      "Product Development Projects",
+      "Prototypes Developed",
+      "Start-ups Incubated",
+      "Technology Transfer Initiatives"
+    ];
+
+    let rowIdx = 1;
+    filtered.forEach(p => {
+      const data = p.data || {};
+      const areas = (data.major_research_areas || []).join('; ');
+      const params = data.parameters || {};
+
+      paramNames.forEach((paramName, pIdx) => {
+        let prevVal = 0;
+        let targetVal = 0;
+
+        if (pIdx === 5) {
+          prevVal = params.param_6a ? params.param_6a.prev : 0;
+          targetVal = params.param_6a ? params.param_6a.target : 0;
+        } else if (pIdx === 6) {
+          prevVal = params.param_6b ? params.param_6b.prev : 0;
+          targetVal = params.param_6b ? params.param_6b.target : 0;
+        } else {
+          const actualIdx = pIdx < 5 ? pIdx + 1 : pIdx;
+          const key = `param_${actualIdx}`;
+          prevVal = params[key] ? params[key].prev : 0;
+          targetVal = params[key] ? params[key].target : 0;
+        }
+
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #e5e7eb';
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; font-weight: 500; text-align: center;">${pIdx === 0 ? rowIdx++ : ''}</td>
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);">${pIdx === 0 ? escapeHtml(p.department) : ''}</td>
+          <td style="padding: 12px 16px; font-size: 13px;">${pIdx === 0 ? escapeHtml(p.academic_year || '') : ''}</td>
+          <td style="padding: 12px 16px; font-size: 13px; color: var(--text-muted);">${pIdx === 0 ? escapeHtml(areas) : ''}</td>
+          <td style="padding: 12px 16px; font-weight: 500;">${escapeHtml(paramName)}</td>
+          <td style="padding: 12px 16px; text-align: center; font-weight: 600; color: #1e40af;">${prevVal}</td>
+          <td style="padding: 12px 16px; text-align: center; font-weight: 600; color: #0f766e;">${targetVal}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  }
+  else if (headingFilter === 'Teaching-Learning Pedagogy (TLP)') {
+    const totalRowEl = document.getElementById('staff-pes-total-row');
+    if (totalRowEl) totalRowEl.style.display = 'none';
+    if (titleEl) {
+      titleEl.style.display = 'block';
+      titleEl.innerText = "SECTION 2: TEACHING-LEARNING PEDAGOGY & INNOVATION TARGETS";
+    }
+    thead.innerHTML = `
+      <tr style="background: var(--bg-light); border-bottom: 2px solid #e5e7eb;">
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 60px;">S.No</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 180px;">Department Name</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 100px;">Academic Year</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 150px;">Record Type</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main);">Faculty / Practice Name</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 100px;">TLP Odd</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 100px;">TLP Even</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 100px;">Assess Odd</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 100px;">Assess Even</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 120px;">E-Content / Target</th>
+      </tr>
+    `;
+
+    const innovationPractices = [
+      "Flipped Classroom Sessions",
+      "Project-Based Learning Activities",
+      "Problem-Based Learning Activities",
+      "Experiential Learning Activities",
+      "ICT-Enabled Teaching Sessions",
+      "AI-Assisted Learning Activities",
+      "Peer Learning Activities",
+      "Case Study-Based Teaching",
+      "Field-Based Learning Activities"
+    ];
+
+    let rowIdx = 1;
+    filtered.forEach(p => {
+      const data = p.data || {};
+      const facultyList = data.faculty_compliance || [];
+      const targets = data.innovation_targets || {};
+
+      facultyList.forEach((f, fIdx) => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #e5e7eb';
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; font-weight: 500; text-align: center;">${fIdx === 0 ? rowIdx++ : ''}</td>
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);">${fIdx === 0 ? escapeHtml(p.department) : ''}</td>
+          <td style="padding: 12px 16px; font-size: 13px;">${fIdx === 0 ? escapeHtml(p.academic_year || '') : ''}</td>
+          <td style="padding: 12px 16px; font-weight: 500; color: #1e3a8a; font-size: 12px;">Faculty Compliance</td>
+          <td style="padding: 12px 16px; font-weight: 500;">${escapeHtml(f.name || '')}</td>
+          <td style="padding: 12px 16px; text-align: center;">${f.tlp_odd || 0}</td>
+          <td style="padding: 12px 16px; text-align: center;">${f.tlp_even || 0}</td>
+          <td style="padding: 12px 16px; text-align: center;">${f.assess_odd || 0}</td>
+          <td style="padding: 12px 16px; text-align: center;">${f.assess_even || 0}</td>
+          <td style="padding: 12px 16px; text-align: center; color: var(--primary); font-weight: 600;">${f.econtent || 0}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      innovationPractices.forEach((practice, pIdx) => {
+        const val = targets[`target_${pIdx + 1}`] || 0;
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #e5e7eb';
+        tr.style.background = '#faf5ff';
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; font-weight: 500; text-align: center;"></td>
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);"></td>
+          <td style="padding: 12px 16px; font-size: 13px;"></td>
+          <td style="padding: 12px 16px; font-weight: 500; color: #6b21a8; font-size: 12px;">Innovation Target</td>
+          <td style="padding: 12px 16px; font-style: italic;">${escapeHtml(practice)}</td>
+          <td style="padding: 12px 16px; text-align: center;">-</td>
+          <td style="padding: 12px 16px; text-align: center;">-</td>
+          <td style="padding: 12px 16px; text-align: center;">-</td>
+          <td style="padding: 12px 16px; text-align: center;">-</td>
+          <td style="padding: 12px 16px; text-align: center; font-weight: 600; color: #701a75;">${val}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const otherTargets = targets.other_targets || [];
+      if (otherTargets.length > 0) {
+        otherTargets.forEach(ot => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid #e5e7eb';
+          tr.style.background = '#faf5ff';
+          tr.innerHTML = `
+            <td style="padding: 12px 16px; font-weight: 500; text-align: center;"></td>
+            <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);"></td>
+            <td style="padding: 12px 16px; font-size: 13px;"></td>
+            <td style="padding: 12px 16px; font-weight: 500; color: #6b21a8; font-size: 12px;">Innovation Target</td>
+            <td style="padding: 12px 16px; font-style: italic;">Other: ${escapeHtml(ot.spec)}</td>
+            <td style="padding: 12px 16px; text-align: center;">-</td>
+            <td style="padding: 12px 16px; text-align: center;">-</td>
+            <td style="padding: 12px 16px; text-align: center;">-</td>
+            <td style="padding: 12px 16px; text-align: center;">-</td>
+            <td style="padding: 12px 16px; text-align: center; font-weight: 600; color: #701a75;">${ot.count || 0}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else if (targets.target_10_spec) {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #e5e7eb';
+        tr.style.background = '#faf5ff';
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; font-weight: 500; text-align: center;"></td>
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);"></td>
+          <td style="padding: 12px 16px; font-size: 13px;"></td>
+          <td style="padding: 12px 16px; font-weight: 500; color: #6b21a8; font-size: 12px;">Innovation Target</td>
+          <td style="padding: 12px 16px; font-style: italic;">Other: ${escapeHtml(targets.target_10_spec)}</td>
+          <td style="padding: 12px 16px; text-align: center;">-</td>
+          <td style="padding: 12px 16px; text-align: center;">-</td>
+          <td style="padding: 12px 16px; text-align: center;">-</td>
+          <td style="padding: 12px 16px; text-align: center;">-</td>
+          <td style="padding: 12px 16px; text-align: center; font-weight: 600; color: #701a75;">${targets.target_10 || 0}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    });
+  }
+  else if (headingFilter === 'Placement and Career Development') {
+    const totalRowEl = document.getElementById('staff-pes-total-row');
+    if (totalRowEl) totalRowEl.style.display = 'none';
+    if (titleEl) {
+      titleEl.style.display = 'block';
+      titleEl.innerText = "SECTION 3: PLACEMENT AND CAREER DEVELOPMENT";
+    }
+    thead.innerHTML = `
+      <tr style="background: var(--bg-light); border-bottom: 2px solid #e5e7eb;">
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 60px;">S.No</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 180px;">Department Name</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 100px;">Academic Year</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 150px;">Record Type</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main);">Parameter / Placement Plan</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 150px;">Previous Year (2025–26)</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 150px;">Target for 2026–27 / Plans</th>
+      </tr>
+    `;
+
+    const placementParams = [
+      "MoUs created for Placements / Projects / Internships",
+      "Placement Training Programmes",
+      "Industry Interaction / Training Sessions"
+    ];
+
+    let rowIdx = 1;
+    filtered.forEach(p => {
+      const data = p.data || {};
+      const placement = data.placement || {};
+      const plans = data.placement_plans || [];
+
+      placementParams.forEach((paramName, idx) => {
+        const key = `param_${idx + 1}`;
+        const prev = placement[key] ? placement[key].prev : 0;
+        const target = placement[key] ? placement[key].target : 0;
+
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #e5e7eb';
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; font-weight: 500; text-align: center;">${idx === 0 ? rowIdx++ : ''}</td>
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);">${idx === 0 ? escapeHtml(p.department) : ''}</td>
+          <td style="padding: 12px 16px; font-size: 13px;">${idx === 0 ? escapeHtml(p.academic_year || '') : ''}</td>
+          <td style="padding: 12px 16px; font-weight: 500; color: #1e3a8a; font-size: 12px;">Placement Metric</td>
+          <td style="padding: 12px 16px; font-weight: 500;">${escapeHtml(paramName)}</td>
+          <td style="padding: 12px 16px; text-align: center; font-weight: 600; color: #1e40af;">${prev}</td>
+          <td style="padding: 12px 16px; text-align: center; font-weight: 600; color: #0f766e;">${target}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      plans.forEach(plan => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #e5e7eb';
+        tr.style.background = '#f0fdf4';
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; font-weight: 500; text-align: center;"></td>
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);"></td>
+          <td style="padding: 12px 16px; font-size: 13px;"></td>
+          <td style="padding: 12px 16px; font-weight: 500; color: #166534; font-size: 12px;">Placement Plan</td>
+          <td style="padding: 12px 16px; font-style: italic; color: #166534;" colspan="2">Plan details:</td>
+          <td style="padding: 12px 16px; font-weight: 500; color: #166534;">${escapeHtml(plan)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  }
+  else if (headingFilter === 'Industry-Academia Collaboration') {
+    const totalRowEl = document.getElementById('staff-pes-total-row');
+    if (totalRowEl) totalRowEl.style.display = 'none';
+    if (titleEl) {
+      titleEl.style.display = 'block';
+      titleEl.innerText = "SECTION 4: INDUSTRY-ACADEMIA COLLABORATION";
+    }
+    thead.innerHTML = `
+      <tr style="background: var(--bg-light); border-bottom: 2px solid #e5e7eb;">
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 60px;">S.No</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 180px;">Department Name</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 100px;">Academic Year</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main); width: 150px;">Record Type</th>
+        <th style="padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-main);">Parameter / Collaboration Plan</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 150px;">Previous Year (2025–26)</th>
+        <th style="padding: 12px 16px; text-align: center; font-weight: 700; color: var(--text-main); width: 150px;">Target for 2026–27 / Plans</th>
+      </tr>
+    `;
+
+    const collabParams = [
+      "MoUs Signed",
+      "Active MoUs",
+      "Industry Experts Invited",
+      "Industrial Visits Conducted",
+      "Industry - Sponsored Research Projects",
+      "Consultancy Assignments",
+      "Joint Publications with Industry"
+    ];
+
+    let rowIdx = 1;
+    filtered.forEach(p => {
+      const data = p.data || {};
+      const collaboration = data.collaboration || {};
+      const plans = data.collaboration_plans || [];
+
+      collabParams.forEach((paramName, idx) => {
+        const key = `param_${idx + 1}`;
+        const prev = collaboration[key] ? collaboration[key].prev : 0;
+        const target = collaboration[key] ? collaboration[key].target : 0;
+
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #e5e7eb';
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; font-weight: 500; text-align: center;">${idx === 0 ? rowIdx++ : ''}</td>
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);">${idx === 0 ? escapeHtml(p.department) : ''}</td>
+          <td style="padding: 12px 16px; font-size: 13px;">${idx === 0 ? escapeHtml(p.academic_year || '') : ''}</td>
+          <td style="padding: 12px 16px; font-weight: 500; color: #1e3a8a; font-size: 12px;">Collaboration Metric</td>
+          <td style="padding: 12px 16px; font-weight: 500;">${escapeHtml(paramName)}</td>
+          <td style="padding: 12px 16px; text-align: center; font-weight: 600; color: #1e40af;">${prev}</td>
+          <td style="padding: 12px 16px; text-align: center; font-weight: 600; color: #0f766e;">${target}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      plans.forEach(plan => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #e5e7eb';
+        tr.style.background = '#f0fdf4';
+        tr.innerHTML = `
+          <td style="padding: 12px 16px; font-weight: 500; text-align: center;"></td>
+          <td style="padding: 12px 16px; font-weight: 600; color: var(--text-main);"></td>
+          <td style="padding: 12px 16px; font-size: 13px;"></td>
+          <td style="padding: 12px 16px; font-weight: 500; color: #166534; font-size: 12px;">Collaboration Plan</td>
+          <td style="padding: 12px 16px; font-style: italic; color: #166534;" colspan="2">Plan details:</td>
+          <td style="padding: 12px 16px; font-weight: 500; color: #166534;">${escapeHtml(plan)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  }
+  else if (resParamFilter) {
     const totalRowEl = document.getElementById('staff-pes-total-row');
     if (totalRowEl) totalRowEl.style.display = 'none';
     if (titleEl) {
@@ -10198,9 +10544,10 @@ function exportStaffPesExcel() {
     const innovationFilter = document.getElementById('staff-pes-filter-innovation').value;
     const placementFilter = document.getElementById('staff-pes-filter-placement').value;
     const collabFilter = document.getElementById('staff-pes-filter-collab').value;
+    const headingFilter = document.getElementById('staff-pes-filter-heading').value;
     
     const footRow = document.getElementById('staff-pes-total-row');
-    if (footRow && footRow.style.display !== 'none' && !resParamFilter && !tlpSearchFilter && !innovationFilter && !placementFilter && !collabFilter) {
+    if (footRow && footRow.style.display !== 'none' && !resParamFilter && !tlpSearchFilter && !innovationFilter && !placementFilter && !collabFilter && !headingFilter) {
       const tds = Array.from(footRow.querySelectorAll('td'));
       if (tds.length >= 7) {
         const footData = [
@@ -10261,8 +10608,10 @@ function exportStaffPesPDF() {
     const innovationFilter = document.getElementById('staff-pes-filter-innovation').value;
     const placementFilter = document.getElementById('staff-pes-filter-placement').value;
     const collabFilter = document.getElementById('staff-pes-filter-collab').value;
+    const headingFilter = document.getElementById('staff-pes-filter-heading').value;
     
-    if (resParamFilter) activeFilterDesc = `Filtered by Research Parameter: ${resParamFilter}`;
+    if (headingFilter) activeFilterDesc = `Section Heading: ${headingFilter}`;
+    else if (resParamFilter) activeFilterDesc = `Filtered by Research Parameter: ${resParamFilter}`;
     else if (tlpSearchFilter) activeFilterDesc = `Filtered by TLP Search: "${tlpSearchFilter}"`;
     else if (innovationFilter) activeFilterDesc = `Filtered by Teaching Innovation Target: ${innovationFilter}`;
     else if (placementFilter) activeFilterDesc = `Filtered by Placement Parameter: ${placementFilter}`;
@@ -10293,7 +10642,7 @@ function exportStaffPesPDF() {
     
     // Append footer total row if visible
     const footRow = document.getElementById('staff-pes-total-row');
-    if (footRow && footRow.style.display !== 'none' && !resParamFilter && !tlpSearchFilter && !innovationFilter && !placementFilter && !collabFilter) {
+    if (footRow && footRow.style.display !== 'none' && !resParamFilter && !tlpSearchFilter && !innovationFilter && !placementFilter && !collabFilter && !headingFilter) {
       const tds = Array.from(footRow.querySelectorAll('td'));
       if (tds.length >= 7) {
         const footData = [
