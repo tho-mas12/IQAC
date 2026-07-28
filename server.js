@@ -96,16 +96,16 @@ function dbRun(sql, params = [], callback = () => {}) {
     callback = params;
     params = [];
   }
-  if (!isDbConnected) {
-    return callback(new Error("Database connection is not established. Please check if your database is active (e.g. Supabase is not paused)."));
-  }
   let querySql = convertSqlParams(sql);
   if (usePostgres) {
     if (querySql.trim().toUpperCase().startsWith('INSERT ')) {
       querySql += ' RETURNING id';
     }
     pgClient.query(querySql, params, (err, res) => {
-      if (err) return callback(err);
+      if (err) {
+        err.message = `${err.message}. Please check if your database is active (e.g. Supabase is not paused).`;
+        return callback(err);
+      }
       const ctx = {
         lastID: res.rows && res.rows[0] ? res.rows[0].id : null,
         changes: res.rowCount
@@ -124,13 +124,13 @@ function dbGet(sql, params = [], callback = () => {}) {
     callback = params;
     params = [];
   }
-  if (!isDbConnected) {
-    return callback(new Error("Database connection is not established. Please check if your database is active (e.g. Supabase is not paused)."));
-  }
   const querySql = convertSqlParams(sql);
   if (usePostgres) {
     pgClient.query(querySql, params, (err, res) => {
-      if (err) return callback(err, null);
+      if (err) {
+        err.message = `${err.message}. Please check if your database is active (e.g. Supabase is not paused).`;
+        return callback(err, null);
+      }
       callback(null, res.rows[0] || null);
     });
   } else {
@@ -145,13 +145,13 @@ function dbAll(sql, params = [], callback = () => {}) {
     callback = params;
     params = [];
   }
-  if (!isDbConnected) {
-    return callback(new Error("Database connection is not established. Please check if your database is active (e.g. Supabase is not paused)."));
-  }
   const querySql = convertSqlParams(sql);
   if (usePostgres) {
     pgClient.query(querySql, params, (err, res) => {
-      if (err) return callback(err, null);
+      if (err) {
+        err.message = `${err.message}. Please check if your database is active (e.g. Supabase is not paused).`;
+        return callback(err, null);
+      }
       callback(null, res.rows || []);
     });
   } else {
