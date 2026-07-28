@@ -1,22 +1,24 @@
 {
   "version": 2,
-  "functions": {
-    "server.js": {
-      "runtime": "@vercel/node"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/server.js"
-    },
-    {
-      "source": "/status",
-      "destination": "/server.js"
-    },
-    {
-      "source": "/:path*",
-      "destination": "/index.html"
-    }
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" },
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "style.css", "use": "@vercel/static" },
+    { "src": "app.js", "use": "@vercel/static" },
+    { "src": "logo.png", "use": "@vercel/static" },
+    { "src": "letter_pad.jpg", "use": "@vercel/static" },
+    { "src": "letter_pad1.jpg", "use": "@vercel/static" },
+    { "src": "letter_pad2.png", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "server.js" },
+    { "src": "/status", "dest": "server.js" },
+    { "src": "/style.css", "dest": "style.css" },
+    { "src": "/app.js", "dest": "app.js" },
+    { "src": "/logo.png", "dest": "logo.png" },
+    { "src": "/letter_pad.jpg", "dest": "letter_pad.jpg" },
+    { "src": "/letter_pad1.jpg", "dest": "letter_pad1.jpg" },
+    { "src": "/letter_pad2.png", "dest": "letter_pad2.png" },
+    { "src": "/(.*)", "dest": "index.html" }
   ]
 }
