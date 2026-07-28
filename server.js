@@ -39,18 +39,19 @@ let sqliteDb = null;
 let isDbConnected = false;
 
 if (usePostgres) {
-  const { Client } = require('pg');
-  pgClient = new Client({
+  const { Pool } = require('pg');
+  pgClient = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   });
   
   pgClient.on('error', (err) => {
-    console.error('PostgreSQL client error:', err.stack || err.message);
+    console.error('PostgreSQL pool error:', err.stack || err.message);
     isDbConnected = false;
   });
 
-  pgClient.connect((err) => {
+  // Verify connection and run migrations
+  pgClient.query('SELECT 1', (err) => {
     if (err) {
       console.error('Error connecting to Supabase PostgreSQL database:', err.stack);
       isDbConnected = false;
@@ -1592,7 +1593,12 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`IQAC Portal Server is running at http://localhost:${PORT}`);
-});
+// Export app for serverless platforms like Vercel
+module.exports = app;
+
+// Start Server locally
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`IQAC Portal Server is running at http://localhost:${PORT}`);
+  });
+}
