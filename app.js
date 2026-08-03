@@ -6585,8 +6585,14 @@ async function generateClaimLetter(e) {
 
 // Convert Number to Rupees in Words Helper
 function numberToRupeesInWords(num) {
-  if (num === 0) return 'Zero';
+  num = parseFloat(num);
+  if (isNaN(num) || num === 0) return 'Zero';
   
+  // Format to 2 decimal places to avoid floating point precision issues
+  const parts = num.toFixed(2).split('.');
+  const rupees = parseInt(parts[0], 10);
+  const paise = parseInt(parts[1], 10);
+
   const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 
                 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
   const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
@@ -6611,24 +6617,49 @@ function numberToRupeesInWords(num) {
     
     return temp.trim();
   }
-  
-  let result = '';
-  
-  if (num >= 100000) {
-    result += convertLessThanOneThousand(Math.floor(num / 100000)) + ' Lakh ';
-    num %= 100000;
+
+  function convertToWords(value) {
+    if (value === 0) return '';
+    let result = '';
+
+    if (value >= 10000000) { // Crore
+      result += convertToWords(Math.floor(value / 10000000)) + ' Crore ';
+      value %= 10000000;
+    }
+    
+    if (value >= 100000) { // Lakh
+      result += convertLessThanOneThousand(Math.floor(value / 100000)) + ' Lakh ';
+      value %= 100000;
+    }
+    
+    if (value >= 1000) { // Thousand
+      result += convertLessThanOneThousand(Math.floor(value / 1000)) + ' Thousand ';
+      value %= 1000;
+    }
+    
+    if (value > 0) {
+      result += convertLessThanOneThousand(value);
+    }
+    
+    return result.trim();
   }
   
-  if (num >= 1000) {
-    result += convertLessThanOneThousand(Math.floor(num / 1000)) + ' Thousand ';
-    num %= 1000;
+  let finalWords = '';
+  const rupeesWords = convertToWords(rupees);
+  if (rupeesWords) {
+    finalWords += rupeesWords;
+  } else {
+    finalWords += 'Zero';
+  }
+
+  if (paise > 0) {
+    const paiseWords = convertLessThanOneThousand(paise);
+    if (paiseWords) {
+      finalWords += ' and Paise ' + paiseWords;
+    }
   }
   
-  if (num > 0) {
-    result += convertLessThanOneThousand(num);
-  }
-  
-  return result.replace(/\s+/g, ' ').trim();
+  return finalWords.replace(/\s+/g, ' ').trim();
 }
 
 // --- CLAIM LETTER EXPORTS (Word / PDF) ---
@@ -7372,12 +7403,12 @@ async function downloadMonthSummaryWord(monthVal, summary, dailyLogs) {
       <table class="signatures-table">
         <tr>
           <td style="text-align: left; padding-left: 20px;">
-            IQAC Coordinator<br><br><br><br>
-            IQAC COORDINATOR
+            Dr V. Jude Nirmal<br><br><br><br>
+            Director - IQAC
           </td>
           <td style="text-align: right; padding-right: 20px;">
-            Rev. Fr. Principal<br><br><br><br>
-            PRINCIPAL
+            Rev. Dr K. Arockiam SJ<br><br><br><br>
+            Principal
           </td>
         </tr>
       </table>
@@ -7575,8 +7606,11 @@ async function downloadMonthSummaryPDF(monthVal, summary, dailyLogs) {
     
     currentY += 25;
     
-    doc.text("IQAC Coordinator", marginX + 10, currentY);
-    doc.text("Rev. Fr. Principal", 210 - marginX - 10, currentY, { align: "right" });
+    doc.text("Dr V. Jude Nirmal", marginX + 10, currentY);
+    doc.text("Director - IQAC", marginX + 10, currentY + 5);
+    
+    doc.text("Rev. Dr K. Arockiam SJ", 210 - marginX - 10, currentY, { align: "right" });
+    doc.text("Principal", 210 - marginX - 10, currentY + 5, { align: "right" });
     
     doc.save(`ewyl_month_summary_${monthVal}.pdf`);
   } catch(err) {
